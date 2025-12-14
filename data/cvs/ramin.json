@@ -1,14 +1,15 @@
 {
   "basics": [
     {
-      "name": "Ramin Yazdani",
+      "fname": "Ramin",
+      "lname": "Yazdani",
       "label": [
         "Biotechnologist",
         "Developer",
         "Data Scientist",
         "Bioinformatician"
       ],
-      "email": "yazdani76ramin@gmail.com",
+      "email": "raya00001@stud.uni-saarland.de",
       "phone": {
         "countryCode": "+49",
         "number": "17666652181",
@@ -40,18 +41,24 @@
   "profiles": [
     {
       "network": "GitHub",
-      "username": "github.com/Raminyazdani",
+      "username": "Raminyazdani",
       "url": "https://github.com/Raminyazdani"
     },
     {
+      "network": "Google Scholar",
+      "username": "Ramin Yazdani",
+      "url": "https://scholar.google.com/citations?user=PIKk-q0AAAAJ&hl=en",
+      "uuid": "PIKk-q0AAAAJ"
+    },
+    {
       "network": "LinkedIn",
-      "username": "linkedin.com/in/ramin-yz",
+      "username": "ramin-yz",
       "url": "https://linkedin.com/in/ramin-yz/"
     },
     {
-      "network": "Website",
-      "username": null,
-      "url": null
+      "network": "ORCHID",
+      "username": "Ramin Yazdani",
+      "url": "https://orcid.org/0000-0002-7996-5475"
     }
   ],
   "education": [
@@ -109,7 +116,7 @@
     {
       "institution": "Karaj Soltani 1 School",
       "location": "Karaj, Iran",
-      "area": "",
+      "area": "Natural Sciences",
       "studyType": "Pre-University",
       "startDate": "2014-09-23",
       "endDate": "2015-09-22",
@@ -125,7 +132,7 @@
     {
       "institution": "Karaj Soltani 1 School",
       "location": "Karaj, Iran",
-      "area": "",
+      "area": "Natural Sciences",
       "studyType": "High School",
       "startDate": "2011-09-23",
       "endDate": "2014-06-22",
@@ -144,7 +151,7 @@
       "language": "Farsi",
       "proficiency": {
         "level": "Native",
-        "CEFR": "Native",
+        "CEFR": null,
         "status": "Mother tongue"
       },
       "certifications": [
@@ -180,7 +187,7 @@
           "maxScore": 9.0,
           "minScore": 0.0,
           "examDate": "2023-12-28",
-          "URL": null
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_ielts_jw47oo.pdf"
         }
       ]
     },
@@ -188,7 +195,7 @@
       "language": "German",
       "proficiency": {
         "level": "Beginner",
-        "CEFR": "A1",
+        "CEFR": null,
         "status": "Studying"
       },
       "certifications": [
@@ -208,7 +215,7 @@
       ]
     }
   ],
-  "certifications and courses": [
+  "workshop_and_certifications": [
     {
       "issuer": "Tuf North Academy",
       "certifications": [
@@ -217,7 +224,7 @@
           "date": "2020-9-31",
           "duration": "18 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MicroArray_dspdq4.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -230,7 +237,7 @@
           "date": "2021-04-10",
           "duration": "58 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MD_wfwvnm.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -248,7 +255,7 @@
           "date": "2023-12-08",
           "duration": "16 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_ICAD_glp_EN_vjmbcp.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -266,7 +273,7 @@
           "date": "2023-12-09",
           "duration": "8 hours",
           "certificate": false,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_Biosafety_biosecurity_and_biological_risk_xeazln.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -308,7 +315,7 @@
           "date": "2023-09-13",
           "duration": "15 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Histological_Techniques_and_Equipment_cyqakk.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -316,24 +323,11 @@
           ]
         },
         {
-          "name": "Applied Bioinformatics",
-          "date": "2023-09-20",
-          "duration": "10 hours",
-          "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Biotechnology",
-            "Academic",
-            "Bioinformatics"
-          ]
-        },
-        {
           "name": "Fundamental Principles of Molecular Testing Techniques",
           "date": "2023-09-10",
           "duration": "45 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_Molecular_Testing_Techniques_stnnhk.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -345,7 +339,32 @@
           "date": "2023-09-20",
           "duration": "6 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab_Animals_oiho0j.pdf",
+          "type_key": [
+            "Full CV",
+            "Biotechnology",
+            "Academic"
+          ]
+        },
+        {
+          "name": "Applied Bioinformatics",
+          "date": "2023-09-20",
+          "duration": "10 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_UoT_Applied_Bioinformatics_urbeov.pdf",
+          "type_key": [
+            "Full CV",
+            "Biotechnology",
+            "Academic",
+            "Bioinformatics"
+          ]
+        },
+        {
+          "name": "Fundamental Principles of In Vitro Cell Culture Techniques",
+          "date": "2023-09-15",
+          "duration": "10 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell_Culture_Techniques_vsz0f3.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -357,19 +376,7 @@
           "date": "2023-09-17",
           "duration": "10 hours",
           "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Biotechnology",
-            "Academic"
-          ]
-        },
-        {
-          "name": "Fundamental Principles of In Vitro Cell Culture Techniques",
-          "date": "2023-09-15",
-          "duration": "10 hours",
-          "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Introduction_to_Microbiological_Lab_Techniques_gflaji.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -587,7 +594,7 @@
           "date": "2023-01-18",
           "duration": "400 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabsharif_python_django_qi5tcd.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -606,7 +613,7 @@
           "date": "2020-09-18",
           "duration": "70 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_front_end_pt2jrn.pdf",
           "type_key": [
             "Full CV",
             "Academic",
@@ -618,7 +625,7 @@
           "date": "2020-07-23",
           "duration": "57 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabkhune_beginner_python_zvfwzv.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -632,7 +639,7 @@
           "date": "2021-12-11",
           "duration": "57 hours",
           "certificate": true,
-          "URL": null,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_advanced_python_porkqg.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -664,83 +671,53 @@
       "issuer": "Hamrah Academy",
       "certifications": [
         {
-          "name": "Fundamental and Roadmap of Data Science",
-          "date": "2024-06-05",
-          "duration": "15 hours",
+          "name": "Fundamentals and Roadmap of Data Science",
+          "date": "2023-07-15",
+          "duration": "3 hours",
           "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Academic",
-            "Bioinformatics",
-            "Programming"
-          ]
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data_Science_lea7xa.pdf"
+        },
+        {
+          "name": "Mathematics for Data Science and Artificial Intelligence",
+          "date": "2023-09-01",
+          "duration": "8 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Mathematics_for_Data_Science_and_Artificial_Intelligence_tufiqi.pdf"
+        },
+        {
+          "name": "Data Mining and Business Intelligence with KNIME",
+          "date": "2023-09-05",
+          "duration": "6 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Mining_and_Business_Intelligence_with_KNIME_kctnfx.pdf"
         },
         {
           "name": "Comprehensive Python Programming",
-          "date": "2024-06-09",
-          "duration": "45 hours",
+          "date": "2023-09-12",
+          "duration": "12 hours",
           "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Biotechnology",
-            "Academic",
-            "Bioinformatics",
-            "Programming"
-          ]
-        },
-        {
-          "name": "Data Mining with Knime",
-          "date": "2024-06-15",
-          "duration": "10 hours",
-          "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Academic",
-            "Bioinformatics",
-            "Programming"
-          ]
-        },
-        {
-          "name": "Mathematics for Data Science and AI",
-          "date": "2024-06-18",
-          "duration": "6 hours",
-          "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Academic",
-            "Bioinformatics",
-            "Programming"
-          ]
-        },
-        {
-          "name": "Introductory Database",
-          "date": "2024-06-27",
-          "duration": "10 hours",
-          "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Academic",
-            "Programming"
-          ]
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Comprehensive_Python_Programming_aofpwo.pdf"
         },
         {
           "name": "Data Visualization Tools",
-          "date": "2024-06-28",
+          "date": "2023-10-22",
+          "duration": "5 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Visualization_Tools_ooqjbj.pdf"
+        },
+        {
+          "name": "Introductory Database Principles",
+          "date": "2023-10-19",
           "duration": "10 hours",
           "certificate": true,
-          "URL": null,
-          "type_key": [
-            "Full CV",
-            "Biotechnology",
-            "Academic",
-            "Bioinformatics",
-            "Programming"
-          ]
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Introductory_Database_Principles_dby3im.pdf"
+        },
+        {
+          "name": "Data Mining with Python",
+          "date": "2023-11-01",
+          "duration": "8 hours",
+          "certificate": true,
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Data_Mining_with_Python_fz3e0c.pdf"
         }
       ]
     },
@@ -2508,17 +2485,86 @@
           ]
         }
       ]
+    },
+    "Soft Skills": {
+      "Core Soft Skills": [
+        {
+          "long_name": "Analytical Thinking",
+          "short_name": "Analytical Thinking",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Problem-Solving",
+          "short_name": "Problem-Solving",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Team Collaboration",
+          "short_name": "Team Collaboration",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Project Management",
+          "short_name": "Project Management",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Scientific Writing",
+          "short_name": "Scientific Writing",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Adaptability & Continuous Learning",
+          "short_name": "Adaptability & Learning",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Time Management",
+          "short_name": "Time Management",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Interdisciplinary Communication",
+          "short_name": "Interdisciplinary Communication",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Research & Critical Analysis",
+          "short_name": "Research & Analysis",
+          "type_key": [
+            "Full CV"
+          ]
+        },
+        {
+          "long_name": "Self-Motivation & Initiative",
+          "short_name": "Self-Motivation",
+          "type_key": [
+            "Full CV"
+          ]
+        }
+      ]
     }
   },
   "experiences": [
     {
-      "role": "Personal & Academic Projects",
-      "duration": "2017-06-01 - Present",
-      "primaryFocus": "Automation, Scripting & Data Science",
-      "description": "Developed personal and course-related automation tools, analytical scripts, and machine learning pipelines."
-    },
-    {
-      "role": "Freelance Full-stack Developer",
+      "role": "Full-stack Developer",
+      "institution": "Freelance",
       "duration": "2018-02-11 - Recent",
       "description": "Developed and maintained diverse web applications, backend & frontend components, and automated data workflows."
     },
@@ -2549,45 +2595,6 @@
       "duration": "2009-04-25 - 2023-10-23",
       "primaryFocus": "Export, Import, and Business Management",
       "description": "Oversaw operations, strategic planning, and business development for the family trading business."
-    },
-    {
-      "role": "Robotics and Embedded Systems Developer (Student Projects)",
-      "institution": "High School & Personal projects",
-      "duration": "2011-11-20 - 2015-05-10",
-      "primaryFocus": "Microcontroller programming & robot development",
-      "description": "Developed microcontroller-based robotics systems and participated in student competitions."
-    }
-  ],
-  "softSkills": [
-    {
-      "name": "Analytical Thinking"
-    },
-    {
-      "name": "Problem-Solving"
-    },
-    {
-      "name": "Team Collaboration"
-    },
-    {
-      "name": "Project Management"
-    },
-    {
-      "name": "Scientific Writing"
-    },
-    {
-      "name": "Adaptability & Continuous Learning"
-    },
-    {
-      "name": "Time Management"
-    },
-    {
-      "name": "Interdisciplinary Communication"
-    },
-    {
-      "name": "Research & Critical Analysis"
-    },
-    {
-      "name": "Self-Motivation & Initiative"
     }
   ],
   "projects": [
@@ -2711,37 +2718,18 @@
         "Programming",
         "Academic"
       ]
+    },
+    {
+      "title": "Robotics & Embedded Systems Developer — High School & Personal Projects (2011–2015)",
+      "description": "Microcontroller programming and robot development for student competitions; designed and built embedded robotics systems and control logic.",
+      "type_key": [
+        "Full CV",
+        "Robotics",
+        "Embedded Systems",
+        "Student Projects"
+      ]
     }
   ],
-  "interests": [
-    {
-      "name": "Bioinformatics & Systems Biology",
-      "icon": "🧬",
-      "description": "Exploring the complexity of biological systems through computational and analytical methods."
-    },
-    {
-      "name": "AI, Data Analysis, Machine Learning & Automation",
-      "icon": "🤖",
-      "description": "Leveraging artificial intelligence and automation to extract insights and drive innovation."
-    },
-    {
-      "name": "Web Systems & Interfaces",
-      "icon": "🌐",
-      "description": "Designing and building modern, user-friendly web applications and interfaces."
-    },
-    {
-      "name": "Open Source & Software Contributions",
-      "icon": "💻",
-      "description": "Contributing to the tech community and supporting collaborative software development."
-    },
-    {
-      "name": "Problem Solving & Continuous Learning",
-      "icon": "🧩",
-      "description": "Embracing challenges and continuously expanding knowledge across disciplines."
-    }
-  ],
-  "awards": [],
-  "volunteerExperience": [],
   "publications": [
     {
       "title": "Antibacterial effects of Vancomycin/Ziziphus-encapsulated niosome nanoparticles against vancomycin-resistant Enterococcus faecium clinical isolates",
@@ -2749,14 +2737,55 @@
         "Rysan Jabr Kadhim Alboughanimeh",
         "et al."
       ],
+      "authors_structured": [
+        {
+          "literal": "Rysan Jabr Kadhim Alboughanimeh"
+        },
+        {
+          "literal": "et al."
+        }
+      ],
       "type": "Research Paper",
       "status": "Waiting for Submission",
+      "year": null,
+      "month": null,
+      "day": null,
+      "date": null,
+      "journal": null,
+      "volume": null,
+      "issue": null,
+      "pages": null,
+      "article_number": null,
+      "doi": null,
+      "issn": null,
+      "url": null,
+      "access_date": null,
+      "language": null,
+      "publisher": null,
+      "place": null,
+      "editors": null,
+      "book_title": null,
+      "chapter_pages": null,
+      "edition": null,
+      "conference": null,
+      "degree_type": null,
+      "repository_url": null,
       "correspondent": "Dr. Saeed Samarghandian",
+      "supervisors": null,
       "institution": null,
       "faculty": null,
       "school": null,
       "isbn": null,
       "submissionDate": null,
+      "identifiers": {
+        "doi": null,
+        "isbn": null,
+        "issn": null,
+        "pmid": null,
+        "pmcid": null,
+        "arxiv": null
+      },
+      "notes": null,
       "URL": null,
       "type_key": [
         "Full CV",
@@ -2771,15 +2800,56 @@
         "Ramin Yazdani",
         "et al."
       ],
+      "authors_structured": [
+        {
+          "literal": "Ramin Yazdani"
+        },
+        {
+          "literal": "et al."
+        }
+      ],
       "type": "Book Chapter",
       "status": "Published",
+      "year": null,
+      "month": null,
+      "day": null,
+      "date": null,
+      "journal": null,
+      "volume": null,
+      "issue": null,
+      "pages": null,
+      "article_number": null,
+      "doi": null,
+      "issn": null,
+      "url": "https://www.taylorfrancis.com/chapters/edit/10.1201/9781003441069-5/recent-advances-conventional-modern-wastewater-treatment-approaches-ramin-yazdani-sharareh-harirchi-mandana-lak-mojdeh-mirshafiei-seyed-ali-nojoumi-mohadasseh-ramezani-behnam-rasekh-fatemeh-yazdian",
+      "access_date": null,
+      "language": null,
+      "publisher": "Taylor & Francis",
+      "place": null,
+      "editors": null,
+      "book_title": null,
+      "chapter_pages": null,
+      "edition": null,
+      "conference": null,
+      "degree_type": null,
+      "repository_url": null,
       "correspondent": "Dr. Fatemeh Yazdian",
-      "isbn": "9781032528595",
+      "supervisors": null,
       "institution": null,
       "faculty": null,
       "school": null,
+      "isbn": "9781032528595",
       "submissionDate": null,
-      "URL": null,
+      "identifiers": {
+        "doi": null,
+        "isbn": "9781032528595",
+        "issn": null,
+        "pmid": null,
+        "pmcid": null,
+        "arxiv": null
+      },
+      "notes": null,
+      "URL": "https://www.taylorfrancis.com/chapters/edit/10.1201/9781003441069-5/recent-advances-conventional-modern-wastewater-treatment-approaches-ramin-yazdani-sharareh-harirchi-mandana-lak-mojdeh-mirshafiei-seyed-ali-nojoumi-mohadasseh-ramezani-behnam-rasekh-fatemeh-yazdian",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2793,14 +2863,55 @@
         "Yaqoob Thajil Al-Bozouni",
         "et al."
       ],
+      "authors_structured": [
+        {
+          "literal": "Yaqoob Thajil Al-Bozouni"
+        },
+        {
+          "literal": "et al."
+        }
+      ],
       "type": "Research Paper",
       "status": "Waiting for Submission",
+      "year": null,
+      "month": null,
+      "day": null,
+      "date": null,
+      "journal": null,
+      "volume": null,
+      "issue": null,
+      "pages": null,
+      "article_number": null,
+      "doi": null,
+      "issn": null,
+      "url": null,
+      "access_date": null,
+      "language": null,
+      "publisher": null,
+      "place": null,
+      "editors": null,
+      "book_title": null,
+      "chapter_pages": null,
+      "edition": null,
+      "conference": null,
+      "degree_type": null,
+      "repository_url": null,
       "correspondent": "Dr. Saeed Samarghandian",
+      "supervisors": null,
       "institution": null,
       "faculty": null,
       "school": null,
       "isbn": null,
       "submissionDate": null,
+      "identifiers": {
+        "doi": null,
+        "isbn": null,
+        "issn": null,
+        "pmid": null,
+        "pmcid": null,
+        "arxiv": null
+      },
+      "notes": null,
       "URL": null,
       "type_key": [
         "Full CV",
@@ -2815,14 +2926,55 @@
         "Pooria Moulavi",
         "et al."
       ],
+      "authors_structured": [
+        {
+          "literal": "Pooria Moulavi"
+        },
+        {
+          "literal": "et al."
+        }
+      ],
       "type": "Review Article",
       "status": "Waiting for Submission",
+      "year": null,
+      "month": null,
+      "day": null,
+      "date": null,
+      "journal": null,
+      "volume": null,
+      "issue": null,
+      "pages": null,
+      "article_number": null,
+      "doi": null,
+      "issn": null,
+      "url": null,
+      "access_date": null,
+      "language": null,
+      "publisher": null,
+      "place": null,
+      "editors": null,
+      "book_title": null,
+      "chapter_pages": null,
+      "edition": null,
+      "conference": null,
+      "degree_type": null,
+      "repository_url": null,
       "correspondent": "Dr. Saeed Samarghandian",
+      "supervisors": null,
       "institution": null,
       "faculty": null,
       "school": null,
       "isbn": null,
       "submissionDate": null,
+      "identifiers": {
+        "doi": null,
+        "isbn": null,
+        "issn": null,
+        "pmid": null,
+        "pmcid": null,
+        "arxiv": null
+      },
+      "notes": null,
       "URL": null,
       "type_key": [
         "Full CV",
@@ -2836,8 +2988,36 @@
       "authors": [
         "Ramin Yazdani"
       ],
+      "authors_structured": [
+        {
+          "literal": "Ramin Yazdani"
+        }
+      ],
       "type": "Master Thesis",
       "status": "Submitted",
+      "year": 2024,
+      "month": 9,
+      "day": 15,
+      "date": "2024-09-15",
+      "journal": null,
+      "volume": null,
+      "issue": null,
+      "pages": null,
+      "article_number": null,
+      "doi": null,
+      "issn": null,
+      "url": null,
+      "access_date": null,
+      "language": null,
+      "publisher": null,
+      "place": null,
+      "editors": null,
+      "book_title": null,
+      "chapter_pages": null,
+      "edition": null,
+      "conference": null,
+      "degree_type": "Master's thesis",
+      "repository_url": null,
       "correspondent": "Dr. Mohammad Barshan Tashnizi",
       "supervisors": [
         "Dr. Mohammad Barshan Tashnizi",
@@ -2848,6 +3028,15 @@
       "school": "School of Life Science Engineering",
       "isbn": null,
       "submissionDate": "2024-09-15",
+      "identifiers": {
+        "doi": null,
+        "isbn": null,
+        "issn": null,
+        "pmid": null,
+        "pmcid": null,
+        "arxiv": null
+      },
+      "notes": null,
       "URL": null,
       "type_key": [
         "Full CV",
@@ -2859,6 +3048,24 @@
   ],
   "references": [
     {
+      "name": "Shokouh Shomeil Zadeh Shoushtari",
+      "position": "Wissenschaftliche Mitarbeiterin / Researcher",
+      "department": "Department of Developmental Neuropsychology",
+      "institution": "University of Trier",
+      "location": "Trier, Germany",
+      "email": [
+        "Shoushtari@uni-trier.de"
+      ],
+      "phone": null,
+      "URL": null,
+      "type_key": [
+        "Full CV",
+        "Biotechnology",
+        "Academic",
+        "Bioinformatics"
+      ]
+    },
+    {
       "name": "Prof. Babak Khalili Hadad",
       "position": "Assistant Professor, Biochemist, Member of AAUP",
       "department": "Department of Biotechnology",
@@ -2869,7 +3076,7 @@
         "Ba.khalili@iau.ac.ir"
       ],
       "phone": null,
-      "URL": null,
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/Reference_Babak__Khalili_Hadad_lb2rxf.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2887,7 +3094,7 @@
         "biodibio@yahoo.com"
       ],
       "phone": null,
-      "URL": null,
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Hedieh_Dibah_ynttbv.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2911,7 +3118,7 @@
           "number": "9123961780"
         }
       ],
-      "URL": null,
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Simin_Nabizadeh_sf74hi.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2935,49 +3142,7 @@
           "number": "9105969589"
         }
       ],
-      "URL": null,
-      "type_key": [
-        "Full CV",
-        "Biotechnology",
-        "Academic",
-        "Bioinformatics"
-      ]
-    },
-    {
-      "name": "Dr. Fatemeh Yazdian",
-      "position": "Associate Professor in Chemical Engineering",
-      "department": "Department of Life Science Engineering, Faculty of New Sciences and Technologies",
-      "institution": "University of Tehran",
-      "location": "Tehran, Iran",
-      "email": [
-        "yazdian@ut.ac.ir"
-      ],
-      "phone": [
-        {
-          "formatted": "+98 912 826 7686",
-          "countryCode": "+98",
-          "number": "9128267686"
-        }
-      ],
-      "URL": null,
-      "type_key": [
-        "Full CV",
-        "Biotechnology",
-        "Academic",
-        "Bioinformatics"
-      ]
-    },
-    {
-      "name": "Prof. Saeed Samarghandian",
-      "position": "Professor",
-      "department": "Department of Basic Medical Sciences",
-      "institution": "Neyshabur University of Medical Sciences",
-      "location": "Neyshabur, Iran",
-      "email": [
-        "samarghandians@mums.ac.ir"
-      ],
-      "phone": null,
-      "URL": null,
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Mohammad_Amin_Boojari_oln3ua.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",

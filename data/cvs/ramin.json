@@ -2601,6 +2601,7 @@
     {
       "title": "Integrated Omics Pipeline for Microbial Genomics",
       "description": "Developed a comprehensive pipeline integrating metagenomic, transcriptomic, and proteomic data for functional gene analysis and microbial community profiling.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2610,6 +2611,7 @@
     {
       "title": "Single-Cell & Spatial Transcriptomics Workflow",
       "description": "Implemented analysis workflows for single-cell RNA-seq and spatial transcriptomics data, enabling cell type identification and trajectory inference.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2619,6 +2621,7 @@
     {
       "title": "Bioprocess Optimization for Protein Production",
       "description": "Optimized fed-batch fermentation processes for heterologous protein expression in Pichia pastoris, including pathway engineering and bioreactor management.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2628,6 +2631,7 @@
     {
       "title": "Automation & Web Data Extraction Solutions",
       "description": "Designed and deployed Python-based web crawlers and automation scripts for data extraction, cleaning, and processing from diverse online sources.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2637,6 +2641,7 @@
     {
       "title": "Full-Stack Web Application for Data Visualization",
       "description": "Built interactive dashboards and visualization tools using Django, React, and Plotly for scientific data representation and reporting.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2646,6 +2651,7 @@
     {
       "title": "Machine Learning Applications in Bioinformatics",
       "description": "Developed predictive models and clustering algorithms for biological data analysis, focusing on gene expression and classification tasks.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2656,6 +2662,7 @@
     {
       "title": "Containerized Bioinformatics Workflows",
       "description": "Deployed reproducible bioinformatics pipelines using Docker and Kubernetes for scalable and collaborative research environments.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2665,6 +2672,7 @@
     {
       "title": "CI/CD Pipeline Implementation for Web Applications",
       "description": "Configured and automated continuous integration and deployment pipelines using GitLab CI/CD and Docker for web applications, ensuring robust delivery workflows.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2674,6 +2682,7 @@
     {
       "title": "Backend API Development for Data-Driven Applications",
       "description": "Designed RESTful APIs with Django Rest Framework and FastAPI to serve as backends for data-driven applications, focusing on performance and scalability.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2683,6 +2692,7 @@
     {
       "title": "Real-Time Data Visualization Dashboard",
       "description": "Developed a real-time dashboard for monitoring and visualizing streaming data using React, WebSockets, and Plotly for interactive user experience.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2694,6 +2704,7 @@
     {
       "title": "Full-Stack E-commerce Web Platform",
       "description": "Built a scalable e-commerce platform integrating user management, product catalogs, and payment systems using Django, React, and PostgreSQL.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2703,6 +2714,7 @@
     {
       "title": "Linux System Automation & Monitoring Scripts",
       "description": "Created Bash and Python scripts for automating server maintenance tasks, log management, and resource monitoring on Linux-based systems.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2713,6 +2725,7 @@
     {
       "title": "Cloud-Based Microservices Deployment",
       "description": "Implemented microservices architecture and deployed containerized services on cloud infrastructure using Docker and Kubernetes.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2722,13 +2735,25 @@
     {
       "title": "Robotics & Embedded Systems Developer — High School & Personal Projects (2011–2015)",
       "description": "Microcontroller programming and robot development for student competitions; designed and built embedded robotics systems and control logic.",
+      "url":null,
       "type_key": [
         "Full CV",
         "Robotics",
         "Embedded Systems",
         "Student Projects"
       ]
-    }
+    },
+    {
+  "title": "Policy Compliance Checker (Flask + React + SQLite)",
+  "description": "Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.",
+  "url": "https://github.com/Raminyazdani/policy-compliance-checker",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+}
+
   ],
   "publications": [
     {

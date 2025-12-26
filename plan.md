@@ -931,4 +931,67 @@ This plan is a living document and should be updated as requirements evolve or t
 
 ---
 
+### PHASE 6: Enhanced UI Features
+
+#### Task 6.1: Language Selector Carousel with 3D Card Effect
+**Description**: Replace the simple language dropdown with an interactive 3D carousel showing all three language options (EN/DE/FA) simultaneously, with the selected language prominently in the foreground and the other two positioned behind it on the left and right.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/LanguageCarousel.tsx` component
+- [ ] Display 3 language cards simultaneously (EN, DE, FA)
+- [ ] Apply 3D transform effect: focused/selected card is larger and closer (z-axis forward)
+- [ ] Non-selected cards are positioned behind on left and right with reduced scale and opacity
+- [ ] Smooth transition animations when switching between languages (300-500ms)
+- [ ] Cards are clickable to select that language
+- [ ] Keyboard navigation: Arrow keys to cycle through languages, Enter to select
+- [ ] Touch/swipe support for mobile devices
+- [ ] Visual indicators: focused card has higher z-index, larger scale (e.g., 1.1x), full opacity
+- [ ] Background cards: smaller scale (e.g., 0.85x), reduced opacity (0.6-0.7), slight blur
+- [ ] Carousel wraps around: from FA, right arrow goes to EN; from EN, left arrow goes to FA
+- [ ] Respect `prefers-reduced-motion` - disable 3D transforms, use simple fade/position change
+- [ ] Replace or integrate with existing language switcher in header
+
+**Visual Layout Example**:
+```
+     [DE]              [EN]              [FA]
+   (smaller,        (focused,         (smaller,
+    behind,         forward,          behind,
+    left)           center)           right)
+```
+
+**Oversight Checks**:
+- ✓ Visual inspection: three cards visible simultaneously
+- ✓ Click on background card (e.g., DE when EN is focused) - DE moves to center/foreground, EN moves to background
+- ✓ Verify CSS transforms: focused card has `transform: scale(1.1) translateZ(50px)` or similar
+- ✓ Background cards have `transform: scale(0.85) translateZ(-20px)` or similar
+- ✓ Press right arrow key - carousel cycles to next language smoothly
+- ✓ Press left arrow key - carousel cycles to previous language
+- ✓ On mobile: swipe left/right - carousel responds appropriately
+- ✓ Check `prefers-reduced-motion: reduce` - 3D effects disabled, simple transition instead
+- ✓ Verify animation duration is 300-500ms
+- ✓ Selected language triggers actual language switch (loads corresponding JSON file)
+- ✓ Test wrapping: from FA, next goes to EN; from EN, previous goes to FA
+- ✓ Check z-index stacking: focused card is on top, others behind
+- ✓ Verify touch targets are adequate on mobile (min 44x44px)
+
+**Implementation Notes**:
+- Use CSS `transform: perspective()` on container for 3D space
+- Use `transform: rotateY()` for slight angle on side cards (optional enhancement)
+- Use `transform: translateZ()` for depth effect
+- Consider using `transform-style: preserve-3d` for nested 3D transforms
+- State management: track current focused language index (0, 1, or 2)
+- Animation: use CSS transitions or React Spring for smooth movement
+- Accessibility: ensure focus indicators clear, screen reader announces language change
+
+**Fallback Strategy** (Minimal Library Approach):
+- Primary: Pure CSS transforms + React state for card positioning
+- Fallback: If 3D transforms prove complex, use 2D approach with scale/opacity only
+- No external carousel libraries needed - implement with vanilla React + CSS
+
+**Dependencies**: Task 1.3 (Header component), Task 0.3 (Multi-language JSON files)
+
+**Estimated Effort**: 1-2 days
+
+---
+
 **End of Plan**

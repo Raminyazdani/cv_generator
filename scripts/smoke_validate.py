@@ -28,6 +28,10 @@ CVS_PATH = PROJECT_ROOT / "data" / "cvs"
 REQUIRED_KEYS = ["basics"]
 
 # Keys that should be arrays (not objects or other types)
+# Note: This list is intentionally explicit rather than auto-derived to:
+# 1. Catch cases where a new section is accidentally defined as wrong type
+# 2. Serve as documentation of expected CV structure
+# Add new section types here when extending the CV schema
 ARRAY_KEYS = ["basics", "profiles", "education", "experiences", "languages", 
               "projects", "publications", "references", "workshop_and_certifications"]
 

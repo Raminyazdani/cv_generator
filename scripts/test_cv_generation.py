@@ -177,9 +177,23 @@ def check_rendered_output(rendered_sections: dict, cv_name: str, cv_data: dict) 
     """
     issues = []
     
+    # Mapping from template name to JSON data key
+    SECTION_TO_DATA_KEY = {
+        "publications": "publications",
+        "projects": "projects", 
+        "references": "references",
+        "certificates": "workshop_and_certifications",
+        "experience": "experiences",
+        "skills": "skills",
+        "language": "languages",
+        "education": "education",
+        "header": "basics",
+        "layout": None,  # Layout is always rendered
+    }
+    
     # Sections that can be legitimately empty if source data is empty
-    optional_sections = ["publications", "projects", "references", "certificates", 
-                        "experiences", "skills", "language"]
+    OPTIONAL_SECTIONS = {"publications", "projects", "references", "certificates", 
+                         "experience", "skills", "language"}
     
     for section_name, content in rendered_sections.items():
         # Check for literal 'undefined' (case insensitive)
@@ -189,15 +203,16 @@ def check_rendered_output(rendered_sections: dict, cv_name: str, cv_data: dict) 
         # Check for empty sections (just whitespace)
         # Only flag as issue if the source data has content
         if not content.strip():
-            # Get the corresponding data key
-            data_key = section_name + "s" if section_name in ["publication", "project", "reference", "experience", "certificate"] else section_name
-            if data_key == "languages":
-                data_key = "languages"
+            # Get the corresponding data key using the mapping
+            data_key = SECTION_TO_DATA_KEY.get(section_name)
             
-            # Check if this is an optional section with empty source data
-            source_data = cv_data.get(data_key) or cv_data.get(section_name + "s") or cv_data.get(section_name)
+            if data_key is None:
+                # Layout or unknown section - skip empty check
+                continue
+                
+            source_data = cv_data.get(data_key)
             
-            if section_name not in optional_sections:
+            if section_name not in OPTIONAL_SECTIONS:
                 # Required sections should not be empty
                 issues.append(f"{cv_name}/{section_name}: Section is empty")
             elif source_data and len(source_data) > 0:

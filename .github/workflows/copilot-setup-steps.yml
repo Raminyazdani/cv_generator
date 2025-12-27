@@ -1,0 +1,41 @@
+# Copilot Agent Environment Setup
+# This workflow preinstalls dependencies for faster Copilot background jobs.
+# Must be on the default branch to take effect.
+# See: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment
+
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:  # Allow manual trigger for testing
+
+permissions:
+  contents: read
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jinja2
+
+      - name: Verify installation
+        run: |
+          python --version
+          pip show jinja2
+
+      - name: Create cache for dependencies
+        run: |
+          echo "Dependencies installed successfully"
+          pip freeze > requirements-lock.txt

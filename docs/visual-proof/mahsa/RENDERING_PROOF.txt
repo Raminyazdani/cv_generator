@@ -1,0 +1,16 @@
+CV Generation Proof for: mahsa
+==================================================
+
+Sections rendered: 10
+  - education: 23 lines, 882 chars
+  - certificates: 141 lines, 2238 chars
+  - publications: 0 lines, 0 chars
+  - references: 47 lines, 1927 chars
+  - experience: 34 lines, 1440 chars
+  - header: 67 lines, 1064 chars
+  - language: 51 lines, 1076 chars
+  - skills: 102 lines, 4069 chars
+  - projects: 0 lines, 0 chars
+  - layout: 627 lines, 17900 chars
+
+✅ All sections rendered successfully

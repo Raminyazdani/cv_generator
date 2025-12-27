@@ -1,0 +1,627 @@
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8 Unicode
+% Awesome CV LaTeX Template for CV/Resume
+%
+% This template has been downloaded from:
+% https://github.com/posquit0/Awesome-CV
+%
+% Author:
+% Claud D. Park <posquit0.bj@gmail.com>
+% http://www.posquit0.com
+%
+% Template license:
+% CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+%
+
+
+%-------------------------------------------------------------------------------
+% CONFIGURATIONS
+%-------------------------------------------------------------------------------
+% A4 paper size by default, use 'letterpaper' for US letter
+\documentclass[11pt, a4paper]{./awesome-cv}
+
+% 1) Subsection heading: keep following content with the heading
+\makeatletter
+\renewcommand{\cvsubsection}[1]{%
+  \vspace{\acvSectionContentTopSkip}% global knob below
+  \vspace{-3mm}% fine-tune up
+  \subsectionstyle{#1}%
+  \phantomsection
+  \par\nobreak\@afterheading
+}
+\makeatother
+
+% 2) Global content top skip (single place to control it)
+\renewcommand{\acvSectionContentTopSkip}{3mm}
+
+% 3) Bullet lists inside entries: slightly roomier, consistent
+\renewenvironment{cvitems}{%
+  \vspace{-3.0mm}%
+  \begin{justify}%
+  \begin{itemize}[leftmargin=2ex,nosep]%
+    \setlength{\parskip}{0pt}%
+    \setlength{\itemsep}{0.3ex}% space between bullets
+    \setlength{\topsep}{0.4ex}% space above/below the list
+    \renewcommand{\labelitemi}{\bullet}%
+}{%
+  \end{itemize}%
+  \end{justify}%
+  \vspace{1.5mm}%
+}
+
+% --- Compact 2-row skill block: full-width header + 2 cols (30/70) ---
+\newcommand{\cvskillgroup}[3]{%
+  % local scope: help line-breaking so long lists don't overflow
+  \begingroup\sloppy\emergencystretch=2em
+  % Row 1: full-width heading
+  \noindent\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} p{\linewidth}}
+    \skilltypestyle{#1}\\
+  \end{tabular*}%
+  % small gap
+  \vspace{0.2ex}
+
+  % Row 2: two columns (L 30% / R 70%)
+  \noindent\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}%
+    >{\raggedright\arraybackslash}p{0.30\linewidth}%
+    >{\raggedright\arraybackslash}p{0.70\linewidth}}
+    \skilltypestyle{#2} & \skillsetstyle{#3}\\
+  \end{tabular*}%
+  \par\endgroup
+}
+% One table per parent, stacked vertically
+\makeatletter
+\newcommand{\SkillGroupTopSep}{0.8\baselineskip} % space before each parent block
+\newcommand{\SkillRowSep}{0.35ex}                % space between rows
+
+% A two-column skills table that wraps nicely
+\newenvironment{mycvskills}{%
+  \vspace{0.25\baselineskip}%
+  \begingroup
+    \sloppy\emergencystretch=2em % prevent overflow
+    \setlength{\tabcolsep}{0pt}%
+    \setlength{\extrarowheight}{0pt}%
+    \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}%
+      >{\raggedleft\arraybackslash}p{0.30\linewidth}%
+      >{\raggedright\arraybackslash}p{0.67\linewidth}}%
+}{%
+    \end{tabular*}%
+  \endgroup
+}
+
+% Row macro: child label + wrapped values
+\newcommand{\mycvskill}[2]{%
+  \skilltypestyle{#1} & \skillsetstyle{#2} \\[-\SkillRowSep]
+}
+
+\renewcommand*{\headerfirstnamestyle}[1]{\headerlastnamestyle{#1}}
+
+\makeatother
+
+% Configure page margins with geometry
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Color for highlights
+% Awesome Colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pink, awesome-orange
+%                 awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-nephritis}
+% Uncomment if you would like to specify your own color
+% \definecolor{awesome}{HTML}{202020}
+
+% Colors for text
+% Uncomment if you would like to specify your own color
+% \definecolor{darktext}{HTML}{414141}
+% \definecolor{text}{HTML}{333333}
+% \definecolor{graytext}{HTML}{5D5D5D}
+% \definecolor{lighttext}{HTML}{999999}
+% \definecolor{sectiondivider}{HTML}{5D5D5D}
+
+% Set false if you don't want to highlight section with awesome color
+\setbool{acvSectionColorHighlight}{true}
+
+% If you would like to change the social information separator from a pipe (|) to something else
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%-------------------------------------------------------------------------------
+% basics and profiles
+
+
+
+% Available options: circle|rectangle,edge/noedge,left/right
+% \photo{./profile.png}
+
+% assume you already set firstname/lastname earlier
+\name{Mahsa}{Nejadhossein}
+
+
+\position{  Microbiologist{\enskip\cdotp\enskip}  Applied Biotechnology Student}
+
+\address{Ansbach, Bavaria, 91522, Germany}
+
+
+  \photo[circle,noedge,left]{./data/pics/mahsa.jpg}
+
+
+
+
+\mobile{+49 176 647 77330}
+
+
+
+\email{mahsa.nejad77@gmail.com}
+
+
+
+
+
+
+% -----------------------
+
+
+
+%
+%\github{Raminyazdani}
+%
+%
+%\linkedin{ramin-yz}
+%
+%\googlescholar{PIKk-q0AAAAJ}{google scholar:Ramin Yazdani}
+
+
+%\mobile{+49 (0) 176 666 52181}
+%\email{raya00001@stud.uni-saarland.de}
+%\extrainfo{Date of birth: 7 sep 1997}
+
+% \homepage{...} % no website in your JSON
+
+
+% \gitlab{gitlab-id}
+% \stackoverflow{SO-id}{SO-name}
+% \twitter{@twit}
+% \x{x-id}
+% \skype{skype-id}
+% \reddit{reddit-id}
+% \medium{medium-id}
+% \kaggle{kaggle-id}
+% \hackerrank{hackerrank-id}
+% \telegram{telegram-username}
+
+
+% \extrainfo{extra information}
+
+% \quote{``Be the change that you want to see in the world."}
+
+
+
+%-------------------------------------------------------------------------------
+\begin{document}
+
+% Print the header with above personal information
+% Give optional argument to change alignment(C: center, L: left, R: right)
+\makecvheader
+
+% Print the footer with 3 arguments(<left>, <center>, <right>)
+% Leave any of these blank if they are not needed
+\makecvfooter
+  {\today}
+  {Mahsa Nejadhossein~~~·~~~Curriculum Vitae}
+  {\thepage}
+
+
+%-------------------------------------------------------------------------------
+%	CV/RESUME CONTENT
+%	Each section is imported separately, open each file in turn to modify content
+%-------------------------------------------------------------------------------
+% --- File includes (classic Awesome-CV) ---------------------------------------
+% Uncomment these if your Python writes the corresponding files AND you prefer \input.
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Education}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  \cventry
+    {Master's in Applied Biotechnology} % Degree
+    {Hochschule Ansbach}                       % Institution
+    {Ansbach, Germany}                          % Location
+    {2024-03-01 - present} % Date(s)
+    {\newline}
+  \cventry
+    {Bachelor's in Microbiology} % Degree
+    {Islamic Azad University, Karaj Branch}                       % Institution
+    {Karaj, Iran}                          % Location
+    {2019-09-01 - 2023-02-28} % Date(s)
+    {\newline}
+\end{cventries}
+
+
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Experience}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  \cventry
+    {\bodyfont\bfseries Dr. Nejadhossein's Radiology \& Sonography Clinic} % Organization
+    {Assistant} % Job title
+    {} % Location (optional / often empty)
+    {2017-12-01 - present} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Radiology and sonography practice support}
+        \item {Assisted in daily tasks at a radiology and sonography practice, supporting patient workflow and basic administrative and clinical activities.}
+      \end{cvitems}
+    }
+  \cventry
+    {\bodyfont\bfseries Shafa Medical Diagnostic Laboratory} % Organization
+    {Laboratory Intern / Assistant} % Job title
+    {} % Location (optional / often empty)
+    {2022-07-01 - 2023-07-01} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Medical diagnostic laboratory techniques}
+        \item {Gained hands-on experience with medical diagnostic laboratory procedures, including sample handling, microbiological techniques and operation of core laboratory equipment.}
+      \end{cvitems}
+    }
+\end{cventries}
+
+
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Languages}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+{%
+  \renewcommand{\arraystretch}{1.15}% slightly taller rows
+  \begin{cvskills}
+    \cvskill
+      {Farsi}
+      {%
+        \textbf{} — Native%
+ \,(\textit{Mother tongue})%
+%
+%
+%
+            \enskip{\scriptsize\color{gray}[%
+Mother Tongue            ]}%
+%
+%
+      }
+    \cvskill
+      {English}
+      {%
+        \textbf{B2} — Upper-Intermediate%
+ \,(\textit{Good command for academic and everyday communication})%
+%
+%
+%
+            \enskip{\scriptsize\color{gray}[%
+IELTS Academic\enskip•\enskipOverall 6.5/9.0
+            ]}%
+%
+%
+      }
+    \cvskill
+      {German}
+      {%
+        \textbf{B2} — Intermediate%
+ \,(\textit{Actively improving for study and work})%
+%
+%
+%
+%
+      }
+  \end{cvskills}
+}%
+
+
+
+
+\cvsection{Workshops \& Certifications}
+
+\begin{issuerhonors}{University of British Columbia (ELI)}
+  \newline
+  \cvhonor
+    {%
+      English Fundamentals Program%
+%
+    }
+    {(4 months)}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Shafa Medical Diagnostic Laboratory}
+  \newline
+  \cvhonor
+    {%
+      Laboratory Microbial Techniques Internship%
+%
+    }
+    {(1 year (\textasciitilde{}90 hours structured training))}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Training Course in Medical Diagnostic Laboratory Skills%
+%
+    }
+    {(50 hours)}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{ICAD Academy}
+  \newline
+  \cvhonor
+    {%
+      Good Laboratory Practice (GLP)%
+%
+    }
+    {(16 hours)}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{University of Tehran}
+  \newline
+  \cvhonor
+    {%
+      Histological techniques and equipment%
+%
+    }
+    {(15 hours)}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Applied Bioinformatics%
+%
+    }
+    {(10 hours)}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Fundamental principles of molecular testing techniques%
+%
+    }
+    {(45 hours)}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Fundamental techniques for handling blood sampling and injection in laboratory animals%
+%
+    }
+    {(6 hours)}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Introduction to microbiological lab techniques%
+%
+    }
+    {(10 hours)}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Fundamental principles of in vitro cell culture techniques%
+%
+    }
+    {(10 hours)}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{IQC / ASCB}
+  \newline
+  \cvhonor
+    {%
+      Bioinformatics Training%
+%
+    }
+    {}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Maktabkhooneh}
+  \newline
+  \cvhonor
+    {%
+      Intermediate R and Python programming%
+%
+    }
+    {}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      General programming skills%
+%
+    }
+    {}
+    {Certification}
+    {}
+  \cvhonor
+    {%
+      Front-end development (HTML, CSS, JavaScript, PhpStorm)%
+%
+    }
+    {}
+    {Certification}
+    {}
+\end{issuerhonors}
+\newline
+
+
+%-------------------------------------------------------------------------------
+%  SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Skills}
+
+%-------------------------------------------------------------------------------
+%  CONTENT
+%-------------------------------------------------------------------------------
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Laboratory Techniques}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Molecular \& Microbial Biology Techniques}
+            {Microbial techniques,\allowbreak PCR / real-time PCR,\allowbreak Urine \& stool analysis,\allowbreak Hematology,\allowbreak Immunology}
+          \mycvskill
+            {Histology \& Cell Culture}
+            {Histology,\allowbreak Cell culture basics}
+          \mycvskill
+            {Lab Equipment \& Instrumentation}
+            {Incubators,\allowbreak Liquid handling systems,\allowbreak Biochemical analyzers,\allowbreak Spectrophotometers,\allowbreak Calibration tools,\allowbreak Pipetting}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Bioinformatics \& Computational Tools}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Sequence Analysis \& Primer Design}
+            {FinchTV,\allowbreak Sequence analysis tools,\allowbreak Protein bioinformatics,\allowbreak Primer design,\allowbreak NCBI \& online tools}
+          \mycvskill
+            {Programming \& Scripting}
+            {R,\allowbreak Python}
+          \mycvskill
+            {Data \& Database Management}
+            {Database management}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Software \& Creative Tools}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Office \& Productivity}
+            {Microsoft Office}
+          \mycvskill
+            {Design \& Creative Software}
+            {Photoshop,\allowbreak Illustrator,\allowbreak Canva,\allowbreak Procreate}
+          \mycvskill
+            {Web \& Front-end}
+            {HTML/CSS,\allowbreak JavaScript,\allowbreak PhpStorm}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Soft Skills}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Core Soft Skills}
+            {Teamwork,\allowbreak Communication,\allowbreak Adaptability,\allowbreak Reliability}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Artistic \& Personal Interests}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Hobbies \& Interests}
+            {Piano,\allowbreak Photography,\allowbreak Fashion,\allowbreak Drawing,\allowbreak Dance \& fitness}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+
+
+
+%-------------------------------------------------------------------------------
+%  SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{References}
+
+%-------------------------------------------------------------------------------
+%  CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Dr. Mohammadali Nejadhossein}} % headline
+    {Medical doctor \& radiologist}                 % role/department
+    {Dr. Nejadhossein's Radiology \& Sonography Clinic, Karaj, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} nejadhossein@yahoo.com}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Dr. Sepideh Abdi Soufi}} % headline
+    {Medical practitioner \& clinical and anatomical pathologist}                 % role/department
+    {Karaj, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} sasa\_118@yahoo.com}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Dr. Mona Farhadi}} % headline
+    {Assistant professor of developmental biology — Developmental Biology}                 % role/department
+    {Islamic Azad University, Karaj Branch, Karaj, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} mona.farhadi@kiau.ac.ir}
+      \end{cvitems}
+    }
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+\end{document}

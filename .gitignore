@@ -64,3 +64,6 @@ output/*.pdf
 ~$*
 *.tmp
 
+# CI generated reports (not tracked, uploaded as artifacts)
+validation-report.json
+requirements-lock.txt

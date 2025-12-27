@@ -1,0 +1,1280 @@
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8 Unicode
+% Awesome CV LaTeX Template for CV/Resume
+%
+% This template has been downloaded from:
+% https://github.com/posquit0/Awesome-CV
+%
+% Author:
+% Claud D. Park <posquit0.bj@gmail.com>
+% http://www.posquit0.com
+%
+% Template license:
+% CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
+%
+
+
+%-------------------------------------------------------------------------------
+% CONFIGURATIONS
+%-------------------------------------------------------------------------------
+% A4 paper size by default, use 'letterpaper' for US letter
+\documentclass[11pt, a4paper]{./awesome-cv}
+
+% 1) Subsection heading: keep following content with the heading
+\makeatletter
+\renewcommand{\cvsubsection}[1]{%
+  \vspace{\acvSectionContentTopSkip}% global knob below
+  \vspace{-3mm}% fine-tune up
+  \subsectionstyle{#1}%
+  \phantomsection
+  \par\nobreak\@afterheading
+}
+\makeatother
+
+% 2) Global content top skip (single place to control it)
+\renewcommand{\acvSectionContentTopSkip}{3mm}
+
+% 3) Bullet lists inside entries: slightly roomier, consistent
+\renewenvironment{cvitems}{%
+  \vspace{-3.0mm}%
+  \begin{justify}%
+  \begin{itemize}[leftmargin=2ex,nosep]%
+    \setlength{\parskip}{0pt}%
+    \setlength{\itemsep}{0.3ex}% space between bullets
+    \setlength{\topsep}{0.4ex}% space above/below the list
+    \renewcommand{\labelitemi}{\bullet}%
+}{%
+  \end{itemize}%
+  \end{justify}%
+  \vspace{1.5mm}%
+}
+
+% --- Compact 2-row skill block: full-width header + 2 cols (30/70) ---
+\newcommand{\cvskillgroup}[3]{%
+  % local scope: help line-breaking so long lists don't overflow
+  \begingroup\sloppy\emergencystretch=2em
+  % Row 1: full-width heading
+  \noindent\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} p{\linewidth}}
+    \skilltypestyle{#1}\\
+  \end{tabular*}%
+  % small gap
+  \vspace{0.2ex}
+
+  % Row 2: two columns (L 30% / R 70%)
+  \noindent\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}%
+    >{\raggedright\arraybackslash}p{0.30\linewidth}%
+    >{\raggedright\arraybackslash}p{0.70\linewidth}}
+    \skilltypestyle{#2} & \skillsetstyle{#3}\\
+  \end{tabular*}%
+  \par\endgroup
+}
+% One table per parent, stacked vertically
+\makeatletter
+\newcommand{\SkillGroupTopSep}{0.8\baselineskip} % space before each parent block
+\newcommand{\SkillRowSep}{0.35ex}                % space between rows
+
+% A two-column skills table that wraps nicely
+\newenvironment{mycvskills}{%
+  \vspace{0.25\baselineskip}%
+  \begingroup
+    \sloppy\emergencystretch=2em % prevent overflow
+    \setlength{\tabcolsep}{0pt}%
+    \setlength{\extrarowheight}{0pt}%
+    \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}%
+      >{\raggedleft\arraybackslash}p{0.30\linewidth}%
+      >{\raggedright\arraybackslash}p{0.67\linewidth}}%
+}{%
+    \end{tabular*}%
+  \endgroup
+}
+
+% Row macro: child label + wrapped values
+\newcommand{\mycvskill}[2]{%
+  \skilltypestyle{#1} & \skillsetstyle{#2} \\[-\SkillRowSep]
+}
+
+\renewcommand*{\headerfirstnamestyle}[1]{\headerlastnamestyle{#1}}
+
+\makeatother
+
+% Configure page margins with geometry
+\geometry{left=1.4cm, top=.8cm, right=1.4cm, bottom=1.8cm, footskip=.5cm}
+
+% Color for highlights
+% Awesome Colors: awesome-emerald, awesome-skyblue, awesome-red, awesome-pink, awesome-orange
+%                 awesome-nephritis, awesome-concrete, awesome-darknight
+\colorlet{awesome}{awesome-nephritis}
+% Uncomment if you would like to specify your own color
+% \definecolor{awesome}{HTML}{202020}
+
+% Colors for text
+% Uncomment if you would like to specify your own color
+% \definecolor{darktext}{HTML}{414141}
+% \definecolor{text}{HTML}{333333}
+% \definecolor{graytext}{HTML}{5D5D5D}
+% \definecolor{lighttext}{HTML}{999999}
+% \definecolor{sectiondivider}{HTML}{5D5D5D}
+
+% Set false if you don't want to highlight section with awesome color
+\setbool{acvSectionColorHighlight}{true}
+
+% If you would like to change the social information separator from a pipe (|) to something else
+\renewcommand{\acvHeaderSocialSep}{\quad\textbar\quad}
+
+
+%-------------------------------------------------------------------------------
+%	PERSONAL INFORMATION
+%	Comment any of the lines below if they are not required
+%-------------------------------------------------------------------------------
+% basics and profiles
+
+
+
+% Available options: circle|rectangle,edge/noedge,left/right
+% \photo{./profile.png}
+
+% assume you already set firstname/lastname earlier
+\name{Ramin}{Yazdani}
+
+
+\position{  Biotechnologist{\enskip\cdotp\enskip}  Developer{\enskip\cdotp\enskip}  Data Scientist{\enskip\cdotp\enskip}  Bioinformatician}
+
+\address{Saarbrücken, Saarland, 66121, Germany}
+
+
+  \photo[circle,noedge,left]{./data/pics/ramin.jpg}
+
+
+
+
+\mobile{+49 (0) 176 666 52181}
+
+
+
+\email{raya00001@stud.uni-saarland.de}
+
+
+
+
+
+
+% -----------------------
+
+
+
+
+  \googlescholar{PIKk-q0AAAAJ}{google scholar :,Ramin Yazdani}
+
+  \linkedin{ramin-yz}
+
+
+
+%
+%\github{Raminyazdani}
+%
+%
+%\linkedin{ramin-yz}
+%
+%\googlescholar{PIKk-q0AAAAJ}{google scholar:Ramin Yazdani}
+
+
+%\mobile{+49 (0) 176 666 52181}
+%\email{raya00001@stud.uni-saarland.de}
+%\extrainfo{Date of birth: 7 sep 1997}
+
+% \homepage{...} % no website in your JSON
+
+
+% \gitlab{gitlab-id}
+% \stackoverflow{SO-id}{SO-name}
+% \twitter{@twit}
+% \x{x-id}
+% \skype{skype-id}
+% \reddit{reddit-id}
+% \medium{medium-id}
+% \kaggle{kaggle-id}
+% \hackerrank{hackerrank-id}
+% \telegram{telegram-username}
+
+
+% \extrainfo{extra information}
+
+% \quote{``Be the change that you want to see in the world."}
+
+
+
+%-------------------------------------------------------------------------------
+\begin{document}
+
+% Print the header with above personal information
+% Give optional argument to change alignment(C: center, L: left, R: right)
+\makecvheader
+
+% Print the footer with 3 arguments(<left>, <center>, <right>)
+% Leave any of these blank if they are not needed
+\makecvfooter
+  {\today}
+  {Ramin Yazdani~~~·~~~Curriculum Vitae}
+  {\thepage}
+
+
+%-------------------------------------------------------------------------------
+%	CV/RESUME CONTENT
+%	Each section is imported separately, open each file in turn to modify content
+%-------------------------------------------------------------------------------
+% --- File includes (classic Awesome-CV) ---------------------------------------
+% Uncomment these if your Python writes the corresponding files AND you prefer \input.
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Education}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  \cventry
+    {Master's in Bioinformatics} % Degree
+    {Saarland University}                       % Institution
+    {Saarbrücken, Germany}                          % Location
+    {2024-10-20 - present} % Date(s)
+    {\newline}
+  \cventry
+    {Master's in Biotechnology (Industrial and Environmental)} % Degree
+    {University of Tehran}                       % Institution
+    {Tehran, Iran}                          % Location
+    {2021-09-22 - 2024-09-15} % Date(s)
+    {\newline}
+  \cventry
+    {Bachelor's in Biotechnology} % Degree
+    {Islamic Azad University, Roudehen Branch}                       % Institution
+    {Roudehen, Iran}                          % Location
+    {2017-09-23 - 2021-07-22} % Date(s)
+    {\newline}
+  \cventry
+    {Pre-University in Natural Sciences} % Degree
+    {Karaj Soltani 1 School}                       % Institution
+    {Karaj, Iran}                          % Location
+    {2014-09-23 - 2015-09-22} % Date(s)
+    {\newline}
+  \cventry
+    {High School in Natural Sciences} % Degree
+    {Karaj Soltani 1 School}                       % Institution
+    {Karaj, Iran}                          % Location
+    {2011-09-23 - 2014-06-22} % Date(s)
+    {\newline}
+\end{cventries}
+
+
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Experience}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  \cventry
+    {\bodyfont\bfseries Freelance} % Organization
+    {Full-stack Developer} % Job title
+    {} % Location (optional / often empty)
+    {2018-02-11 - Recent} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Developed and maintained diverse web applications, backend \& frontend components, and automated data workflows.}
+      \end{cvitems}
+    }
+  \cventry
+    {\bodyfont\bfseries University of Tehran} % Organization
+    {Bioinformatics Researcher - Master's Thesis } % Job title
+    {} % Location (optional / often empty)
+    {2023-10-23 - 2024-09-15} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Omics-Based Analysis of Microbial Genomes/Fermentation and Bioprocessing}
+        \item {Performed bioinformatics analyses, gene expression profiling, functional annotation, and bioprocess optimization.}
+      \end{cvitems}
+    }
+  \cventry
+    {\bodyfont\bfseries Kamadani Foodstuff Trading LLC} % Organization
+    {Co-Founder \& Business Development Lead} % Job title
+    {} % Location (optional / often empty)
+    {2022-07-14 - 2023-07-13} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Company Establishment \& Business Development}
+        \item {Co-founded and established the company, led business development and partnerships.}
+      \end{cvitems}
+    }
+  \cventry
+    {\bodyfont\bfseries University of Tehran / Rahpouyan Fanavar Sadegh} % Organization
+    {Research Assistant - Biotechnology Laboratory / Fermentation Engineering} % Job title
+    {} % Location (optional / often empty)
+    {2023-01-21 - 2023-09-22} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Fed-batch Optimization \& Bioprocess Engineering}
+        \item {Worked on Pichia pastoris fermentation optimization and bioprocess engineering projects.}
+      \end{cvitems}
+    }
+  \cventry
+    {\bodyfont\bfseries Yazdan Tejarat Absaran} % Organization
+    {Management Board Member} % Job title
+    {} % Location (optional / often empty)
+    {2009-04-25 - 2023-10-23} % Date(s)
+    {
+      \begin{cvitems} % Description(s)
+        \item {Export, Import, and Business Management}
+        \item {Oversaw operations, strategic planning, and business development for the family trading business.}
+      \end{cvitems}
+    }
+\end{cventries}
+
+
+%-------------------------------------------------------------------------------
+%  SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Publications}
+
+%-------------------------------------------------------------------------------
+%  CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  % derive year and authors text
+  % venue/location line by type
+  \cventry
+    {Research Paper — Waiting for Submission} % type/status
+    {%
+      \textit{Antibacterial effects of Vancomycin/Ziziphus-encapsulated niosome nanoparticles against vancomycin-resistant Enterococcus faecium clinical isolates}%
+    } % title (+ short link tag if present)
+    {} % venue/journal/book/institution
+    {n.d.} % year
+    {%
+      \begin{cvitems}
+        \item {\textbf{Authors:} Rysan Jabr Kadhim Alboughanimeh, et al.}
+        % DOI only (no long URL here; short [LINK] already shown after title)
+      \end{cvitems}
+    }
+  % derive year and authors text
+  % venue/location line by type
+  \cventry
+    {Book Chapter} % type/status
+    {%
+      \textit{Recent Advances in Conventional and Modern Waste Treatment Approaches}%
+\,{\href{https://www.taylorfrancis.com/chapters/edit/10.1201/9781003441069-5/recent-advances-conventional-modern-wastewater-treatment-approaches-ramin-yazdani-sharareh-harirchi-mandana-lak-mojdeh-mirshafiei-seyed-ali-nojoumi-mohadasseh-ramezani-behnam-rasekh-fatemeh-yazdian}{\honorlocationstyle{[LINK]}}}    } % title (+ short link tag if present)
+    {} % venue/journal/book/institution
+    {n.d.} % year
+    {%
+      \begin{cvitems}
+        \item {\textbf{Authors:} Ramin Yazdani, et al.}
+            \item {\textbf{Publisher:} Taylor \& Francis}
+        % DOI only (no long URL here; short [LINK] already shown after title)
+      \end{cvitems}
+    }
+  % derive year and authors text
+  % venue/location line by type
+  \cventry
+    {Research Paper — Waiting for Submission} % type/status
+    {%
+      \textit{Ceftazidime-loaded niosomes as a great antibacterial agent against biofilm-formed Pseudomonas aeruginosa clinical isolates}%
+    } % title (+ short link tag if present)
+    {} % venue/journal/book/institution
+    {n.d.} % year
+    {%
+      \begin{cvitems}
+        \item {\textbf{Authors:} Yaqoob Thajil Al-Bozouni, et al.}
+        % DOI only (no long URL here; short [LINK] already shown after title)
+      \end{cvitems}
+    }
+  % derive year and authors text
+  % venue/location line by type
+  \cventry
+    {Review Article — Waiting for Submission} % type/status
+    {%
+      \textit{BCL-2 mediated apoptotic pathway as a promising target for bio-synthesized silver nanoparticles: review article}%
+    } % title (+ short link tag if present)
+    {} % venue/journal/book/institution
+    {n.d.} % year
+    {%
+      \begin{cvitems}
+        \item {\textbf{Authors:} Pooria Moulavi, et al.}
+        % DOI only (no long URL here; short [LINK] already shown after title)
+      \end{cvitems}
+    }
+  % derive year and authors text
+  % venue/location line by type
+  \cventry
+    {Master Thesis — Submitted} % type/status
+    {%
+      \textit{Omics-Based Analysis and Gene Profiling to Identify Lactobacillus Strains for Modulating HDL/LDL Ratios in Pharmaceutical Applications}%
+    } % title (+ short link tag if present)
+    {University of Tehran} % venue/journal/book/institution
+    {2024} % year
+    {%
+      \begin{cvitems}
+        \item {\textbf{Authors:} Ramin Yazdani}
+\item {\textbf{Degree:} Master's thesis}            \item {\textbf{Affiliation:} Faculty of New Sciences and Technologies, School of Life Science Engineering}
+        % DOI only (no long URL here; short [LINK] already shown after title)
+      \end{cvitems}
+    }
+\end{cventries}
+
+
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Languages}
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+{%
+  \renewcommand{\arraystretch}{1.15}% slightly taller rows
+  \begin{cvskills}
+    \cvskill
+      {Farsi}
+      {%
+        \textbf{} — Native%
+ \,(\textit{Mother tongue})%
+%
+%
+%
+            \enskip{\scriptsize\color{gray}[%
+Mother Tongue            ]}%
+%
+%
+      }
+    \cvskill
+      {English}
+      {%
+        \textbf{C1} — Professional%
+ \,(\textit{Fluent})%
+%
+%
+%
+            \enskip{\scriptsize\color{gray}[%
+\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_ielts_jw47oo.pdf}{IELTS Academic}\enskip•\enskipOverall 8.0/9.0
+                  \enskip•\enskip R 9.0, L 8.5, W 6.5, S 7.0
+\enskip•\enskip2023-12-28
+            ]}%
+%
+%
+      }
+    \cvskill
+      {German}
+      {%
+        \textbf{} — Beginner%
+ \,(\textit{Studying})%
+%
+%
+%
+%
+      }
+  \end{cvskills}
+}%
+
+
+
+
+\cvsection{Workshops \& Certifications}
+
+\begin{issuerhonors}{Tuf North Academy}
+  \newline
+  \cvhonor
+    {%
+      Microarray Data Analysis in R Software and Systems Biology%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MicroArray_dspdq4.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(18 hours)}
+    {Certification}
+    {2020-9-31}
+  \cvhonor
+    {%
+      Bioinformatics of Proteins, Molecular Dynamic Simulation, and Vaccine Design%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MD_wfwvnm.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(58 hours)}
+    {Certification}
+    {2021-04-10}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{ICAD Academy International}
+  \newline
+  \cvhonor
+    {%
+      GLP%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_ICAD_glp_EN_vjmbcp.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(16 hours)}
+    {Certification}
+    {2023-12-08}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Rahpouyan Fanavar Sadegh}
+  \newline
+  \cvhonor
+    {%
+      Biosafety, biosecurity, and biological risk%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_Biosafety_biosecurity_and_biological_risk_xeazln.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2023-12-09}
+  \cvhonor
+    {%
+      GMP in drug industry%
+%
+    }
+    {(90 hours)}
+    {Workshop}
+    {2023-12-20}
+  \cvhonor
+    {%
+      Fermentation process of heterologous protein production%
+%
+    }
+    {(20 weeks)}
+    {Workshop}
+    {2024-02-25}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{University of Tehran}
+  \newline
+  \cvhonor
+    {%
+      Histological Techniques and Equipment%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Histological_Techniques_and_Equipment_cyqakk.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(15 hours)}
+    {Certification}
+    {2023-09-13}
+  \cvhonor
+    {%
+      Fundamental Principles of Molecular Testing Techniques%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_Molecular_Testing_Techniques_stnnhk.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(45 hours)}
+    {Certification}
+    {2023-09-10}
+  \cvhonor
+    {%
+      Fundamental Techniques for Handling, Bleeding, and Injection of Lab Animals%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab_Animals_oiho0j.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(6 hours)}
+    {Certification}
+    {2023-09-20}
+  \cvhonor
+    {%
+      Applied Bioinformatics%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_UoT_Applied_Bioinformatics_urbeov.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(10 hours)}
+    {Certification}
+    {2023-09-20}
+  \cvhonor
+    {%
+      Fundamental Principles of In Vitro Cell Culture Techniques%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell_Culture_Techniques_vsz0f3.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(10 hours)}
+    {Certification}
+    {2023-09-15}
+  \cvhonor
+    {%
+      Introduction to Microbiological Lab Techniques%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Introduction_to_Microbiological_Lab_Techniques_gflaji.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(10 hours)}
+    {Certification}
+    {2023-09-17}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Actin Academy}
+  \newline
+  \cvhonor
+    {%
+      ChIP-Seq Data Analysis%
+%
+    }
+    {(12 hours)}
+    {Workshop}
+    {2024-06-06}
+  \cvhonor
+    {%
+      Online Databases%
+%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2024-03-14}
+  \cvhonor
+    {%
+      Genomic Data Analysis%
+%
+    }
+    {(24 hours)}
+    {Workshop}
+    {2024-04-04}
+  \cvhonor
+    {%
+      Microarray Data Analysis%
+%
+    }
+    {(16 hours)}
+    {Workshop}
+    {2024-04-15}
+  \cvhonor
+    {%
+      Single Cell RNA Sequencing%
+%
+    }
+    {(12 hours)}
+    {Workshop}
+    {2024-04-22}
+  \cvhonor
+    {%
+      Bulk RNA Sequencing%
+%
+    }
+    {(12 hours)}
+    {Workshop}
+    {2024-04-29}
+  \cvhonor
+    {%
+      Proteomics Data Analysis%
+%
+    }
+    {(16 hours)}
+    {Workshop}
+    {2024-05-06}
+  \cvhonor
+    {%
+      Machine Learning%
+%
+    }
+    {(20 hours)}
+    {Workshop}
+    {2024-06-27}
+  \cvhonor
+    {%
+      Metagenomic Data Analysis%
+%
+    }
+    {(12 hours)}
+    {Workshop}
+    {2024-05-27}
+  \cvhonor
+    {%
+      Precision Medicine Biological Systems%
+%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2024-02-19}
+  \cvhonor
+    {%
+      Gene Regulatory Network Analysis%
+%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2024-06-10}
+  \cvhonor
+    {%
+      Complex Biological Network Analysis%
+%
+    }
+    {(20 hours)}
+    {Workshop}
+    {2024-06-13}
+  \cvhonor
+    {%
+      Metabolic Network Reconstruction%
+%
+    }
+    {(20 hours)}
+    {Workshop}
+    {2024-05-20}
+  \cvhonor
+    {%
+      Introduction to Big Biological Data%
+%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2024-03-04}
+  \cvhonor
+    {%
+      Docker and Visualization%
+%
+    }
+    {(8 hours)}
+    {Workshop}
+    {2024-07-04}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Maktab Sharif Academy}
+  \newline
+  \cvhonor
+    {%
+      Python \& Django%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabsharif_python_django_qi5tcd.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(400 hours)}
+    {Certification}
+    {2023-01-18}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Maktabkhooneh}
+  \newline
+  \cvhonor
+    {%
+      Front-End Web Development and Design%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_front_end_pt2jrn.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(70 hours)}
+    {Certification}
+    {2020-09-18}
+  \cvhonor
+    {%
+      Python Programming for Beginners%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabkhune_beginner_python_zvfwzv.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(57 hours)}
+    {Certification}
+    {2020-07-23}
+  \cvhonor
+    {%
+      Advanced Python Programming%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_advanced_python_porkqg.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(57 hours)}
+    {Certification}
+    {2021-12-11}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Daneshjooyar}
+  \newline
+  \cvhonor
+    {%
+      UI/UX%
+%
+    }
+    {(30 hours)}
+    {Workshop}
+    {2021-11-09}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Hamrah Academy}
+  \newline
+  \cvhonor
+    {%
+      Fundamentals and Roadmap of Data Science%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data_Science_lea7xa.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(3 hours)}
+    {Certification}
+    {2023-07-15}
+  \cvhonor
+    {%
+      Mathematics for Data Science and Artificial Intelligence%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Mathematics_for_Data_Science_and_Artificial_Intelligence_tufiqi.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(8 hours)}
+    {Certification}
+    {2023-09-01}
+  \cvhonor
+    {%
+      Data Mining and Business Intelligence with KNIME%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Mining_and_Business_Intelligence_with_KNIME_kctnfx.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(6 hours)}
+    {Certification}
+    {2023-09-05}
+  \cvhonor
+    {%
+      Comprehensive Python Programming%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Comprehensive_Python_Programming_aofpwo.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(12 hours)}
+    {Certification}
+    {2023-09-12}
+  \cvhonor
+    {%
+      Data Visualization Tools%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Visualization_Tools_ooqjbj.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(5 hours)}
+    {Certification}
+    {2023-10-22}
+  \cvhonor
+    {%
+      Introductory Database Principles%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Introductory_Database_Principles_dby3im.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(10 hours)}
+    {Certification}
+    {2023-10-19}
+  \cvhonor
+    {%
+      Data Mining with Python%
+\enskip\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Data_Mining_with_Python_fz3e0c.pdf}{\honorlocationstyle{[LINK]}}%
+    }
+    {(8 hours)}
+    {Certification}
+    {2023-11-01}
+\end{issuerhonors}
+\newline
+\begin{issuerhonors}{Faradars}
+  \newline
+  \cvhonor
+    {%
+      Linear Algebra Toward Data Science%
+%
+    }
+    {(60 hours)}
+    {Workshop}
+    {2024-03-18}
+\end{issuerhonors}
+\newline
+
+
+%-------------------------------------------------------------------------------
+%  SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Skills}
+
+%-------------------------------------------------------------------------------
+%  CONTENT
+%-------------------------------------------------------------------------------
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Programming \& Scripting}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Programming Languages}
+            {Python,\allowbreak R,\allowbreak C++,\allowbreak JS}
+          \mycvskill
+            {Machine Learning \& Data Science}
+            {Supervised/Unsupervised,\allowbreak Model Metrics,\allowbreak Cross-Validation,\allowbreak Hyperparameter Tuning,\allowbreak Feature Engineering,\allowbreak TensorFlow,\allowbreak PyTorch,\allowbreak Transformers,\allowbreak ML Pipelines,\allowbreak Dim. Reduction,\allowbreak Deep Learning,\allowbreak Regularization,\allowbreak Explainability}
+          \mycvskill
+            {Scripting \& Automation Tools}
+            {Bash,\allowbreak Selenium,\allowbreak Web Automation \& Crawling,\allowbreak Shell,\allowbreak Conda,\allowbreak venv}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{DevOps \& Infrastructure}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Networking \& Protocols}
+            {Protocols,\allowbreak OSI/TCP-IP,\allowbreak IP/Subnetting,\allowbreak Routing/Switching,\allowbreak VPN/Tunneling,\allowbreak Firewall \& ACL,\allowbreak Proxies \& LB,\allowbreak DNS/DHCP,\allowbreak Sockets,\allowbreak Diagnostics,\allowbreak Traffic Analysis,\allowbreak Performance Tuning,\allowbreak IoT \& Embedded}
+          \mycvskill
+            {DevOps Tools \& CI/CD Pipelines}
+            {Pipeline Design,\allowbreak Git,\allowbreak n8n,\allowbreak CI/CD}
+          \mycvskill
+            {Cloud Platforms \& Authentication}
+            {Firebase Auth,\allowbreak Azure}
+          \mycvskill
+            {Containerization \& Orchestration}
+            {Docker,\allowbreak K8s}
+          \mycvskill
+            {System Administration \& Linux Tools}
+            {Linux CLI}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Software \& Web Development}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Frontend Frameworks \& UI Technologies}
+            {HTML,\allowbreak CSS,\allowbreak React,\allowbreak Tailwind,\allowbreak Bootstrap}
+          \mycvskill
+            {Backend Development \& APIs}
+            {Node.js,\allowbreak Express,\allowbreak Flask,\allowbreak Django,\allowbreak FastAPI,\allowbreak REST APIs}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Databases \& Data Engineering}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Database Modeling \& Optimization}
+            {DB Concepts,\allowbreak ORM,\allowbreak ERD Modeling,\allowbreak Indexing \& Queries,\allowbreak ACID,\allowbreak Schema Design,\allowbreak Backup \& Recovery}
+          \mycvskill
+            {SQL Databases}
+            {PostgreSQL,\allowbreak MySQL,\allowbreak SQLite}
+          \mycvskill
+            {NoSQL Databases}
+            {MongoDB,\allowbreak Redis}
+          \mycvskill
+            {Data Pipelines \& ETL Systems}
+            {Knime}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Data Visualization \& Reporting}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Scientific Plotting Tools}
+            {Matplotlib,\allowbreak Seaborn,\allowbreak Plotly,\allowbreak ggplot2,\allowbreak Jupyter,\allowbreak RMarkdown,\allowbreak LaTeX}
+          \mycvskill
+            {Dashboarding \& Reporting Platforms}
+            {Power BI,\allowbreak Tableau,\allowbreak Dashboards}
+          \mycvskill
+            {Visual Analytics \& Network Tools}
+            {NetworkX,\allowbreak Graphviz}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Bioinformatics Domains}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Statistical Modeling \& Machine Learning in Bioinformatics}
+            {scikit-learn,\allowbreak GSEA,\allowbreak FDR,\allowbreak Elastic Net,\allowbreak LASSO,\allowbreak XGBoost,\allowbreak CCA,\allowbreak WGCNA,\allowbreak Regularization,\allowbreak Fine-Tuning,\allowbreak Model Eval}
+          \mycvskill
+            {Genomics \& Genome Assembly}
+            {FASTQC,\allowbreak Bowtie2,\allowbreak BWA,\allowbreak HISAT2,\allowbreak Kallisto,\allowbreak BUSCO,\allowbreak Quast,\allowbreak Library Prep}
+          \mycvskill
+            {Transcriptomics \& Single-Cell Analysis}
+            {DESeq2,\allowbreak edgeR,\allowbreak limma,\allowbreak DoubletFinder,\allowbreak ArchR,\allowbreak 10x Visium,\allowbreak Seurat,\allowbreak Cell Ranger,\allowbreak CytoSPACE,\allowbreak Hist2ST}
+          \mycvskill
+            {Metagenomics \& Microbial Ecology}
+            {eggNOG,\allowbreak MetaPhlAn,\allowbreak QIIME2,\allowbreak Kraken2}
+          \mycvskill
+            {Functional Annotation \& Systems Biology}
+            {GO,\allowbreak Enrichr,\allowbreak BioCyc,\allowbreak Cytoscape,\allowbreak KeGG}
+          \mycvskill
+            {Protein Structure \& Structural Bioinformatics}
+            {AlphaFold,\allowbreak Modeller,\allowbreak SwissModel,\allowbreak HHpred,\allowbreak HMMs,\allowbreak TmHMM,\allowbreak Rosetta}
+          \mycvskill
+            {Phylogeny \& Comparative Genomics}
+            {BLAST,\allowbreak Clustal,\allowbreak OrthoFinder}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Laboratory Techniques}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Molecular \& Microbial Biology Techniques}
+            {DNA/RNA Extraction,\allowbreak PCR/qPCR,\allowbreak Gel Electrophoresis,\allowbreak Electroporation,\allowbreak Gram Staining,\allowbreak Media Prep,\allowbreak Contamination Control,\allowbreak AST,\allowbreak Biochemical ID,\allowbreak Broth Culture,\allowbreak Aseptic Technique,\allowbreak Cell Counting,\allowbreak Cell Authentication,\allowbreak Cryopreservation,\allowbreak Cell Culture,\allowbreak Western Blot,\allowbreak Chem Handling,\allowbreak Pipetting}
+          \mycvskill
+            {In Vivo \& Ex Vivo Experimental Protocols}
+            {Animal Handling,\allowbreak Anesthesia,\allowbreak Gavage,\allowbreak Blood Draw,\allowbreak Enrichment,\allowbreak Euthanasia,\allowbreak Ethics}
+          \mycvskill
+            {Experimental Design \& Laboratory Documentation}
+            {DoE,\allowbreak SOP Compliance,\allowbreak RSM}
+          \mycvskill
+            {Analytical Instruments \& Chromatography}
+            {2D-PAGE,\allowbreak ELISA,\allowbreak FACS,\allowbreak Confocal Scope,\allowbreak Fluoro Scope,\allowbreak AAS,\allowbreak CE,\allowbreak Cond. Meter,\allowbreak HPLC,\allowbreak Chromatography,\allowbreak UV-Vis/FTIR}
+          \mycvskill
+            {Bioprocess \& Bioreactor Engineering}
+            {Reactor Modes,\allowbreak Airlift BioR,\allowbreak Agitation/Foam,\allowbreak Feed Control,\allowbreak HCDC,\allowbreak MFA,\allowbreak DFBA,\allowbreak Wet Wt,\allowbreak Centrifug./Filt.,\allowbreak Metabolic Eng.,\allowbreak Scale-Up,\allowbreak Monitoring Tools,\allowbreak Bio/pH-stat}
+          \mycvskill
+            {Lab Safety, Compliance \& Regulatory Practices}
+            {GLP,\allowbreak GMP,\allowbreak Biosafety,\allowbreak QA/QC,\allowbreak R\&D Rules}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+  \noindent\begin{tabular*}{\linewidth}{@{}l@{}}
+    % Row 1: subsection (parent) with slight top margin
+    \begin{minipage}{\linewidth}
+      \vspace*{1\baselineskip}%
+      \cvsubsection{Soft Skills}
+    \end{minipage}\\
+    % Row 2: skills block (children + values)
+    \begin{minipage}{\linewidth}
+      \begin{mycvskills}
+          \mycvskill
+            {Core Soft Skills}
+            {Analytical Thinking,\allowbreak Problem-Solving,\allowbreak Team Collaboration,\allowbreak Project Management,\allowbreak Scientific Writing,\allowbreak Adaptability \& Learning,\allowbreak Time Management,\allowbreak Interdisciplinary Communication,\allowbreak Research \& Analysis,\allowbreak Self-Motivation}
+      \end{mycvskills}
+    \end{minipage}\\
+  \end{tabular*}
+
+
+
+\cvsection{Projects}
+
+\begin{cventries}
+  \cventry
+    {Bioinformatics}
+    {Integrated Omics Pipeline for Microbial Genomics}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Developed a comprehensive pipeline integrating metagenomic, transcriptomic, and proteomic data for functional gene analysis and microbial community profiling.}
+      \end{cvitems}
+    }
+  \cventry
+    {Bioinformatics}
+    {Single-Cell \& Spatial Transcriptomics Workflow}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Implemented analysis workflows for single-cell RNA-seq and spatial transcriptomics data, enabling cell type identification and trajectory inference.}
+      \end{cvitems}
+    }
+  \cventry
+    {Biotechnology}
+    {Bioprocess Optimization for Protein Production}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Optimized fed-batch fermentation processes for heterologous protein expression in Pichia pastoris, including pathway engineering and bioreactor management.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Automation \& Web Data Extraction Solutions}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Designed and deployed Python-based web crawlers and automation scripts for data extraction, cleaning, and processing from diverse online sources.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Full-Stack Web Application for Data Visualization}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Built interactive dashboards and visualization tools using Django, React, and Plotly for scientific data representation and reporting.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming {\textbar} Bioinformatics}
+    {Machine Learning Applications in Bioinformatics}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Developed predictive models and clustering algorithms for biological data analysis, focusing on gene expression and classification tasks.}
+      \end{cvitems}
+    }
+  \cventry
+    {Bioinformatics}
+    {Containerized Bioinformatics Workflows}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Deployed reproducible bioinformatics pipelines using Docker and Kubernetes for scalable and collaborative research environments.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {CI/CD Pipeline Implementation for Web Applications}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Configured and automated continuous integration and deployment pipelines using GitLab CI/CD and Docker for web applications, ensuring robust delivery workflows.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Backend API Development for Data-Driven Applications}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Designed RESTful APIs with Django Rest Framework and FastAPI to serve as backends for data-driven applications, focusing on performance and scalability.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming {\textbar} Bioinformatics {\textbar} Biotechnology}
+    {Real-Time Data Visualization Dashboard}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Developed a real-time dashboard for monitoring and visualizing streaming data using React, WebSockets, and Plotly for interactive user experience.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Full-Stack E-commerce Web Platform}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Built a scalable e-commerce platform integrating user management, product catalogs, and payment systems using Django, React, and PostgreSQL.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming {\textbar} Bioinformatics}
+    {Linux System Automation \& Monitoring Scripts}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Created Bash and Python scripts for automating server maintenance tasks, log management, and resource monitoring on Linux-based systems.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Cloud-Based Microservices Deployment}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Implemented microservices architecture and deployed containerized services on cloud infrastructure using Docker and Kubernetes.}
+      \end{cvitems}
+    }
+  \cventry
+    {Robotics {\textbar} Embedded Systems {\textbar} Student Projects}
+    {Robotics \& Embedded Systems Developer — High School \& Personal Projects (2011–2015)}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Microcontroller programming and robot development for student competitions; designed and built embedded robotics systems and control logic.}
+      \end{cvitems}
+    }
+  \cventry
+    {Programming}
+    {Policy Compliance Checker (Flask + React + SQLite)}
+    {}
+    {}
+    {
+      \begin{cvitems}
+        \item {Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.}
+      \end{cvitems}
+    }
+\end{cventries}
+
+
+%-------------------------------------------------------------------------------
+%  SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{References}
+
+%-------------------------------------------------------------------------------
+%  CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Shokouh Shomeil Zadeh Shoushtari}} % headline
+    {Wissenschaftliche Mitarbeiterin / Researcher — Department of Developmental Neuropsychology}                 % role/department
+    {University of Trier, Trier, Germany}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} Shoushtari@uni-trier.de}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Prof. Babak Khalili Hadad}} % headline
+    {Assistant Professor, Biochemist, Member of AAUP — Department of Biotechnology}                 % role/department
+    {Islamic Azad University, Roudehen Branch, Roudehen, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} Babakkhalili.hadad@ciu.edu.ge \enskip•\enskip Ba.khalili@iau.ac.ir}
+          \item {\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/Reference_Babak__Khalili_Hadad_lb2rxf.pdf}{\honorlocationstyle{[LETTER]}}}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Prof. Hedieh Dibah}} % headline
+    {Assistant Professor, Faculty of Agriculture \& Science — Department of Biotechnology}                 % role/department
+    {Islamic Azad University, Roudehen Branch, Roudehen, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} biodibio@yahoo.com}
+          \item {\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Hedieh_Dibah_ynttbv.pdf}{\honorlocationstyle{[LETTER]}}}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Prof. Simin Nabizadeh}} % headline
+    {Assistant Professor, Faculty of Agriculture \& Science — Department of Biotechnology}                 % role/department
+    {Islamic Azad University, Roudehen Branch, Roudehen, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} Nabizadeh\_simin@gmail.com}
+          \item {\textbf{Phone:} +98 912 396 1780}
+          \item {\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Simin_Nabizadeh_sf74hi.pdf}{\honorlocationstyle{[LETTER]}}}
+      \end{cvitems}
+    }
+  % --- Precompute strings safely
+  % --- Decide if we have any items to list
+  \cventry
+    {\textbf{Dr. Mohammad Amin Boojari}} % headline
+    {Bioprocess Engineering, R\&D Specialist at RFS}                 % role/department
+    {Tarbiat Modares University, Tehran, Iran}                 % institution, location
+    {}                                                    % dates (unused)
+    {%
+      \begin{cvitems}
+          \item {\textbf{Email:} a.boojari@modares.ac.ir}
+          \item {\textbf{Phone:} +98 910 596 9589}
+          \item {\href{https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Mohammad_Amin_Boojari_oln3ua.pdf}{\honorlocationstyle{[LETTER]}}}
+      \end{cvitems}
+    }
+\end{cventries}
+
+%-------------------------------------------------------------------------------
+\end{document}

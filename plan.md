@@ -2601,4 +2601,855 @@ interface CardProps {
 
 ---
 
+### PHASE 8: Production Infrastructure & Technical Essentials
+
+#### Task 8.1: Error Pages & Navigation Edge Cases
+**Description**: Implement professional error pages (404, 500, offline) and handle all navigation edge cases gracefully.
+
+**Acceptance Criteria**:
+- [ ] Create `src/pages/NotFound404.tsx` for 404 errors
+- [ ] Create `src/pages/Error500.tsx` for server errors
+- [ ] Create `src/pages/OfflinePage.tsx` for offline state
+- [ ] Create `src/pages/Maintenance.tsx` for maintenance mode
+- [ ] 404 page features:
+  - User-friendly message ("Page not found")
+  - Search box to find content
+  - Links to main sections
+  - "Back to Home" button
+  - Suggested popular pages
+  - Match site theme and language
+- [ ] Error pages include:
+  - Error code and friendly message
+  - Illustration or icon
+  - Contact information
+  - Report problem button
+  - Navigation back to safety
+- [ ] Handle invalid routes gracefully
+- [ ] Detect broken internal links
+- [ ] Handle hash/anchor navigation failures
+- [ ] Redirect old URLs (if site restructured)
+
+**Oversight Checks**:
+- ✓ Navigate to `/invalid-route` - 404 page displays
+- ✓ 404 page matches current theme
+- ✓ Switch language - 404 page text updates
+- ✓ Click "Back to Home" - navigates to home
+- ✓ Search on 404 page - finds relevant content
+- ✓ Trigger 500 error - error page displays
+- ✓ Go offline - offline page shows (PWA)
+- ✓ All error pages keyboard accessible
+
+**Dependencies**: Task 1.1 (Theme), Task 0.3 (Languages), Task 7.10 (PWA)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.2: Loading States & Lazy Loading Strategy
+**Description**: Implement comprehensive loading states and code-splitting strategy for optimal performance.
+
+**Acceptance Criteria**:
+- [ ] Create global loading indicator component
+- [ ] Route-based code splitting (React.lazy + Suspense)
+- [ ] Component-level lazy loading for heavy sections
+- [ ] Image lazy loading with intersection observer
+- [ ] Lazy load non-critical CSS
+- [ ] Lazy load third-party scripts (analytics, etc.)
+- [ ] Loading states:
+  - Initial app load (splash screen)
+  - Route transitions
+  - Data fetching (if backend added)
+  - Image loading (blur-up effect)
+  - Section reveal on scroll
+- [ ] Skeleton loaders for content (already in Task 6.20)
+- [ ] Progress indicator for long operations
+- [ ] Timeout handling (show error after X seconds)
+- [ ] Preload critical resources
+
+**Implementation Pattern**:
+```typescript
+// Route splitting
+const ProjectsSection = React.lazy(() => import('./components/ProjectsSection'));
+
+// Component usage
+<Suspense fallback={<SectionSkeleton />}>
+  <ProjectsSection />
+</Suspense>
+```
+
+**Oversight Checks**:
+- ✓ Check Network tab - chunks loaded on demand
+- ✓ Navigate between sections - smooth transitions
+- ✓ Slow 3G simulation - loading states appear
+- ✓ Images load progressively with blur-up
+- ✓ Initial bundle size < 200KB gzipped
+- ✓ Lighthouse: Reduce unused JavaScript warning minimal
+- ✓ Third-party scripts defer until after page interactive
+
+**Dependencies**: Task 4.4 (Performance), Task 6.20 (Skeletons)
+
+**Estimated Effort**: 2 days
+
+---
+
+#### Task 8.3: Environment Configuration & Build Profiles
+**Description**: Set up proper environment configuration for development, staging, and production with secure secret management.
+
+**Acceptance Criteria**:
+- [ ] Create `.env.example` template file
+- [ ] Environment variables for:
+  - `REACT_APP_API_URL` (if backend exists)
+  - `REACT_APP_ANALYTICS_ID`
+  - `REACT_APP_SENTRY_DSN`
+  - `REACT_APP_ENV` (dev/staging/prod)
+  - `REACT_APP_VERSION` (from package.json)
+  - Feature flags (enable/disable features)
+- [ ] Build profiles:
+  - Development: source maps, hot reload, verbose logging
+  - Staging: optimized but with debugging tools
+  - Production: fully optimized, minimal logging, error tracking
+- [ ] Never commit `.env` files (add to `.gitignore`)
+- [ ] Document all required env vars in README
+- [ ] Add env var validation on app startup
+- [ ] Fail gracefully if critical vars missing
+- [ ] Use different configs per environment (API endpoints, analytics keys, etc.)
+
+**Example `.env.example`**:
+```env
+# API Configuration (if backend added)
+REACT_APP_API_URL=https://api.example.com
+
+# Analytics
+REACT_APP_GA_ID=G-XXXXXXXXXX
+
+# Error Tracking
+REACT_APP_SENTRY_DSN=https://...
+
+# Feature Flags
+REACT_APP_ENABLE_COMMENTS=false
+REACT_APP_ENABLE_AB_TESTING=false
+
+# Environment
+REACT_APP_ENV=production
+```
+
+**Oversight Checks**:
+- ✓ `.env.example` exists with all variables
+- ✓ Real `.env` files not in git (check .gitignore)
+- ✓ Build succeeds with missing optional vars
+- ✓ Build fails with missing critical vars
+- ✓ Environment displayed in console (dev only)
+- ✓ Different analytics ID used per environment
+- ✓ Feature flags toggle features correctly
+
+**Dependencies**: Task 0.1 (Project setup)
+
+**Estimated Effort**: 0.5-1 day
+
+---
+
+#### Task 8.4: Security Headers & Content Security Policy
+**Description**: Implement security best practices including CSP, security headers, and XSS/CSRF protection.
+
+**Acceptance Criteria**:
+- [ ] Content Security Policy (CSP):
+  - Define allowed sources for scripts, styles, images, fonts
+  - Block inline scripts (or use nonces)
+  - Report violations to monitoring
+- [ ] Security headers (via server config or meta tags):
+  - `X-Frame-Options: DENY` (prevent clickjacking)
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy` (limit browser features)
+- [ ] HTTPS enforcement (redirect HTTP to HTTPS)
+- [ ] Sanitize user input (if comments/forms exist)
+- [ ] Prevent XSS attacks
+- [ ] Rate limiting for API calls (if backend)
+- [ ] CORS configuration (if API exists)
+- [ ] Subresource Integrity (SRI) for external scripts
+- [ ] Regular dependency security audits (`npm audit`)
+
+**CSP Example**:
+```html
+<meta http-equiv="Content-Security-Policy" 
+  content="default-src 'self'; 
+           script-src 'self' 'unsafe-inline' https://analytics.google.com; 
+           style-src 'self' 'unsafe-inline'; 
+           img-src 'self' data: https:; 
+           font-src 'self' data:;">
+```
+
+**Oversight Checks**:
+- ✓ Check response headers - all security headers present
+- ✓ CSP violations logged (if any)
+- ✓ Site works with CSP enabled
+- ✓ External resources load correctly
+- ✓ Run `npm audit` - no high/critical vulnerabilities
+- ✓ Lighthouse Security score: 100
+- ✓ Site accessible only via HTTPS
+- ✓ Mixed content warnings: 0
+
+**Dependencies**: Task 5.5 (Deployment)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.5: Logging & Debugging Infrastructure
+**Description**: Implement structured logging for development and production debugging without exposing sensitive info.
+
+**Acceptance Criteria**:
+- [ ] Create `src/utils/logger.ts` utility
+- [ ] Log levels: DEBUG, INFO, WARN, ERROR
+- [ ] Development: verbose console logging with colors
+- [ ] Production: minimal logging, errors to monitoring service
+- [ ] Structured log format:
+  ```typescript
+  {
+    timestamp: "2024-01-15T10:30:00Z",
+    level: "ERROR",
+    message: "Failed to load projects",
+    context: { userId: "xxx", section: "projects" },
+    error: { stack, message }
+  }
+  ```
+- [ ] Log filtering by level/category
+- [ ] Performance logging (timing operations)
+- [ ] User action logging (for debugging)
+- [ ] Network request logging
+- [ ] Redux/state change logging (if using state management)
+- [ ] Sensitive data redaction (emails, tokens, etc.)
+- [ ] Source maps for production debugging
+- [ ] Debug mode toggle (localStorage flag)
+
+**Oversight Checks**:
+- ✓ Dev mode: console shows detailed logs
+- ✓ Prod mode: only errors logged
+- ✓ Trigger error - logged to monitoring service
+- ✓ Enable debug mode - verbose logs appear
+- ✓ Check logs - no sensitive data exposed
+- ✓ Performance logs show operation timings
+- ✓ Source maps work for production errors
+
+**Dependencies**: Task 7.14 (Error tracking)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 8.6: Cache Management & Service Worker Strategy
+**Description**: Implement intelligent caching strategy for assets, data, and offline functionality.
+
+**Acceptance Criteria**:
+- [ ] Service worker caching strategies:
+  - **Cache-First**: Static assets (CSS, JS, images, fonts)
+  - **Network-First**: JSON data files (CV content)
+  - **Stale-While-Revalidate**: Non-critical assets
+  - **Network-Only**: Analytics, tracking
+- [ ] Cache versioning (invalidate on deploy)
+- [ ] Cache size limits
+- [ ] Clear old caches automatically
+- [ ] Precache critical assets on install
+- [ ] Runtime caching for dynamic content
+- [ ] Background sync for failed requests
+- [ ] IndexedDB for large data (if needed)
+- [ ] localStorage for settings (theme, language, etc.)
+- [ ] Clear cache option in UI (dev tools)
+
+**Service Worker Lifecycle**:
+```javascript
+// Install: Precache critical assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('cv-v1').then((cache) => {
+      return cache.addAll(['/index.html', '/styles.css', '/app.js']);
+    })
+  );
+});
+
+// Activate: Clean old caches
+self.addEventListener('activate', (event) => {
+  // Remove old caches
+});
+
+// Fetch: Serve from cache or network
+self.addEventListener('fetch', (event) => {
+  // Cache strategy logic
+});
+```
+
+**Oversight Checks**:
+- ✓ Go offline - site still loads (cached assets)
+- ✓ Check Application tab - caches populated
+- ✓ Deploy new version - old caches cleared
+- ✓ JSON data updates - fetch from network
+- ✓ Cache size within limits (< 50MB)
+- ✓ Background sync works for failed requests
+- ✓ Clear cache button works
+
+**Dependencies**: Task 7.10 (PWA)
+
+**Estimated Effort**: 2-3 days
+
+---
+
+#### Task 8.7: URL Management & Deep Linking
+**Description**: Implement proper URL handling, deep linking, and shareable URLs for specific content/states.
+
+**Acceptance Criteria**:
+- [ ] URL structure:
+  - `/` - Home (hero)
+  - `/#section-name` - Anchor to section
+  - `/?lang=de` - Language selection
+  - `/?theme=dark` - Theme selection
+  - `/?focus=Programming` - Filter state
+  - `/?project=project-slug` - Specific project expanded
+  - `/?article=article-slug` - Specific article (if blog exists)
+- [ ] Parse URL parameters on load
+- [ ] Update URL on state changes (language, theme, filter, etc.)
+- [ ] Browser back/forward buttons work correctly
+- [ ] Sharable URLs: copy current state to clipboard
+- [ ] Pretty URLs (avoid ugly query strings if possible)
+- [ ] Canonical URL for SEO
+- [ ] Handle URL encoding/decoding properly
+- [ ] Scroll to section on hash change
+- [ ] Restore scroll position on back button
+
+**URL State Management**:
+```typescript
+// Read from URL
+const urlParams = new URLSearchParams(window.location.search);
+const lang = urlParams.get('lang') || 'en';
+const theme = urlParams.get('theme') || 'normal';
+
+// Update URL without reload
+const newUrl = `${window.location.pathname}?lang=${lang}&theme=${theme}`;
+window.history.pushState({}, '', newUrl);
+```
+
+**Oversight Checks**:
+- ✓ Open URL with query params - state restored
+- ✓ Change language - URL updates with `?lang=`
+- ✓ Change theme - URL updates with `?theme=`
+- ✓ Apply filter - URL updates with `?focus=`
+- ✓ Browser back button - previous state restored
+- ✓ Share URL with friend - they see same state
+- ✓ Copy URL button copies current state
+- ✓ Hash links scroll to correct section
+
+**Dependencies**: Task 1.3 (Navigation), Task 3.2 (Filtering)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.8: Data Validation & Schema Enforcement
+**Description**: Implement runtime validation of JSON data to catch schema violations and data quality issues.
+
+**Acceptance Criteria**:
+- [ ] Create JSON schema definitions (using JSON Schema or Zod)
+- [ ] Validate JSON data on load:
+  - Required fields present
+  - Data types correct
+  - Date formats valid
+  - URLs properly formatted
+  - Email addresses valid
+  - Arrays not empty when required
+- [ ] Graceful degradation on validation errors
+- [ ] Log validation warnings in development
+- [ ] Show fallback UI for invalid data
+- [ ] Type guards in TypeScript
+- [ ] Unit tests for validation logic
+- [ ] Schema version in JSON (for migrations)
+- [ ] Data migration utilities (if schema changes)
+
+**Validation Example (using Zod)**:
+```typescript
+import { z } from 'zod';
+
+const EducationSchema = z.object({
+  institution: z.string().min(1),
+  studyType: z.string(),
+  area: z.string(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().or(z.literal('present')),
+  gpa: z.string().optional(),
+  type_key: z.array(z.string())
+});
+
+// Validate
+const result = EducationSchema.safeParse(data);
+if (!result.success) {
+  console.error('Validation failed:', result.error);
+}
+```
+
+**Oversight Checks**:
+- ✓ Load invalid JSON - validation errors logged
+- ✓ Invalid date format - fallback displayed
+- ✓ Missing required field - doesn't crash
+- ✓ Wrong data type - type error caught
+- ✓ Dev mode: validation warnings in console
+- ✓ Prod mode: graceful fallback, error logged
+- ✓ Unit tests: all validation scenarios covered
+
+**Dependencies**: Task 0.2 (TypeScript interfaces)
+
+**Estimated Effort**: 2 days
+
+---
+
+#### Task 8.9: Browser Compatibility & Polyfills
+**Description**: Ensure site works across all target browsers with appropriate polyfills and fallbacks.
+
+**Acceptance Criteria**:
+- [ ] Define browser support matrix:
+  - Chrome/Edge: last 2 versions
+  - Firefox: last 2 versions
+  - Safari: last 2 versions
+  - iOS Safari: last 2 versions
+  - Android Chrome: last 2 versions
+- [ ] Add necessary polyfills:
+  - `core-js` for ES6+ features
+  - `regenerator-runtime` for async/await
+  - Intersection Observer polyfill
+  - ResizeObserver polyfill
+  - CSS custom properties fallback (for old browsers)
+- [ ] Modernizr for feature detection (optional)
+- [ ] Graceful degradation strategy:
+  - Advanced animations: fallback to simple transitions
+  - CSS Grid: fallback to Flexbox
+  - Custom fonts: fallback to system fonts
+- [ ] Browser-specific CSS hacks (if needed)
+- [ ] Test on Browserstack or similar
+- [ ] Display warning for unsupported browsers
+- [ ] Add browserslist config
+
+**browserslist config** (in package.json):
+```json
+{
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+```
+
+**Oversight Checks**:
+- ✓ Test on Chrome, Firefox, Safari, Edge - all work
+- ✓ Test on mobile browsers - functional
+- ✓ IE11 (if supporting): graceful fallback or warning
+- ✓ CSS Grid areas work or fallback to Flexbox
+- ✓ Animations work or degrade gracefully
+- ✓ Bundle includes necessary polyfills
+- ✓ Lighthouse: browser compatibility warnings = 0
+
+**Dependencies**: Task 4.5 (Browser compatibility)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.10: Automated Testing Infrastructure
+**Description**: Set up comprehensive testing infrastructure (unit, integration, E2E) with CI integration.
+
+**Acceptance Criteria**:
+- [ ] Unit testing setup (Jest + React Testing Library)
+- [ ] Component tests for all major components
+- [ ] Utility function tests
+- [ ] Integration tests for user flows
+- [ ] E2E tests (Playwright or Cypress):
+  - Homepage loads
+  - Navigation works
+  - Language switching
+  - Theme switching
+  - Filter applies correctly
+  - PDF export triggers
+  - Contact form validation
+  - Mobile responsive
+- [ ] Visual regression testing (optional: Percy, Chromatic)
+- [ ] Test coverage reports (aim for > 80%)
+- [ ] CI pipeline runs tests on every commit
+- [ ] Tests must pass before merge
+- [ ] Performance tests (Lighthouse CI)
+- [ ] Accessibility tests (axe-core)
+
+**Test Example**:
+```typescript
+describe('LanguageSwitch', () => {
+  it('switches content when language changed', () => {
+    render(<App />);
+    const langButton = screen.getByRole('button', { name: /language/i });
+    fireEvent.click(langButton);
+    fireEvent.click(screen.getByText('Deutsch'));
+    expect(screen.getByText(/Bildung/)).toBeInTheDocument();
+  });
+});
+```
+
+**Oversight Checks**:
+- ✓ Run `npm test` - all tests pass
+- ✓ Test coverage report generated
+- ✓ Coverage > 80% for critical components
+- ✓ E2E tests cover main user journeys
+- ✓ CI runs tests automatically
+- ✓ Failed test blocks merge
+- ✓ Visual regression catches UI changes
+
+**Dependencies**: Task 5.3 (QA checklist)
+
+**Estimated Effort**: 4-5 days
+
+---
+
+#### Task 8.11: Continuous Integration & Deployment Pipeline
+**Description**: Set up automated CI/CD pipeline for testing, building, and deploying the site.
+
+**Acceptance Criteria**:
+- [ ] CI/CD platform setup (GitHub Actions, GitLab CI, etc.)
+- [ ] Pipeline stages:
+  1. **Lint**: ESLint, Prettier, TypeScript check
+  2. **Test**: Run all unit/integration tests
+  3. **Build**: Production build
+  4. **Security**: Dependency audit, SAST scan
+  5. **Deploy**: Deploy to staging/production
+- [ ] Automated testing on pull requests
+- [ ] Branch protection rules (require PR reviews, tests pass)
+- [ ] Automated deployment:
+  - `main` branch → production
+  - `develop` branch → staging
+  - Feature branches → preview deployments
+- [ ] Deployment notifications (Slack, email)
+- [ ] Rollback capability
+- [ ] Environment-specific builds
+- [ ] Build artifact caching for speed
+- [ ] Deploy previews for PRs (Netlify, Vercel)
+
+**GitHub Actions Example**:
+```yaml
+name: CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+  
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: npm run deploy
+```
+
+**Oversight Checks**:
+- ✓ Push to branch - CI pipeline triggers
+- ✓ Lint errors - pipeline fails
+- ✓ Test failures - pipeline fails
+- ✓ Push to main - auto-deploys to production
+- ✓ Open PR - preview deployment created
+- ✓ Notification received on deployment
+- ✓ Rollback works if needed
+
+**Dependencies**: Task 5.5 (Deployment), Task 8.10 (Testing)
+
+**Estimated Effort**: 2-3 days
+
+---
+
+#### Task 8.12: Monitoring Dashboard & Alerting
+**Description**: Set up comprehensive monitoring with real-time alerts for issues.
+
+**Acceptance Criteria**:
+- [ ] Monitoring dashboard (Grafana, Datadog, or similar)
+- [ ] Metrics tracked:
+  - **Performance**: Load time, TTFB, Core Web Vitals
+  - **Errors**: Error rate, error types, affected users
+  - **Traffic**: Page views, unique visitors, sessions
+  - **User behavior**: Bounce rate, time on site, conversions
+  - **Technical**: API response times, cache hit rate, build times
+- [ ] Real-time alerting:
+  - Error rate spike
+  - Performance degradation
+  - Site downtime
+  - High traffic spike
+  - Security anomalies
+- [ ] Alert channels: Email, Slack, SMS, PagerDuty
+- [ ] Incident response playbook
+- [ ] Dashboard accessible to team
+- [ ] Historical data retention
+- [ ] Custom reports and visualizations
+- [ ] SLA monitoring (uptime target: 99.9%)
+
+**Alerts Setup**:
+```yaml
+alerts:
+  - name: High Error Rate
+    condition: error_rate > 5%
+    duration: 5m
+    channels: [email, slack]
+    
+  - name: Performance Degradation
+    condition: avg_load_time > 3s
+    duration: 10m
+    channels: [slack]
+    
+  - name: Site Down
+    condition: uptime < 100%
+    duration: 1m
+    channels: [email, sms, pagerduty]
+```
+
+**Oversight Checks**:
+- ✓ Dashboard shows real-time metrics
+- ✓ Trigger error - alert received
+- ✓ Slow down site artificially - alert received
+- ✓ Historical data available for analysis
+- ✓ Custom dashboard for CV-specific metrics
+- ✓ Alert fatigue minimal (good thresholds)
+- ✓ Incident playbook documented and accessible
+
+**Dependencies**: Task 7.2 (Analytics), Task 7.14 (Error tracking)
+
+**Estimated Effort**: 2-3 days
+
+---
+
+#### Task 8.13: Legal Pages & Compliance
+**Description**: Create required legal pages and ensure GDPR/privacy compliance.
+
+**Acceptance Criteria**:
+- [ ] Create legal pages:
+  - **Privacy Policy**: Data collection, usage, storage, rights
+  - **Terms of Service**: Usage terms, disclaimers
+  - **Cookie Policy**: What cookies used, why, how to disable
+  - **GDPR Compliance**: User rights, data export, deletion
+  - **Accessibility Statement**: WCAG compliance level, known issues, contact
+- [ ] Cookie consent banner (if using tracking cookies)
+- [ ] Easy access to legal pages (footer links)
+- [ ] Contact information for privacy concerns
+- [ ] Data processing agreements (if backend handles user data)
+- [ ] User rights implementation:
+  - Access: Download all personal data
+  - Rectification: Update information
+  - Erasure: Delete account/data
+  - Portability: Export in machine-readable format
+- [ ] Analytics opt-out option
+- [ ] Regular compliance audits
+
+**Privacy Policy Sections**:
+1. What data is collected
+2. How data is used
+3. Who data is shared with
+4. How data is stored and secured
+5. User rights (GDPR)
+6. Cookie policy
+7. Contact information
+8. Last updated date
+
+**Oversight Checks**:
+- ✓ Privacy policy accessible from footer
+- ✓ Cookie banner appears (if needed)
+- ✓ Accept/decline cookies works
+- ✓ Analytics opt-out functional
+- ✓ Privacy policy up to date
+- ✓ Contact email for privacy inquiries works
+- ✓ Compliance with GDPR requirements verified
+
+**Dependencies**: Task 7.2 (Analytics - cookies)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.14: Performance Budget & Monitoring
+**Description**: Define and enforce performance budgets with automated monitoring.
+
+**Acceptance Criteria**:
+- [ ] Define performance budgets:
+  - Initial bundle: < 200KB (gzipped)
+  - Total page weight: < 2MB
+  - First Contentful Paint: < 1.5s
+  - Time to Interactive: < 3.5s
+  - Largest Contentful Paint: < 2.5s
+  - Cumulative Layout Shift: < 0.1
+  - First Input Delay: < 100ms
+- [ ] Lighthouse CI integration
+- [ ] Bundle size monitoring (bundlesize, size-limit)
+- [ ] Performance regression detection
+- [ ] Fail CI if budgets exceeded
+- [ ] Performance reports on each PR
+- [ ] Webpack bundle analyzer
+- [ ] Image optimization automation
+- [ ] Font optimization (subsetting, preload)
+- [ ] Critical CSS extraction
+
+**Bundle Size Check**:
+```json
+{
+  "scripts": {
+    "size": "size-limit"
+  },
+  "size-limit": [
+    {
+      "path": "build/static/js/*.js",
+      "limit": "200 KB"
+    },
+    {
+      "path": "build/static/css/*.css",
+      "limit": "50 KB"
+    }
+  ]
+}
+```
+
+**Oversight Checks**:
+- ✓ Run `npm run size` - within budget
+- ✓ Add large dependency - size check fails
+- ✓ Lighthouse CI runs on PR
+- ✓ Performance scores meet targets
+- ✓ Bundle analyzer shows chunk sizes
+- ✓ Images optimized automatically
+- ✓ Critical CSS inlined
+
+**Dependencies**: Task 4.4 (Performance optimization)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 8.15: Graceful Degradation & Fallback Strategies
+**Description**: Implement fallbacks for when features fail or aren't supported.
+
+**Acceptance Criteria**:
+- [ ] Feature detection:
+  - JavaScript disabled: Show message
+  - Cookies disabled: Show warning
+  - LocalStorage unavailable: Use in-memory fallback
+  - Service Worker not supported: Skip PWA features
+- [ ] Network failure handling:
+  - Offline banner
+  - Retry mechanism
+  - Queue failed requests
+  - Show cached content
+- [ ] Third-party failures:
+  - Analytics fails: Continue without tracking
+  - Font loading fails: Use system fonts
+  - External API timeout: Show cached data or message
+- [ ] Progressive enhancement mindset:
+  - Core content accessible without JS
+  - Enhance with JS when available
+- [ ] Error boundaries around risky components
+- [ ] Timeout limits for all async operations
+- [ ] Fallback UI for broken images
+- [ ] Fallback for unsupported CSS features
+
+**No-JavaScript Fallback**:
+```html
+<noscript>
+  <div class="no-js-warning">
+    <h1>JavaScript Required</h1>
+    <p>This site requires JavaScript to function properly. 
+       Please enable JavaScript in your browser settings.</p>
+  </div>
+</noscript>
+```
+
+**Oversight Checks**:
+- ✓ Disable JavaScript - warning message shows
+- ✓ Block cookies - warning shows (if needed)
+- ✓ Go offline - offline banner appears
+- ✓ Block external domain - site still works
+- ✓ Font fails to load - system font used
+- ✓ Break image URL - fallback icon shows
+- ✓ Timeout API call - error message after X seconds
+- ✓ Error boundary catches component errors
+
+**Dependencies**: Task 4.1 (Data handling), Task 7.10 (PWA)
+
+**Estimated Effort**: 2 days
+
+---
+
+### PHASE 8 SUMMARY
+
+**Total Tasks in Phase 8**: 15 tasks (8.1 - 8.15)
+
+**Focus Areas**:
+- **Error Handling**: 404 pages, error boundaries, graceful failures
+- **Performance**: Loading states, lazy loading, caching, budgets
+- **Infrastructure**: Environment config, CI/CD, monitoring, logging
+- **Security**: CSP, security headers, data validation
+- **Compatibility**: Browser support, polyfills, fallbacks
+- **Quality**: Automated testing, code quality, documentation
+- **Legal**: Privacy policy, GDPR compliance, cookie consent
+- **Production Readiness**: Deep linking, debugging, alerting
+
+**Estimated Total Effort for Phase 8**: 25-35 days
+
+**Critical for Production**:
+- **Must Have**: 8.1 (404 page), 8.2 (Loading), 8.3 (Env config), 8.4 (Security), 8.8 (Validation), 8.11 (CI/CD), 8.13 (Legal)
+- **Should Have**: 8.5 (Logging), 8.6 (Caching), 8.7 (URLs), 8.10 (Testing), 8.12 (Monitoring), 8.14 (Performance budget), 8.15 (Fallbacks)
+- **Nice to Have**: 8.9 (Old browser support if not targeting)
+
+**Technical Debt Prevention**:
+- Automated testing prevents regressions
+- CI/CD ensures quality before deployment
+- Monitoring catches issues in production
+- Performance budgets prevent bloat
+- Security measures protect users
+- Legal compliance avoids liabilities
+
+---
+
+## FINAL COMPLETE PROJECT SUMMARY
+
+**Total Phases**: 8
+**Total Tasks**: ~100 tasks
+**Estimated Timeline**: 
+- Phases 0-5 (Core): 15-22 days
+- Phase 6 (Enhanced UI): 23-30 days  
+- Phase 7 (Advanced Features): 35-45 days
+- Phase 8 (Production Infrastructure): 25-35 days
+- **Total: 98-132 days (4-5.5 months)** for single developer
+
+**Revised Progressive Implementation Strategy**:
+1. **MVP (Phases 0-3)**: ~3-4 weeks - Functional site with all content sections
+2. **Production-Ready (Phases 4-5 + Phase 8 essentials)**: ~2-3 weeks - Tested, secure, documented
+3. **Premium UI (Phase 6)**: ~4-5 weeks - Beautiful animations and consistent design system
+4. **Showcase Features (Phase 7)**: ~6-7 weeks - Advanced features demonstrating expertise
+5. **Infrastructure Polish (Phase 8 remaining)**: ~3-4 weeks - Full production maturity
+
+**Realistic Deployment Timeline**:
+- **Week 4**: MVP deployed to staging (basic functionality)
+- **Week 7**: Production-ready version with infrastructure (Phases 0-5, 8 essentials)
+- **Week 12**: Premium UI features added (Phase 6)
+- **Week 19**: Full showcase version with advanced features (Phase 7)
+- **Week 23**: Complete production-grade system (all of Phase 8)
+
+**Project Maturity Levels**:
+- **Level 1 - Functional** (Phases 0-3): Works, shows content
+- **Level 2 - Professional** (+ Phases 4-5, 8.1-8.4): Production-ready, secure, tested
+- **Level 3 - Premium** (+ Phase 6): Beautiful, polished UI/UX
+- **Level 4 - Showcase** (+ Phase 7): Advanced features, demonstrates expertise
+- **Level 5 - Enterprise** (+ all Phase 8): Full production infrastructure, monitoring, compliance
+
+---
+
 **End of Plan**

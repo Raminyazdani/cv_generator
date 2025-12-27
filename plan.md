@@ -1403,4 +1403,86 @@ This plan is a living document and should be updated as requirements evolve or t
 
 ---
 
+#### Task 6.13: Conditional Section Rendering - Hide Empty Sections
+**Description**: Implement logic to automatically hide sections and their headings when they contain no data or empty arrays, ensuring a clean, content-driven layout.
+
+**Acceptance Criteria**:
+- [ ] Create utility function `src/utils/sectionVisibility.ts` to check if section has content
+- [ ] Check conditions for each section type:
+  - Array-based sections (education, experiences, projects, publications, references, certifications, languages): Hide if array is empty or undefined
+  - Object-based sections (skills): Hide if object is empty, has no keys, or all nested arrays are empty
+  - Nested data (skills categories): Hide category if items array is empty
+- [ ] Apply conditional rendering to all section components
+- [ ] Hide section wrapper, heading, and any decorative elements when empty
+- [ ] Ensure no empty space or visual artifacts left behind
+- [ ] Handle edge cases: null values, undefined fields, arrays with only null/undefined items
+- [ ] Filtering consideration: If focus filter results in no items, show "No results for this filter" message instead of hiding section
+- [ ] Update navigation menu: hide links to empty sections or disable/gray them out
+
+**Section-Specific Rules**:
+- **Hero/Basics**: Always visible (core identity section)
+- **Profiles**: Hide if `profiles` array is empty
+- **Education**: Hide if `education` array is empty or all entries filtered out
+- **Languages**: Hide if `languages` array is empty
+- **Certifications**: Hide if `workshop_and_certifications` array is empty
+- **Skills**: Hide if `skills` object is empty or all categories have empty items
+- **Experiences**: Hide if `experiences` array is empty
+- **Projects**: Hide if `projects` array is empty (after deduplication)
+- **Publications**: Hide if `publications` array is empty
+- **References**: Hide if `references` array is empty
+- **Contact Form**: Always visible (placeholder for future)
+- **Booking Widget**: Always visible (placeholder for future)
+
+**Implementation Pattern**:
+```typescript
+// Example utility function
+export const hasSectionContent = (data: any, sectionType: string): boolean => {
+  if (!data) return false;
+  
+  switch (sectionType) {
+    case 'array':
+      return Array.isArray(data) && data.length > 0;
+    case 'skills':
+      return data && Object.keys(data).some(section => 
+        Object.keys(data[section]).some(category => 
+          Array.isArray(data[section][category]) && 
+          data[section][category].length > 0
+        )
+      );
+    default:
+      return !!data;
+  }
+};
+
+// Example component usage
+{hasSectionContent(education, 'array') && (
+  <EducationSection data={education} />
+)}
+```
+
+**Oversight Checks**:
+- ✓ Remove `education` array from JSON - Education section and heading not visible
+- ✓ Set `profiles` to empty array `[]` - Profiles section not visible
+- ✓ Remove all items from a skills category - that category heading not visible
+- ✓ Remove all skills categories - entire Skills section not visible
+- ✓ Verify navigation menu updates: links to empty sections hidden or disabled
+- ✓ Apply focus filter that results in no matches - section shows "No results" message, not hidden
+- ✓ Hero/Basics section always visible even if some fields are missing
+- ✓ Contact and Booking sections always visible (placeholders)
+- ✓ Check for any leftover spacing or visual gaps where hidden sections were
+- ✓ Verify smooth transitions if sections appear/disappear due to filtering
+- ✓ Test with completely empty JSON (only basics) - only Hero and placeholders visible
+
+**User Experience Considerations**:
+- When section is hidden due to filtering, show subtle message: "No [section name] match your current filter. Try 'Full CV' to see all."
+- Provide visual feedback when many sections are hidden
+- Ensure page doesn't look broken when multiple sections are hidden
+- Consider adding a "Show empty sections" toggle in settings for debugging/completeness view
+
+**Dependencies**: Task 2.1-2.10 (all section components), Task 3.2 (filtering logic)
+
+**Estimated Effort**: 1 day
+
+---
+
 **End of Plan**

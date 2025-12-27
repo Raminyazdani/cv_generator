@@ -994,4 +994,413 @@ This plan is a living document and should be updated as requirements evolve or t
 
 ---
 
+#### Task 6.2: Premium Button & Interactive Elements System
+**Description**: Create a comprehensive system for button hover effects, mouse interactions, and micro-animations that work consistently across all interactive elements.
+
+**Acceptance Criteria**:
+- [ ] Create `src/styles/interactions.css` with reusable interaction patterns
+- [ ] Define button hover states: scale (1.05x), shadow elevation, color shift
+- [ ] Add magnetic button effect: buttons slightly follow cursor when nearby (subtle, < 10px)
+- [ ] Implement ripple effect on click (CSS-only or minimal JS)
+- [ ] Create smooth transitions for all interactive states (150ms ease-out)
+- [ ] Add focus-visible styles with animated border or glow effect
+- [ ] Implement disabled state styling (reduced opacity, no-cursor)
+- [ ] Create loading state animation (spinner or pulsing effect)
+- [ ] Add "active" press-down effect (scale 0.95x) for tactile feedback
+- [ ] Ensure all effects respect `prefers-reduced-motion`
+
+**Visual Effects to Implement**:
+- Primary buttons: Gradient background shift on hover, shadow elevation
+- Secondary buttons: Border glow, background fade-in
+- Icon buttons: Rotate or scale on hover
+- Links: Underline slide-in effect from left to right
+- Cards: Lift effect (translateY + shadow) on hover
+- Input fields: Border color animation, label float effect
+
+**Oversight Checks**:
+- ✓ Hover over any button - smooth scale and shadow animation occurs
+- ✓ Move cursor near button with magnetic effect - button subtly moves toward cursor
+- ✓ Click button - ripple effect emanates from click point
+- ✓ Tab to button - focus indicator animates in smoothly
+- ✓ Verify disabled buttons have no hover effects
+- ✓ Check all transitions are 150ms or appropriate duration
+- ✓ Test with `prefers-reduced-motion: reduce` - only essential animations remain
+- ✓ Verify consistency across all button types (primary, secondary, icon)
+
+**Dependencies**: Task 1.1 (Theme system)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 6.3: Parallax Scrolling & Depth Effects
+**Description**: Add subtle parallax effects to create depth and premium feel during scrolling.
+
+**Acceptance Criteria**:
+- [ ] Implement parallax effect on hero cover image (scrolls slower than content)
+- [ ] Add parallax to section backgrounds (if any decorative elements)
+- [ ] Create depth layers: background (0.3x speed), mid-ground (0.6x speed), foreground (1x speed)
+- [ ] Keep effects subtle (max 30% speed difference) to avoid motion sickness
+- [ ] Use `transform: translateY()` with `will-change` for performance
+- [ ] Implement via Intersection Observer + requestAnimationFrame
+- [ ] Disable parallax on mobile (performance concern)
+- [ ] Respect `prefers-reduced-motion: reduce` - disable all parallax
+
+**Oversight Checks**:
+- ✓ Scroll page - hero cover image moves slower than content (parallax effect visible)
+- ✓ Verify performance: scrolling is smooth, no jank (use DevTools Performance tab)
+- ✓ Check mobile - parallax disabled, normal scrolling
+- ✓ Test `prefers-reduced-motion: reduce` - parallax disabled
+- ✓ Verify `will-change: transform` applied to parallax elements
+
+**Dependencies**: Task 2.1 (Hero section)
+
+**Estimated Effort**: 0.5-1 day
+
+---
+
+#### Task 6.4: Skills Section Interactive Carousel/Slider
+**Description**: Transform the skills display into an interactive horizontal carousel that showcases skill categories with smooth sliding transitions.
+
+**Acceptance Criteria**:
+- [ ] Create carousel for skill categories (Programming, Data Science, Soft Skills, etc.)
+- [ ] Display 1-3 categories at a time depending on screen size (1 on mobile, 2 on tablet, 3 on desktop)
+- [ ] Add navigation arrows (previous/next) with smooth slide animations
+- [ ] Add dot indicators at bottom showing current position
+- [ ] Auto-advance option (optional, with pause on hover)
+- [ ] Swipe gestures on mobile/tablet
+- [ ] Keyboard navigation: Arrow keys to navigate, Tab to enter/exit carousel
+- [ ] Each category card shows title and skill items (badges/chips)
+- [ ] Smooth easing function for slide transitions (cubic-bezier)
+- [ ] Cards have subtle scale effect when entering/exiting viewport
+
+**Visual Layout**:
+```
+[<] [Programming Languages] [Data Science] [>]
+    • • ○ ○ ○  (dot indicators)
+```
+
+**Oversight Checks**:
+- ✓ Click next arrow - carousel slides to next category smoothly
+- ✓ Click previous arrow - carousel slides backward
+- ✓ Swipe left on mobile - carousel advances
+- ✓ Click dot indicator - carousel jumps to that category
+- ✓ Verify 1 card visible on mobile, 2 on tablet, 3 on desktop
+- ✓ Press arrow keys - carousel navigates
+- ✓ Hover over carousel (if auto-advance enabled) - auto-advance pauses
+- ✓ Check transition is smooth (300-500ms cubic-bezier easing)
+- ✓ Verify `prefers-reduced-motion` - instant jumps instead of slides
+
+**Dependencies**: Task 2.6 (Skills section)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 6.5: Projects Gallery with Lightbox Carousel
+**Description**: Transform projects section into an interactive gallery with image preview carousel and lightbox modal.
+
+**Acceptance Criteria**:
+- [ ] Display projects as grid of cards with project thumbnails (if available)
+- [ ] Add hover effect: card lifts, shows overlay with project title and brief description
+- [ ] Click on project card opens lightbox modal with full details
+- [ ] Lightbox includes image carousel if project has multiple images
+- [ ] Carousel has smooth transitions, thumbnail strip at bottom
+- [ ] Arrow keys navigate between projects in lightbox
+- [ ] Close button, ESC key, and click outside close lightbox
+- [ ] Zoom in/out on images (optional pinch-to-zoom on mobile)
+- [ ] Add filter/sort controls above gallery (by type_key or technology)
+- [ ] Animate grid layout changes when filtering
+
+**Oversight Checks**:
+- ✓ Hover over project card - card lifts and overlay appears
+- ✓ Click project card - lightbox opens with full details
+- ✓ If multiple images, carousel works with smooth transitions
+- ✓ Press arrow keys in lightbox - navigate between projects
+- ✓ Press ESC - lightbox closes
+- ✓ Click thumbnail - jumps to that image
+- ✓ Filter projects by technology - grid animates layout changes
+- ✓ Verify focus trap in lightbox
+- ✓ Check mobile pinch-to-zoom works (if implemented)
+
+**Dependencies**: Task 2.8 (Projects section), Task 3.1 (Media modal)
+
+**Estimated Effort**: 2-3 days
+
+---
+
+#### Task 6.6: Timeline Visualization with Animated Progress
+**Description**: Create an interactive vertical timeline for Education and Experience sections with animated progress indicators.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/Timeline.tsx` component
+- [ ] Vertical line connecting all timeline entries
+- [ ] Animated dots/nodes at each entry point
+- [ ] Progress bar fills as user scrolls down the timeline
+- [ ] Timeline animates in from left/right as it enters viewport
+- [ ] Entries stagger in with fade + slide animation (200ms delay between items)
+- [ ] Hover over timeline entry: highlight with color, slight scale
+- [ ] Active entry indicator (based on scroll position)
+- [ ] Add subtle connecting lines with animation (draw from top to bottom)
+- [ ] Responsive: horizontal timeline on mobile (optional)
+
+**Visual Example**:
+```
+    ○ ──── 2024: Master's Bioinformatics
+    │
+    ○ ──── 2021-2024: Master's Biotechnology
+    │
+    ○ ──── 2018-2021: Bachelor's
+```
+
+**Oversight Checks**:
+- ✓ Scroll to timeline section - line draws from top to bottom
+- ✓ Verify entries fade and slide in with stagger effect
+- ✓ Scroll through timeline - progress indicator fills dynamically
+- ✓ Hover over entry - highlight animation occurs
+- ✓ Check stagger delay is ~200ms between items
+- ✓ Verify timeline responsive on mobile
+- ✓ Test `prefers-reduced-motion` - no animation, all content immediately visible
+
+**Dependencies**: Task 2.3 (Education section), Task 2.7 (Experience section)
+
+**Estimated Effort**: 2 days
+
+---
+
+#### Task 6.7: Cursor Follower & Custom Cursor Effects
+**Description**: Implement a custom cursor with trailing effect and contextual changes based on hover targets.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/CursorFollower.tsx`
+- [ ] Custom cursor circle follows mouse position (hidden default cursor)
+- [ ] Trailing effect: second larger circle follows with delay (100-150ms)
+- [ ] Cursor changes on hover: scale up over links/buttons, change color
+- [ ] Blend mode for interesting visual effect (e.g., `mix-blend-mode: difference`)
+- [ ] Smooth interpolation using lerp (linear interpolation) for fluid movement
+- [ ] Only active on desktop (hide on mobile/touch devices)
+- [ ] Disable if user prefers default cursor (check user agent/settings)
+- [ ] Respect `prefers-reduced-motion` - reduce trail effect complexity
+
+**Cursor States**:
+- Default: small circle (8px diameter)
+- Hover link/button: large circle (32px diameter) with reduced opacity
+- Hover text: vertical line cursor for text selection
+- Click/active: shrink briefly (6px) then return
+
+**Oversight Checks**:
+- ✓ Move mouse - custom cursor smoothly follows with trail
+- ✓ Hover over button - cursor scales up to 32px
+- ✓ Hover over text - cursor changes to text selection style
+- ✓ Click - cursor briefly shrinks
+- ✓ Verify trail circle follows with ~100ms delay
+- ✓ Check on mobile - custom cursor hidden, native cursor visible
+- ✓ Test performance - no impact on scroll/interaction smoothness
+- ✓ Verify `prefers-reduced-motion` - simplified cursor or disabled
+
+**Dependencies**: None (global feature)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 6.8: Smooth Page Transitions & Section Reveal Animations
+**Description**: Enhance page load and section transitions with sophisticated reveal animations.
+
+**Acceptance Criteria**:
+- [ ] Implement page load animation: fade in from dark with logo/name reveal
+- [ ] Stagger section reveals as user scrolls (each section has unique entrance)
+- [ ] Section entrance styles:
+  - Hero: Fade in + scale from 0.95 to 1.0
+  - Education/Experience: Slide in from left with fade
+  - Skills: Slide in from right with fade
+  - Projects: Grid items pop in with stagger (cascade effect)
+  - Publications: Fade in from bottom
+- [ ] Use Intersection Observer for scroll-triggered animations
+- [ ] Each animation respects timing: 500ms duration, 100ms stagger between items
+- [ ] Add subtle background pattern animations (optional: animated gradients, particles)
+- [ ] Ensure animations only trigger once (not on every scroll)
+- [ ] Respect `prefers-reduced-motion` - instant appearance, no animation
+
+**Oversight Checks**:
+- ✓ Refresh page - smooth fade in with logo reveal
+- ✓ Scroll to each section - appropriate entrance animation triggers
+- ✓ Verify stagger timing between items (100ms)
+- ✓ Scroll back up and down - animations don't retrigger
+- ✓ Check multiple sections animating simultaneously look smooth
+- ✓ Test `prefers-reduced-motion: reduce` - all content immediately visible
+- ✓ Verify no layout shift during animations
+
+**Dependencies**: Task 2.1-2.10 (all sections)
+
+**Estimated Effort**: 2 days
+
+---
+
+#### Task 6.9: Floating Action Button (FAB) with Quick Actions
+**Description**: Add a floating action button in the bottom-right corner with expandable quick action menu.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/FloatingActionButton.tsx`
+- [ ] Circular FAB button fixed in bottom-right corner
+- [ ] Primary action: "Back to top" (scrolls smoothly to page top)
+- [ ] Click/tap to expand: reveals 3-4 quick action buttons radially
+- [ ] Quick actions:
+  - Back to top (scroll to hero)
+  - Download PDF (triggers print dialog)
+  - Contact (scrolls to contact form)
+  - Toggle theme (quick theme switcher)
+- [ ] Smooth expand/collapse animation (rotate + scale sub-buttons)
+- [ ] FAB hides when at top of page, appears when scrolling down
+- [ ] Hover effect: FAB pulses subtly
+- [ ] Mobile-friendly: adequate touch target size (56x56px minimum)
+- [ ] Keyboard accessible: Tab to focus, Enter/Space to activate
+
+**Visual Layout (Expanded)**:
+```
+        ○ (Back to top)
+       ╱
+      ● ─ ○ (Download PDF)
+       ╲
+        ○ (Contact)
+```
+
+**Oversight Checks**:
+- ✓ Scroll down - FAB appears with fade-in animation
+- ✓ Scroll to top - FAB disappears
+- ✓ Click FAB - sub-buttons expand radially with smooth animation
+- ✓ Click "Back to top" - smoothly scrolls to top
+- ✓ Click "Download PDF" - print dialog opens
+- ✓ Verify FAB size is adequate for touch (56x56px)
+- ✓ Tab to FAB - focus indicator visible, Enter activates
+- ✓ Test on mobile - FAB doesn't obscure content
+- ✓ Check z-index: FAB appears above all content but below modals
+
+**Dependencies**: Task 1.4 (Footer), Task 3.4 (PDF export)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 6.10: Theme Transition Animations
+**Description**: Add smooth visual transitions when switching between themes instead of instant changes.
+
+**Acceptance Criteria**:
+- [ ] Implement cross-fade animation when changing themes (500ms duration)
+- [ ] Use CSS transitions on all theme-related custom properties
+- [ ] Add visual feedback during theme switch: brief color wave or gradient sweep
+- [ ] Prevent flash of unstyled content (FOUC) during transition
+- [ ] Smooth transition for background colors, text colors, borders, shadows
+- [ ] Add theme preview thumbnails in theme switcher (mini cards showing colors)
+- [ ] Theme switcher shows current theme with checkmark or highlight
+- [ ] Persist theme smoothly: no flash on page reload
+
+**Oversight Checks**:
+- ✓ Switch theme - smooth cross-fade occurs (500ms)
+- ✓ Verify no jarring color shifts or flashes
+- ✓ Check all elements transition smoothly (background, text, borders, shadows)
+- ✓ Open theme switcher - preview thumbnails show each theme's colors
+- ✓ Current theme is clearly highlighted
+- ✓ Refresh page - theme loads without flash (stored in localStorage, applied before render)
+- ✓ Test rapid theme switching - transitions queue properly without breaking
+
+**Dependencies**: Task 1.1 (Theme system), Task 1.3 (Header with theme switcher)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 6.11: Scroll Progress Indicator
+**Description**: Add a visual indicator showing reading progress through the page.
+
+**Acceptance Criteria**:
+- [ ] Create horizontal progress bar at top of page (fixed position)
+- [ ] Bar fills from left to right as user scrolls down
+- [ ] Calculate progress: `scrollTop / (scrollHeight - clientHeight)`
+- [ ] Smooth animation using CSS transition or requestAnimationFrame
+- [ ] Color matches current theme's primary color
+- [ ] Minimal height (2-3px) to avoid being intrusive
+- [ ] Add subtle glow effect on progress bar
+- [ ] Option to show section markers on progress bar (dots indicating section boundaries)
+
+**Oversight Checks**:
+- ✓ Scroll down - progress bar fills proportionally
+- ✓ Scroll to bottom - progress bar reaches 100%
+- ✓ Verify smooth animation (no jank)
+- ✓ Check color matches theme primary color
+- ✓ Switch theme - progress bar color updates
+- ✓ Verify height is subtle (2-3px)
+- ✓ If section markers enabled, verify they align with actual sections
+
+**Dependencies**: Task 1.1 (Theme system)
+
+**Estimated Effort**: 0.5 days
+
+---
+
+#### Task 6.12: Easter Egg: Konami Code Unlockable Theme
+**Description**: Add a fun hidden feature that unlocks a special theme when user enters the Konami code.
+
+**Acceptance Criteria**:
+- [ ] Detect Konami code sequence: ↑ ↑ ↓ ↓ ← → ← → B A
+- [ ] On successful entry: unlock "Secret" theme (e.g., retro, neon, matrix style)
+- [ ] Show brief celebration animation (confetti, particles, or screen flash)
+- [ ] Add "Secret" theme to theme switcher after unlock
+- [ ] Persist unlock state in localStorage
+- [ ] Add subtle hint in footer or about section: "Try the Konami code 🎮"
+- [ ] Ensure doesn't interfere with normal keyboard navigation
+- [ ] Make it fun but professional (not distracting from CV content)
+
+**Secret Theme Suggestions**:
+- Retro/Terminal: Green text on black, monospace font, CRT scanline effect
+- Neon/Cyberpunk: Dark background with neon accent colors, glow effects
+- Matrix: Falling characters animation in background (subtle)
+
+**Oversight Checks**:
+- ✓ Enter Konami code sequence - celebration animation triggers
+- ✓ Secret theme appears in theme switcher
+- ✓ Apply secret theme - unique styling applied
+- ✓ Refresh page - secret theme remains unlocked (localStorage)
+- ✓ Verify normal keyboard navigation still works
+- ✓ Check hint text is visible but subtle
+- ✓ Ensure secret theme is still professional and readable
+
+**Dependencies**: Task 1.1 (Theme system), Task 1.3 (Theme switcher)
+
+**Estimated Effort**: 1 day (for fun and delight!)
+
+---
+
+### PHASE 6 SUMMARY
+
+**Total Tasks in Phase 6**: 12 tasks (6.1 - 6.12)
+
+**Focus Areas**:
+- Interactive carousels and sliders (Language, Skills, Projects)
+- Premium micro-interactions (buttons, hover effects, cursor)
+- Smooth animations and transitions (scroll, page load, theme switching)
+- Visual depth and polish (parallax, timeline, progress indicator)
+- Delightful details (FAB, easter egg)
+
+**Estimated Total Effort for Phase 6**: 15-20 days
+
+**Key Principles**:
+- All animations respect `prefers-reduced-motion: reduce`
+- Mobile-first responsive design
+- Performance-conscious (60fps target)
+- Accessibility maintained (keyboard navigation, focus indicators)
+- Consistent with theme system
+- Pure CSS/minimal JS approach where possible
+
+**Testing Checklist for Phase 6**:
+- [ ] All animations smooth (60fps) on desktop
+- [ ] All interactions work on mobile/touch devices
+- [ ] Keyboard navigation complete and intuitive
+- [ ] No performance degradation with all effects active
+- [ ] All effects disabled properly with `prefers-reduced-motion`
+- [ ] Visual consistency across all 6 themes + secret theme
+- [ ] No accessibility regressions
+
+---
+
 **End of Plan**

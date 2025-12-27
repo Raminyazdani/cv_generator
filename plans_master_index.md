@@ -29,11 +29,12 @@ The CV Generator project consists of:
 | B6 | [plans_backend/plan6_testing.md](./plans_backend/plan6_testing.md) | Backend Testing | B0-B5 |
 | B7 | [plans_backend/plan7_ci_deployment.md](./plans_backend/plan7_ci_deployment.md) | CI Integration & Deployment | B0-B6 |
 
-### Frontend Plans (11 plans)
+### Frontend Plans (12 plans)
 
 | ID | Plan | Title | Dependencies |
 |----|------|-------|--------------|
-| F1 | [plans_frontend/plan1_project_setup.md](./plans_frontend/plan1_project_setup.md) | Project Setup & Foundation | None |
+| F0 | [plans_frontend/plan0_frontend_readiness.md](./plans_frontend/plan0_frontend_readiness.md) | Frontend Readiness & Tooling | None |
+| F1 | [plans_frontend/plan1_project_setup.md](./plans_frontend/plan1_project_setup.md) | Project Setup & Foundation | F0 |
 | F2 | [plans_frontend/plan2_layout_theme.md](./plans_frontend/plan2_layout_theme.md) | Core Layout & Theme System | F1 |
 | F3 | [plans_frontend/plan3_section_rendering.md](./plans_frontend/plan3_section_rendering.md) | Section Rendering & JSON Mapping | F1, F2 |
 | F4 | [plans_frontend/plan4_advanced_features.md](./plans_frontend/plan4_advanced_features.md) | Advanced Features | F1-F3 |
@@ -70,49 +71,50 @@ The CV Generator project consists of:
 | Order | Plan | Track | Duration |
 |-------|------|-------|----------|
 | 1 | B0 | Backend | 1-2 days |
-| 2 | F1 | Frontend | 1-2 days |
-| 3 | B1 | Backend | 2-3 days |
-| 4 | F2 | Frontend | 2-3 days |
+| 2 | F0 | Frontend | 1 day |
+| 3 | F1 | Frontend | 1-2 days |
+| 4 | B1 | Backend | 2-3 days |
+| 5 | F2 | Frontend | 2-3 days |
 
 ### Phase 2: Core Functionality (Week 3-5)
 **Goal:** Implement main features for both systems
 
 | Order | Plan | Track | Duration |
 |-------|------|-------|----------|
-| 5 | B2 | Backend | 2-3 days |
-| 6 | F3 | Frontend | 5-7 days |
-| 7 | B3, B4, B5 | Backend (parallel) | 3-5 days |
-| 8 | F4 | Frontend | 3-4 days |
+| 6 | B2 | Backend | 2-3 days |
+| 7 | F3 | Frontend | 5-7 days |
+| 8 | B3, B4, B5 | Backend (parallel) | 3-5 days |
+| 9 | F4 | Frontend | 3-4 days |
 
 ### Phase 3: Integration & Polish (Week 6-7)
 **Goal:** Connect frontend to backend, polish both
 
 | Order | Plan | Track | Duration |
 |-------|------|-------|----------|
-| 9 | F5 | Frontend | 2-3 days |
-| 10 | B6 | Backend | 2-3 days |
-| 11 | S1 | Shared | 2-3 days |
-| 12 | B7 | Backend | 2-3 days |
+| 10 | F5 | Frontend | 2-3 days |
+| 11 | B6 | Backend | 2-3 days |
+| 12 | S1 | Shared | 2-3 days |
+| 13 | B7 | Backend | 2-3 days |
 
 ### Phase 4: Premium Features (Week 8-12)
 **Goal:** Enhanced UI and advanced features
 
 | Order | Plan | Track | Duration |
 |-------|------|-------|----------|
-| 13 | F6 | Frontend | 8-10 days |
-| 14 | F7 | Frontend | 6-8 days |
-| 15 | F8 | Frontend | 8-10 days |
+| 14 | F6 | Frontend | 8-10 days |
+| 15 | F7 | Frontend | 6-8 days |
+| 16 | F8 | Frontend | 8-10 days |
 
 ### Phase 5: Enterprise Features (Week 13-18)
 **Goal:** SEO, PWA, advanced features, infrastructure
 
 | Order | Plan | Track | Duration |
 |-------|------|-------|----------|
-| 16 | F9 | Frontend | 10-12 days |
-| 17 | F10 | Frontend | 12-15 days |
-| 18 | F11 | Frontend | 12-15 days |
-| 19 | S2 | Shared | 12-15 days |
-| 20 | S3 | Shared | 12-15 days |
+| 17 | F9 | Frontend | 10-12 days |
+| 18 | F10 | Frontend | 12-15 days |
+| 19 | F11 | Frontend | 12-15 days |
+| 20 | S2 | Shared | 12-15 days |
+| 21 | S3 | Shared | 12-15 days |
 
 ---
 
@@ -127,7 +129,7 @@ B0 → B1 → B2 → B3/B4/B5 → B6 → B7
 
 ### Track 2: Frontend
 ```
-F1 → F2 → F3 → F4 → F5 → F6 → F7 → F8 → F9 → F10 → F11
+F0 → F1 → F2 → F3 → F4 → F5 → F6 → F7 → F8 → F9 → F10 → F11
 ```
 
 ### Track 3: Shared (after MVP)
@@ -147,9 +149,9 @@ S1 → S2 → S3
 | Track | Plans | Effort (days) |
 |-------|-------|---------------|
 | Backend | 8 plans | 13-21 days |
-| Frontend | 11 plans | 70-89 days |
+| Frontend | 12 plans | 71-90 days |
 | Shared | 3 plans | 26-33 days |
-| **Total** | 22 plans | **109-143 days** |
+| **Total** | 23 plans | **110-144 days** |
 
 **With Parallel Execution:**
 - 2 developers: ~70-90 days

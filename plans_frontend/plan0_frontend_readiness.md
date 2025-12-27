@@ -151,7 +151,8 @@ This plan covers:
 **Acceptance Criteria**:
 - [ ] Install testing dependencies:
   ```bash
-  npm install -D vitest @testing-library/react @testing-library/jest-dom
+  npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
+  npm install -D @vitejs/plugin-react
   ```
 - [ ] Configure Vitest in `vite.config.ts`:
   ```typescript

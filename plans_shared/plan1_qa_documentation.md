@@ -16,8 +16,9 @@ This plan covers:
 ## CRITICAL RULES (MUST FOLLOW)
 
 ### LOCKED FILES / IMMUTABILITY
-- `ramin_de.json`, `ramin_fa.json`, `cv.json` are byte-identical locked inputs (at least through the end of "projects"; treat as fully read-only).
-- **Absolutely no edits, no formatting changes, no sorting, no whitespace modifications** to these files.
+- `data/cvs/ramin.json`, `data/cvs/mahsa.json` are byte-identical locked inputs.
+- The entire contents of these files are immutable - **absolutely no edits, no formatting changes, no sorting, no whitespace modifications** are permitted.
+- Tests should read these files directly without modification.
 
 ### SELF-OVERSEER REQUIREMENT (NON-NEGOTIABLE)
 - You must continuously self-audit and NOT stop until:

@@ -1485,4 +1485,420 @@ export const hasSectionContent = (data: any, sectionType: string): boolean => {
 
 ---
 
+#### Task 6.14: Universal Section Heading System
+**Description**: Create a unified, beautiful, and flexible section heading component system that maintains visual consistency across all sections while supporting different heading styles (with/without buttons, icons, decorations).
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/SectionHeading.tsx` as universal heading component
+- [ ] Support multiple heading variants:
+  - **Standard**: Title with decorative underline/accent
+  - **With Action**: Title + action button (e.g., "View All", "Download")
+  - **With Icon**: Title + leading icon (contextual to section)
+  - **With Counter**: Title + item count badge (e.g., "Projects (12)")
+  - **With Filter Info**: Title + current filter indicator
+- [ ] Consistent spacing and sizing across all sections
+- [ ] Animated entrance: Slide in from side with fade (respects reduced motion)
+- [ ] Decorative elements:
+  - Gradient underline that animates in from left
+  - Optional accent icon/glyph before title
+  - Optional subtle background pattern or shape
+- [ ] Theme-aware: colors adapt to current theme
+- [ ] RTL-compatible: decorations flip direction in RTL mode
+- [ ] Typography: Clear hierarchy (title, subtitle, metadata)
+
+**Component API Example**:
+```typescript
+interface SectionHeadingProps {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  variant?: 'standard' | 'with-action' | 'with-icon' | 'with-counter';
+  actionButton?: {
+    label: string;
+    onClick: () => void;
+    icon?: React.ReactNode;
+  };
+  count?: number;
+  filterActive?: string;
+  className?: string;
+}
+```
+
+**Visual Design Patterns**:
+- Title: 32px font-size, bold, theme primary color
+- Subtitle: 16px, theme secondary color, optional italic
+- Underline: 4px height, gradient from primary to accent, 60% width, animated expand
+- Icon: 24x24px, positioned left (right in RTL), theme accent color
+- Action button: Outlined style, hover scale effect, positioned right (left in RTL)
+- Spacing: 48px margin-bottom, 24px padding-top
+
+**Oversight Checks**:
+- ✓ Replace all section headings with `<SectionHeading />` component
+- ✓ Verify consistent spacing and sizing across all sections
+- ✓ Scroll to each section - heading animates in smoothly
+- ✓ Check all 4 variants render correctly (standard, with-action, with-icon, with-counter)
+- ✓ Switch themes - heading colors update appropriately
+- ✓ Switch to FA (RTL) - decorations and buttons flip correctly
+- ✓ Test `prefers-reduced-motion` - animations disabled
+- ✓ Hover action button - scale and color transition smooth
+- ✓ Verify underline gradient animates from left to right (right to left in RTL)
+
+**Dependencies**: Task 1.1 (Theme system), Task 1.2 (RTL support)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 6.15: Section Container Animation System
+**Description**: Create a universal container component for sections with entrance animations, background effects, and consistent visual treatments.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/SectionContainer.tsx` component
+- [ ] Wrap all content sections (not hero) with this container
+- [ ] Intersection Observer-based entrance animations
+- [ ] Multiple animation styles assigned by section type:
+  - **Education/Experience**: Slide from left with fade
+  - **Skills/Languages**: Slide from right with fade
+  - **Projects/Publications**: Zoom in with fade (scale 0.95 → 1.0)
+  - **References/Contact**: Fade up with subtle bounce
+- [ ] Background decoration options:
+  - Subtle gradient overlay
+  - Geometric pattern (dots, lines, shapes) - theme-aware
+  - Optional colored accent bar on left/right edge
+- [ ] Consistent padding and max-width (1200px)
+- [ ] Alternating background colors (surface vs. background) for visual rhythm
+- [ ] Smooth transitions between sections (no jarring breaks)
+
+**Component API Example**:
+```typescript
+interface SectionContainerProps {
+  id: string;
+  animationType?: 'slide-left' | 'slide-right' | 'zoom' | 'fade-up';
+  background?: 'default' | 'alternate' | 'gradient';
+  accentBar?: boolean;
+  pattern?: 'none' | 'dots' | 'lines' | 'grid';
+  children: React.ReactNode;
+}
+```
+
+**Visual Treatments**:
+- Padding: 80px vertical, 24px horizontal (mobile: 48px vertical, 16px horizontal)
+- Max-width: 1200px centered
+- Border-radius: 16px on cards within sections (optional)
+- Shadow: Subtle elevation on hover (optional for card-style sections)
+- Accent bar: 4px width, full height, primary color, left edge (right in RTL)
+
+**Oversight Checks**:
+- ✓ All sections wrapped with `<SectionContainer />`
+- ✓ Scroll through page - each section animates in with unique entrance
+- ✓ Verify alternating backgrounds create visual rhythm
+- ✓ Check accent bars appear correctly and flip in RTL
+- ✓ Background patterns visible and subtle (not distracting)
+- ✓ Animations smooth and performant (60fps)
+- ✓ Test `prefers-reduced-motion` - content appears instantly
+- ✓ Mobile layout: padding adjusts appropriately
+
+**Dependencies**: Task 2.1-2.10 (all sections), Task 3.3 (scroll animations)
+
+**Estimated Effort**: 2 days
+
+---
+
+#### Task 6.16: Interactive Section Action Buttons
+**Description**: Standardize and enhance action buttons within sections (expand/collapse, filter, sort, view more) with consistent styling and micro-interactions.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/SectionActionButton.tsx` component
+- [ ] Button types:
+  - **Expand/Collapse**: Toggle long content visibility
+  - **View More**: Load additional items or navigate to detail view
+  - **Download**: Export section content (CSV, PDF, etc.)
+  - **Filter**: Quick filter toggle specific to section
+  - **Sort**: Change sort order of items
+- [ ] Consistent visual design:
+  - Outlined style with theme border color
+  - Fill on hover with smooth color transition
+  - Icon + label (icon can be before or after text)
+  - Loading state (spinner animation)
+  - Disabled state (reduced opacity, no interactions)
+- [ ] Micro-interactions:
+  - Ripple effect on click
+  - Icon rotation/transformation (e.g., chevron rotates on expand/collapse)
+  - Color shift on hover (border + background + text)
+  - Subtle scale on hover (1.02x)
+- [ ] Keyboard accessible: Tab to focus, Enter/Space to activate
+- [ ] Size variants: small, medium, large
+- [ ] Position variants: inline, floating (absolute positioned)
+
+**Component API Example**:
+```typescript
+interface SectionActionButtonProps {
+  type: 'expand' | 'view-more' | 'download' | 'filter' | 'sort';
+  label: string;
+  icon?: React.ReactNode;
+  iconPosition?: 'before' | 'after';
+  onClick: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+  size?: 'small' | 'medium' | 'large';
+  variant?: 'outline' | 'filled' | 'ghost';
+}
+```
+
+**Oversight Checks**:
+- ✓ Replace all section action buttons with standardized component
+- ✓ Hover over each button - smooth color and scale transition
+- ✓ Click button - ripple effect visible
+- ✓ Test expand/collapse button - icon rotates smoothly (e.g., chevron)
+- ✓ Tab through buttons - focus indicators clear
+- ✓ Verify loading state shows spinner
+- ✓ Verify disabled state prevents interaction
+- ✓ Check all size variants render correctly
+
+**Dependencies**: Task 6.2 (Button system), Task 6.14 (Section headings)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 6.17: Section Dividers with Decorative Elements
+**Description**: Create elegant, animated dividers between sections that enhance visual flow and maintain design consistency.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/SectionDivider.tsx` component
+- [ ] Multiple divider styles:
+  - **Line with Icon**: Horizontal line with centered icon/ornament
+  - **Gradient Fade**: Gradient line that fades at edges
+  - **Dots Pattern**: Row of decorative dots
+  - **Wave**: Wavy SVG path
+  - **Minimal**: Simple thin line
+- [ ] Animations:
+  - Line expands from center outward on scroll into view
+  - Icon fades in and scales up
+  - Dots appear with stagger effect
+- [ ] Contextual icons based on adjacent sections (optional):
+  - Education → graduation cap
+  - Experience → briefcase
+  - Skills → star/badge
+  - Projects → code/tools
+  - Publications → book/document
+- [ ] Theme-aware colors
+- [ ] RTL-compatible animations
+- [ ] Spacing: 64px margin vertical (separates sections clearly)
+
+**Visual Specifications**:
+- Line height: 2px (standard), 1px (minimal)
+- Icon size: 32x32px, in circle (48x48px) with theme background
+- Gradient: from transparent → primary → accent → transparent
+- Dots: 6-8 dots, 8px diameter, spaced 16px apart
+- Wave: Subtle amplitude (20px), theme accent color
+
+**Oversight Checks**:
+- ✓ Dividers appear between all major sections
+- ✓ Scroll to divider - animation triggers (line expands, icon appears)
+- ✓ Verify appropriate icon for each section transition
+- ✓ Check gradient colors match current theme
+- ✓ Switch to RTL - animations flip direction correctly
+- ✓ Test `prefers-reduced-motion` - dividers appear instantly
+- ✓ Verify consistent spacing (64px) between sections
+
+**Dependencies**: Task 1.1 (Theme system), Task 3.3 (Scroll animations)
+
+**Estimated Effort**: 1 day
+
+---
+
+#### Task 6.18: Section Metadata Display System
+**Description**: Create a consistent system for displaying metadata within sections (dates, tags, counts, status indicators) with unified styling.
+
+**Acceptance Criteria**:
+- [ ] Create reusable metadata components:
+  - `<DateRange />`: Display date ranges with icon (start-end or ongoing)
+  - `<Tag />`: Styled badge for categories, skills, technologies
+  - `<StatusBadge />`: Status indicators (active, completed, in-progress, published)
+  - `<Counter />`: Number display with icon (views, likes, items count)
+  - `<LocationPin />`: Location display with pin icon
+- [ ] Consistent visual design:
+  - Tags: Rounded pills, theme surface background, border, small padding
+  - Dates: Icon + formatted date, theme secondary color
+  - Status: Colored dot + label, specific colors per status
+  - Counter: Icon + number, theme accent color
+- [ ] Hover effects on interactive metadata (e.g., clickable tags)
+- [ ] Truncation handling for long metadata
+- [ ] Group spacing between multiple metadata items
+- [ ] Mobile-responsive: stack or wrap gracefully
+
+**Visual Specifications**:
+- Tags: 24px height, 8px padding horizontal, 12px border-radius, 12px font-size
+- Dates: 14px font-size, icon 16x16px, secondary color
+- Status badge: 8px dot, 14px font-size, 4px gap between dot and label
+- Counter: 16x16px icon, 14px font-size, bold number
+
+**Color Coding for Status**:
+- Active/Published: Green (#10b981)
+- In Progress/Draft: Yellow (#f59e0b)
+- Completed/Archived: Blue (#3b82f6)
+- Inactive/Unpublished: Gray (#6b7280)
+
+**Oversight Checks**:
+- ✓ Replace all inline metadata displays with standardized components
+- ✓ Verify consistent styling across all sections
+- ✓ Hover over tags - subtle scale or background change
+- ✓ Check date formatting handles various formats (ISO, relative, etc.)
+- ✓ Verify status colors match specification
+- ✓ Test long metadata - truncation works correctly
+- ✓ Mobile view - metadata wraps/stacks appropriately
+- ✓ RTL mode - icons and spacing flip correctly
+
+**Dependencies**: Task 2.1-2.10 (all sections)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+#### Task 6.19: Unified Card Component System
+**Description**: Create a flexible card component system used across all sections for consistent item display (education entries, projects, publications, etc.).
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/Card.tsx` base component
+- [ ] Card variants:
+  - **Timeline Card**: Vertical timeline connector, date on side
+  - **Grid Card**: Equal height cards in grid layout
+  - **List Card**: Full-width horizontal layout
+  - **Feature Card**: Large with image/media at top
+  - **Compact Card**: Minimal vertical space, dense info
+- [ ] Visual elements:
+  - Subtle shadow/border
+  - Hover effect: lift (translateY -4px) + shadow elevation
+  - Optional header image/thumbnail
+  - Content area with proper spacing
+  - Footer area for metadata/actions
+- [ ] Interactive states:
+  - Default: subtle shadow
+  - Hover: elevated shadow, slight lift
+  - Active/Selected: border highlight with theme accent
+  - Disabled: reduced opacity, no interactions
+- [ ] Consistent spacing and padding
+- [ ] Theme-aware colors and shadows
+- [ ] Click to expand/view details (optional)
+
+**Component API Example**:
+```typescript
+interface CardProps {
+  variant?: 'timeline' | 'grid' | 'list' | 'feature' | 'compact';
+  header?: React.ReactNode;
+  thumbnail?: string;
+  content: React.ReactNode;
+  footer?: React.ReactNode;
+  interactive?: boolean;
+  selected?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
+```
+
+**Visual Specifications**:
+- Border-radius: 12px
+- Padding: 24px (compact: 16px)
+- Shadow (default): 0 2px 8px rgba(0,0,0,0.1)
+- Shadow (hover): 0 8px 24px rgba(0,0,0,0.15)
+- Transition: all 200ms ease-out
+- Thumbnail: 16:9 aspect ratio, border-radius 8px on top corners
+
+**Oversight Checks**:
+- ✓ Replace all section items with appropriate Card variant
+- ✓ Hover over card - smooth lift and shadow animation
+- ✓ Verify consistent spacing across all card instances
+- ✓ Click interactive card - onClick handler fires
+- ✓ Check selected state has accent border
+- ✓ Verify thumbnail images have correct aspect ratio and border-radius
+- ✓ Test grid layout - cards have equal heights
+- ✓ Mobile view - cards stack and maintain readability
+- ✓ Theme switch - card colors and shadows update
+
+**Dependencies**: Task 1.1 (Theme system), Task 2.1-2.10 (all sections)
+
+**Estimated Effort**: 2-3 days
+
+---
+
+#### Task 6.20: Section Loading States & Skeletons
+**Description**: Implement elegant loading skeletons and states for sections while data is being fetched or filtered.
+
+**Acceptance Criteria**:
+- [ ] Create `src/components/SkeletonLoader.tsx` component
+- [ ] Skeleton variants matching actual content:
+  - Card skeleton (for education, projects, etc.)
+  - List item skeleton
+  - Timeline entry skeleton
+  - Grid item skeleton
+  - Heading skeleton
+- [ ] Shimmer animation effect (gradient moves across skeleton)
+- [ ] Correct dimensions matching actual content
+- [ ] Show appropriate number of skeleton items (3-5 typically)
+- [ ] Smooth transition from skeleton to actual content (fade)
+- [ ] Loading indicator for actions (e.g., applying filters)
+- [ ] Empty state messaging when no data (different from loading)
+
+**Visual Design**:
+- Skeleton color: theme surface color with slightly lighter overlay
+- Shimmer gradient: linear gradient moving left to right
+- Animation duration: 1.5s infinite
+- Border-radius matches actual components
+- Spacing matches actual layout
+
+**Oversight Checks**:
+- ✓ Temporarily add loading state - skeletons appear
+- ✓ Verify shimmer animation smooth and not distracting
+- ✓ Skeleton dimensions match actual content
+- ✓ Transition to real content is smooth (no jump)
+- ✓ Apply filter - loading indicator appears briefly
+- ✓ Empty state shows appropriate message, not skeleton
+- ✓ Test on slow connection (throttle network) - UX acceptable
+- ✓ Theme switch - skeleton colors update
+
+**Dependencies**: Task 6.19 (Card system), Task 2.1-2.10 (all sections)
+
+**Estimated Effort**: 1-2 days
+
+---
+
+### PHASE 6 SUMMARY (Updated)
+
+**Total Tasks in Phase 6**: 20 tasks (6.1 - 6.20)
+
+**Focus Areas**:
+- Interactive carousels and sliders (Language, Skills, Projects)
+- Premium micro-interactions (buttons, hover effects, cursor)
+- Smooth animations and transitions (scroll, page load, theme switching)
+- Visual depth and polish (parallax, timeline, progress indicator)
+- **Universal design system (headings, containers, cards, metadata)**
+- **Visual consistency and integrity across all sections**
+- Delightful details (FAB, easter egg)
+
+**Estimated Total Effort for Phase 6**: 23-30 days
+
+**Design Principles for Tasks 6.14-6.20**:
+- **Consistency First**: All sections use the same visual language
+- **Contextual Variation**: Components adapt to section needs without breaking consistency
+- **Progressive Enhancement**: Core content works, animations enhance
+- **Theme Integration**: All components respect active theme
+- **RTL Compatibility**: All visual elements flip correctly
+- **Accessibility**: Keyboard navigation, screen readers, reduced motion support
+- **Performance**: Smooth 60fps animations, optimized rendering
+
+**Integration Checklist**:
+- [ ] All sections use `<SectionHeading />` component
+- [ ] All sections wrapped in `<SectionContainer />`
+- [ ] All action buttons use `<SectionActionButton />`
+- [ ] Dividers placed between major sections
+- [ ] Metadata displays use standardized components
+- [ ] All list items use appropriate `<Card />` variant
+- [ ] Loading states implemented for all sections
+- [ ] Visual consistency verified across all themes
+- [ ] RTL mode works perfectly for all new components
+- [ ] No accessibility regressions
+
+---
+
 **End of Plan**

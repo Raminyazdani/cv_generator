@@ -5,7 +5,7 @@ Implement advanced UI components including morphing navigation, page corner effe
 
 ## Scope
 This plan covers:
-- Task 6.13: Morphing Navigation Menu (as referenced in plan.md)
+- Task 6.13: Morphing Navigation Menu
 - Task 6.14: Page Corner Curl Effect
 - Task 6.15: Skill Hover Tooltips & Previews
 - Task 6.16: Micro-Feedback & Success Animations

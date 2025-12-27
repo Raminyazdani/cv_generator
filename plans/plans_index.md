@@ -173,6 +173,8 @@ This track ensures production readiness with monitoring, testing, and compliance
 | Production Infrastructure Track | Plans 13-14 | 24-30 days |
 | **Total** | All Plans | 95-122 days |
 
+**Note**: Total assumes sequential execution. With parallel execution of independent tracks (e.g., Premium UI and some Infrastructure tasks can overlap), the timeline could be reduced by 20-30%.
+
 ---
 
 ## Risk Ratings Explained

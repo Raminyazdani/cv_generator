@@ -29,11 +29,11 @@
       "Pictures": [
         {
           "type_of": "profile",
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_pad,b_gen_fill,w_1200,h_1200,ar_1:1/v1748294090/IMG_9262_wioxcp.jpg"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_pad,b_gen_fill,w_1200,h_1200,ar_1:1/IMG_9262.jpg"
         },
         {
           "type_of": "cover",
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_crop,w_1200,h_900,ar_4:3,g_auto/v1748294940/IMG_5283_1200x1800_a2wxn9_c_pad_b_gen_fill_w_1600_h_400_1_lnwatm.jpg"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_crop,w_1200,h_900,ar_4:3,g_auto/IMG_5283_1200x1800_a2wxn9_c_pad_b_gen_fill_w_1600_h_400_1.jpg"
         }
       ]
     }
@@ -187,7 +187,7 @@
           "maxScore": 9.0,
           "minScore": 0.0,
           "examDate": "2023-12-28",
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_ielts_jw47oo.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_ielts.pdf"
         }
       ]
     },
@@ -224,7 +224,7 @@
           "date": "2020-9-31",
           "duration": "18 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MicroArray_dspdq4.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_TUV_north.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -237,7 +237,7 @@
           "date": "2021-04-10",
           "duration": "58 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_TUV_north_Academy_MD_wfwvnm.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_TUV_north_Academy_MD.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -255,7 +255,7 @@
           "date": "2023-12-08",
           "duration": "16 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_ICAD_glp_EN_vjmbcp.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_ICAD_glp_EN.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -273,7 +273,7 @@
           "date": "2023-12-09",
           "duration": "8 hours",
           "certificate": false,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/certificate_Biosafety_biosecurity_and_biological_risk_xeazln.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Biosafety_biosecurity_and_biological_risk.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -315,7 +315,7 @@
           "date": "2023-09-13",
           "duration": "15 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Histological_Techniques_and_Equipment_cyqakk.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Histological_Techniques_and.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -327,7 +327,7 @@
           "date": "2023-09-10",
           "duration": "45 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_Molecular_Testing_Techniques_stnnhk.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_Molecular.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -339,7 +339,7 @@
           "date": "2023-09-20",
           "duration": "6 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab_Animals_oiho0j.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -351,7 +351,7 @@
           "date": "2023-09-20",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_UoT_Applied_Bioinformatics_urbeov.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -364,7 +364,7 @@
           "date": "2023-09-15",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530888/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell_Culture_Techniques_vsz0f3.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -376,7 +376,7 @@
           "date": "2023-09-17",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_UoT_Introduction_to_Microbiological_Lab_Techniques_gflaji.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Introduction_to_Microbiological_Lab.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -594,7 +594,7 @@
           "date": "2023-01-18",
           "duration": "400 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabsharif_python_django_qi5tcd.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabsharif.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -613,7 +613,7 @@
           "date": "2020-09-18",
           "duration": "70 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_front_end_pt2jrn.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune_front_end.pdf",
           "type_key": [
             "Full CV",
             "Academic",
@@ -625,7 +625,7 @@
           "date": "2020-07-23",
           "duration": "57 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530890/certificate_maktabkhune_beginner_python_zvfwzv.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -639,7 +639,7 @@
           "date": "2021-12-11",
           "duration": "57 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/certificate_maktabkhune_advanced_python_porkqg.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -675,49 +675,49 @@
           "date": "2023-07-15",
           "duration": "3 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data_Science_lea7xa.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data.pdf"
         },
         {
           "name": "Mathematics for Data Science and Artificial Intelligence",
           "date": "2023-09-01",
           "duration": "8 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Mathematics_for_Data_Science_and_Artificial_Intelligence_tufiqi.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Mathematics_for_Data_Science_and.pdf"
         },
         {
           "name": "Data Mining and Business Intelligence with KNIME",
           "date": "2023-09-05",
           "duration": "6 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Mining_and_Business_Intelligence_with_KNIME_kctnfx.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Data_Mining_and_Business_Intelligence_with_KNIME.pdf"
         },
         {
           "name": "Comprehensive Python Programming",
           "date": "2023-09-12",
           "duration": "12 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Comprehensive_Python_Programming_aofpwo.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Comprehensive.pdf"
         },
         {
           "name": "Data Visualization Tools",
           "date": "2023-10-22",
           "duration": "5 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Data_Visualization_Tools_ooqjbj.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Data_Visualization_Tools.pdf"
         },
         {
           "name": "Introductory Database Principles",
           "date": "2023-10-19",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531339/certificate_Hamrah_academy_Introductory_Database_Principles_dby3im.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Introductory.pdf"
         },
         {
           "name": "Data Mining with Python",
           "date": "2023-11-01",
           "duration": "8 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749531338/certificate_Hamrah_academy_Data_Mining_with_Python_fz3e0c.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Data_Mining_with.pdf"
         }
       ]
     },
@@ -2609,6 +2609,128 @@
       ]
     },
     {
+  "title": "Policy Compliance Checker (Flask + React + SQLite)",
+  "description": "Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.",
+  "url": "https://github.com/Raminyazdani/policy-compliance-checker",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Cosmetic Shop Marketplace Template (Django)",
+  "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
+  "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Cosmetic Shop Marketplace Template (Django)",
+  "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
+  "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Maktab 78 File Store (Framework-less Python + PostgreSQL)",
+  "description": "Developed an educational, framework-less Python project featuring a nested CLI router/menu system with dynamic callbacks, a lightweight PostgreSQL persistence layer (psycopg2) with small ORM-like models and query builders for CRUD, and domain modules for users, files, comments, carts, and order items.",
+  "url": "https://github.com/Raminyazdani/m78bookstore",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Student Projects"
+  ]
+},
+{
+  "title": "Python Bootcamp Portfolio — Maktab 78 Assignments & Projects",
+  "description": "Compiled and documented a monorepo of Python Bootcamp coursework and projects, organized by homework modules (fundamentals, OOP, system scripting, data validation, databases with PostgreSQL/MongoDB, and Flask REST APIs), including multiple major subprojects in a single structured repository.",
+  "url": "https://github.com/Raminyazdani/HW_all_maktab-78",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Student Projects"
+  ]
+},
+{
+  "title": "IranDoc Ganj Research Paper & Thesis Scraper (Selenium + BeautifulSoup)",
+  "description": "Developed a Python web-scraping tool using Selenium and BeautifulSoup to crawl ganj.irandoc.ac.ir year-by-year (and page-by-page when needed), extract thesis/paper metadata (e.g., subject, type, course, year, university, contributors) with UTF-8 Persian support, and export the results to CSV with an additional CSV cleaning utility.",
+  "url": "https://github.com/Raminyazdani/irandoc",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Personal CV Website (Django + React)",
+  "description": "Built a personal CV website with a React single-page frontend and a Django backend for data storage and API services, showcasing skills, projects, and professional experience in a web format.",
+  "url": "https://github.com/Raminyazdani/My-CV-Website",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Movie/TV Discovery & Personalization App (React + Express + MySQL)",
+  "description": "Built a full-stack movie/TV discovery and personalization monorepo with a React client (Redux Toolkit, Material UI) and an Express server backed by MySQL, integrating Firebase Auth and OMDb/TMDb metadata APIs to support per-user favorites, ratings, reviews, and recommendation requests via a REST API.",
+  "url": "https://github.com/Raminyazdani/movie-rating-app",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+    {
+  "title": "Hospital Database Management System (MySQL + SQL)",
+  "description": "Developed a MySQL hospital database schema for managing patients, doctors, services, departments, surgeries, and visits, providing SQL scripts to create tables, insert sample records, and generate multiple report views, alongside an ERD for documentation.",
+  "url": "https://github.com/Raminyazdani/Hospital-Data-base",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Student Projects"
+  ]
+},
+{
+  "title": "Terminal Calculator (TUI) — Python",
+  "description": "Developed a Python 3.10 terminal calculator (TUI) with safe expression evaluation, command history (view/replay), and light/dark theming using Rich + prompt_toolkit, packaged as a CLI with pytest tests and GitHub Pages documentation.",
+  "url": "https://github.com/Raminyazdani/Calculator",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Student Projects"
+  ]
+},
+{
+  "title": "CV Generator — JSON → Awesome-CV PDF (Jinja2 + XeLaTeX)",
+  "description": "Developed a Python-based CV generator that renders structured JSON into modular Jinja2+LaTeX section templates using the Awesome-CV class, then compiles polished PDFs via XeLaTeX with multi-CV batch support, optional profile photos, StrictUndefined validation, LaTeX-escaping helpers, and reliable intermediate-file cleanup.",
+  "url": "https://github.com/Raminyazdani/cv_generator",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Academic"
+  ]
+},
+{
+  "title": "Python Projects Roadmap (Ongoing)",
+  "description": "Maintaining an ongoing curated roadmap of ~100 Python project ideas categorized by difficulty (Beginner/Intermediate/Advanced) to guide consistent practice and portfolio-building, alongside repository utilities (e.g., create_projects.py).",
+  "url": "https://github.com/Raminyazdani/Python-projects",
+  "type_key": [
+    "Full CV",
+    "Programming",
+    "Student Projects"
+  ]
+},
+
+
+    {
       "title": "Single-Cell & Spatial Transcriptomics Workflow",
       "description": "Implemented analysis workflows for single-cell RNA-seq and spatial transcriptomics data, enabling cell type identification and trajectory inference.",
       "url":null,
@@ -2742,17 +2864,8 @@
         "Embedded Systems",
         "Student Projects"
       ]
-    },
-    {
-  "title": "Policy Compliance Checker (Flask + React + SQLite)",
-  "description": "Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.",
-  "url": "https://github.com/Raminyazdani/policy-compliance-checker",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-}
+    }
+
 
   ],
   "publications": [
@@ -3101,7 +3214,7 @@
         "Ba.khalili@iau.ac.ir"
       ],
       "phone": null,
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530886/Reference_Babak__Khalili_Hadad_lb2rxf.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Babak__Khalili_Hadad.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -3119,7 +3232,7 @@
         "biodibio@yahoo.com"
       ],
       "phone": null,
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Hedieh_Dibah_ynttbv.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Hedieh_Dibah.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -3143,7 +3256,7 @@
           "number": "9123961780"
         }
       ],
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Simin_Nabizadeh_sf74hi.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Simin.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -3167,7 +3280,7 @@
           "number": "9105969589"
         }
       ],
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/v1749530887/Reference_Mohammad_Amin_Boojari_oln3ua.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Mohammad_Amin.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",

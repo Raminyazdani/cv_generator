@@ -156,11 +156,8 @@ def translate_dict_keys(
         else:
             translated_key = original_key
         
-        # Track collisions
-        if translated_key in collisions:
-            collisions[translated_key].append(original_key)
-        else:
-            collisions[translated_key] = [original_key]
+        # Track collisions using setdefault for cleaner code
+        collisions.setdefault(translated_key, []).append(original_key)
         
         # Process the value recursively
         new_in_skills = in_skills_subtree or (original_key == "skills")
@@ -174,8 +171,8 @@ def translate_dict_keys(
         # Handle collision if this key already exists
         if translated_key in result:
             if on_collision == "error":
-                existing_originals = [k for k, v in obj.items() 
-                                     if translate_key(k, lang, lang_map) == translated_key]
+                # Use tracked collisions instead of recomputing
+                existing_originals = collisions[translated_key]
                 raise ValueError(
                     f"Key collision at {path}: keys {existing_originals} "
                     f"both translate to '{translated_key}'"

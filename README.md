@@ -156,10 +156,40 @@ If this fails, install a LaTeX distribution and ensure `xelatex` is on `PATH`.
 
 ### Running the generator
 
-From the project root (`cv_generator`):
+The CV Generator provides both a modern CLI (`cvgen`) and the original script interface.
+
+#### Using the cvgen CLI (recommended)
 
 ```bash
-python generate_cv.py
+# Generate all CVs
+cvgen build
+
+# Generate a specific CV
+cvgen build --name ramin
+
+# Dry run (render LaTeX without compiling to PDF)
+cvgen build --dry-run
+
+# Keep intermediate files for debugging
+cvgen build --keep-intermediate
+
+# Verbose output
+cvgen -v build
+
+# Custom directories
+cvgen build --input-dir data/cvs --output-dir output --templates-dir templates
+
+# Show help
+cvgen --help
+cvgen build --help
+```
+
+#### Using the original script (backward compatible)
+
+```bash
+python generate_cv.py                  # Same as cvgen build
+python generate_cv.py --dry-run        # Same as cvgen build --dry-run
+python generate_cv.py --name ramin     # Same as cvgen build --name ramin
 ```
 
 What this does:
@@ -571,22 +601,55 @@ If you still hit issues, ensure:
 
 ## Development Notes
 
-- **Adding a new section**:
-  1. Create a new template file in `templates/` (e.g. `volunteering.tex`).
-  2. Reference new JSON data in the template (`<VAR> volunteering ... </VAR>`).
-  3. `generate_cv.py` automatically picks up **all** files in `templates/` as section templates:
+### Package Structure
 
-     ```python
-     SECTION_TEMPLATES = [x for x in os.listdir(TEMPLATE_DIR)]
-     ```
+The project is organized as a Python package for maintainability and extensibility:
 
-  4. Add a line to `layout.tex` to embed it:
+```text
+cv_generator/
+├─ src/cv_generator/          # Main package
+│  ├─ __init__.py             # Package exports
+│  ├─ cli.py                  # Command-line interface (cvgen)
+│  ├─ generator.py            # CV generation orchestration
+│  ├─ io.py                   # JSON loading and CV file discovery
+│  ├─ jinja_env.py            # Jinja2 environment configuration
+│  ├─ latex.py                # LaTeX compilation utilities
+│  ├─ cleanup.py              # Directory cleanup (Windows-friendly)
+│  ├─ paths.py                # Path resolution helpers
+│  └─ errors.py               # Error types and exit codes
+├─ tests/                     # Test suite
+├─ pyproject.toml             # Package configuration
+├─ generate_cv.py             # Backward-compatible wrapper
+├─ templates/                 # LaTeX/Jinja2 templates
+├─ data/cvs/                  # CV JSON files
+└─ output/                    # Generated PDFs
+```
 
-     ```latex
-     <VAR> volunteering_section | default('') </VAR>
-     ```
+### Installing for Development
 
-- **Debugging template data**:
+```bash
+# Install in editable mode
+pip install -e .
+
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/
+```
+
+### Adding a new section
+
+1. Create a new template file in `templates/` (e.g. `volunteering.tex`).
+2. Reference new JSON data in the template (`<VAR> volunteering ... </VAR>`).
+3. The generator automatically picks up **all** `.tex` files in `templates/` as section templates.
+4. Add a line to `layout.tex` to embed it:
+
+   ```latex
+   <VAR> volunteering_section | default('') </VAR>
+   ```
+
+### Debugging template data
   - Use `|debug` or `|types` filters in templates to understand what’s being passed in.
   - Example:
 
@@ -596,7 +659,7 @@ If you still hit issues, ensure:
 
 - **Commenting in templates**:
   - Use LaTeX comments (`%`) or the `cmt` / `cblock` filters.
-  - Toggle `SHOW_COMMENTS` in `generate_cv.py` to control whether these get emitted.
+  - Toggle `SHOW_COMMENTS` in `src/cv_generator/jinja_env.py` to control whether these get emitted.
 
 ---
 

@@ -294,7 +294,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             description = request.form.get("description", "").strip() or None
             
             try:
-                update_tag(name, new_name, description, app.config["DB_PATH"])
+                update_tag(name, new_name=new_name, description=description, db_path=app.config["DB_PATH"])
                 flash(f"Tag updated successfully", "success")
                 return redirect(url_for("tags_list"))
             except (ConfigurationError, ValidationError) as e:

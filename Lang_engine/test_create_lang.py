@@ -271,6 +271,198 @@ def test_update_lang_json_dry_run():
         assert not lang_path.exists()
 
 
+# ============================================================================
+# Tests for Feature A: --from-lang (auto-populate source language)
+# ============================================================================
+
+def test_from_lang_populates_empty_slots():
+    """Test that --from-lang populates empty slots with key name."""
+    existing = {
+        "fname": {"de": "", "en": "", "fa": ""},
+        "lname": {"de": "", "en": "", "fa": ""},
+    }
+    discovered_keys = {"fname", "lname"}
+    languages = ["de", "en", "fa"]
+    
+    merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
+    
+    # en slots should be populated with key names
+    assert merged["fname"]["en"] == "fname"
+    assert merged["lname"]["en"] == "lname"
+    
+    # Other language slots should remain empty
+    assert merged["fname"]["de"] == ""
+    assert merged["fname"]["fa"] == ""
+    
+    # Stats should reflect from-lang population
+    assert stats["from_lang_populated"] == 2
+
+
+def test_from_lang_preserves_existing_translations():
+    """Test that --from-lang does not overwrite non-empty translations."""
+    existing = {
+        "fname": {"de": "Vorname", "en": "First Name", "fa": ""},
+    }
+    discovered_keys = {"fname"}
+    languages = ["de", "en", "fa"]
+    
+    merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
+    
+    # Existing non-empty "en" translation should be preserved, NOT overwritten
+    assert merged["fname"]["en"] == "First Name"
+    assert merged["fname"]["de"] == "Vorname"
+    
+    # from_lang_populated should be 0 since en slot was already filled
+    assert stats["from_lang_populated"] == 0
+    assert stats["translations_preserved"] == 2
+
+
+def test_from_lang_different_language():
+    """Test that --from-lang works with different languages (e.g., de, fa)."""
+    existing = {
+        "fname": {"de": "", "en": "", "fa": ""},
+    }
+    discovered_keys = {"fname"}
+    languages = ["de", "en", "fa"]
+    
+    # Test with German
+    merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="de")
+    assert merged["fname"]["de"] == "fname"
+    assert merged["fname"]["en"] == ""
+    assert stats["from_lang_populated"] == 1
+    
+    # Test with Persian
+    merged2, stats2 = merge_lang_data(existing, discovered_keys, languages, from_lang="fa")
+    assert merged2["fname"]["fa"] == "fname"
+    assert merged2["fname"]["en"] == ""
+
+
+def test_from_lang_with_new_keys():
+    """Test that --from-lang works when adding new keys."""
+    existing = {}
+    discovered_keys = {"fname", "lname"}
+    languages = ["en", "de"]
+    
+    merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
+    
+    assert merged["fname"]["en"] == "fname"
+    assert merged["lname"]["en"] == "lname"
+    assert merged["fname"]["de"] == ""
+    assert stats["keys_added"] == 2
+    assert stats["from_lang_populated"] == 2
+
+
+# ============================================================================
+# Tests for Feature B: Skills subtree exclusion
+# ============================================================================
+
+def test_collect_keys_excludes_skills_descendants():
+    """Test that keys under 'skills' are excluded from discovery."""
+    data = {
+        "basics": {"fname": "John"},
+        "skills": {
+            "Programming": {
+                "Languages": [
+                    {"long_name": "Python", "short_name": "Py"}
+                ]
+            },
+            "Soft Skills": {
+                "Communication": []
+            }
+        },
+        "education": []
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=True)
+    
+    # Top-level keys should be present
+    assert "basics" in keys
+    assert "fname" in keys
+    assert "skills" in keys
+    assert "education" in keys
+    
+    # Keys under skills should NOT be present
+    assert "Programming" not in keys
+    assert "Languages" not in keys
+    assert "long_name" not in keys
+    assert "short_name" not in keys
+    assert "Soft Skills" not in keys
+    assert "Communication" not in keys
+
+
+def test_collect_keys_include_skills_descendants_when_disabled():
+    """Test that skills descendants are included when exclusion is disabled."""
+    data = {
+        "basics": {"fname": "John"},
+        "skills": {
+            "Programming": {"Languages": []}
+        }
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=False)
+    
+    # Skills descendants should be included
+    assert "Programming" in keys
+    assert "Languages" in keys
+
+
+def test_collect_keys_skills_as_empty_object():
+    """Test that skills exclusion works when skills is an empty object."""
+    data = {
+        "basics": {"fname": "John"},
+        "skills": {}
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=True)
+    
+    assert "skills" in keys
+    assert "basics" in keys
+    assert "fname" in keys
+
+
+def test_collect_keys_skills_as_list():
+    """Test that skills exclusion works when skills is a list."""
+    data = {
+        "basics": {"fname": "John"},
+        "skills": [
+            {"category": "Programming", "items": ["Python"]}
+        ]
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=True)
+    
+    # skills key should be present
+    assert "skills" in keys
+    # Keys inside the skills list should NOT be present
+    assert "category" not in keys
+    assert "items" not in keys
+
+
+# ============================================================================
+# Tests for idempotency with new features
+# ============================================================================
+
+def test_idempotency_with_from_lang():
+    """Test that running with --from-lang twice produces identical output."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cv_path = Path(tmpdir) / "test_cv.json"
+        lang_path = Path(tmpdir) / "lang.json"
+        
+        cv_data = {"fname": "John", "lname": "Doe"}
+        cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
+        
+        # First run with from_lang
+        update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
+        first_content = lang_path.read_text(encoding="utf-8")
+        
+        # Second run with same from_lang
+        update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
+        second_content = lang_path.read_text(encoding="utf-8")
+        
+        # Should be identical
+        assert first_content == second_content
+
+
 def run_all_tests():
     """Run all tests and report results."""
     import traceback
@@ -291,6 +483,18 @@ def run_all_tests():
         test_update_lang_json_creates_file,
         test_update_lang_json_idempotent,
         test_update_lang_json_dry_run,
+        # New tests for Feature A (--from-lang)
+        test_from_lang_populates_empty_slots,
+        test_from_lang_preserves_existing_translations,
+        test_from_lang_different_language,
+        test_from_lang_with_new_keys,
+        # New tests for Feature B (skills exclusion)
+        test_collect_keys_excludes_skills_descendants,
+        test_collect_keys_include_skills_descendants_when_disabled,
+        test_collect_keys_skills_as_empty_object,
+        test_collect_keys_skills_as_list,
+        # Idempotency with new features
+        test_idempotency_with_from_lang,
     ]
     
     passed = 0

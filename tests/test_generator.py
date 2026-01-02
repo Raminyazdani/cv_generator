@@ -96,7 +96,6 @@ class TestGenerateCV:
     
     def test_generate_cv_dry_run(self, sample_cv, lang_map_dir, tmp_path):
         """Test generating a CV in dry-run mode."""
-        result_dir = tmp_path / "result"
         output_dir = tmp_path / "output"
         output_dir.mkdir()
         
@@ -107,10 +106,9 @@ class TestGenerateCV:
             sample_cv,
             templates_dir=get_default_templates_path(),
             output_dir=output_dir,
-            result_dir=result_dir,
             lang_map=lang_map,
             dry_run=True,
-            keep_intermediate=True
+            keep_latex=True
         )
         
         assert result.success is True
@@ -127,7 +125,6 @@ class TestGenerateCV:
         cv_file = tmp_path / "incomplete.json"
         cv_file.write_text(json.dumps(cv_data))
         
-        result_dir = tmp_path / "result"
         output_dir = tmp_path / "output"
         output_dir.mkdir()
         
@@ -137,7 +134,6 @@ class TestGenerateCV:
             cv_file,
             templates_dir=get_default_templates_path(),
             output_dir=output_dir,
-            result_dir=result_dir,
             lang_map=lang_map,
             dry_run=True
         )
@@ -182,7 +178,7 @@ class TestGenerateAllCVs:
                 output_dir=output_dir,
                 name_filter="user1",
                 dry_run=True,
-                keep_intermediate=True
+                keep_latex=True
             )
         
         assert len(results) == 1

@@ -63,7 +63,19 @@ cv_generator/
 │  └─ pics/                 # Optional profile photos
 │     ├─ mahsa.jpg
 │     └─ ramin.jpg
-├─ output/                  # Final generated PDFs (e.g. mahsa.pdf, ramin.pdf)
+├─ output/                  # All generated artifacts
+│  ├─ pdf/                  # Generated PDFs organized by profile/lang
+│  │  └─ ramin/
+│  │     ├─ en/
+│  │     │  └─ ramin_en.pdf
+│  │     └─ de/
+│  │        └─ ramin_de.pdf
+│  ├─ latex/                # LaTeX sources (when --keep-latex is used)
+│  │  └─ ramin/
+│  │     └─ en/
+│  │        ├─ main.tex
+│  │        └─ sections/
+│  └─ logs/                 # Generation logs
 ├─ templates/               # Jinja2+LaTeX section templates
 │  ├─ layout.tex            # Main document layout; includes sections inline
 │  ├─ header.tex            # Personal info & social links
@@ -76,12 +88,7 @@ cv_generator/
 │  ├─ publications.tex
 │  ├─ references.tex
 │  └─ ... (extendable)
-└─ (generated at runtime)
-   └─ result/               # Per-person intermediate .tex sections (auto‑cleaned)
-      └─ <name>/sections/
-         ├─ header.tex
-         ├─ education.tex
-         └─ ...
+└─ src/cv_generator/        # Python package source
 ```
 
 ---
@@ -170,8 +177,8 @@ cvgen build --name ramin
 # Dry run (render LaTeX without compiling to PDF)
 cvgen build --dry-run
 
-# Keep intermediate files for debugging
-cvgen build --keep-intermediate
+# Keep LaTeX source files for debugging
+cvgen build --keep-latex
 
 # Verbose output
 cvgen -v build
@@ -528,21 +535,69 @@ Each of these is filled by `generate_cv.py` after rendering the corresponding te
 
 ## Output and Intermediate Files
 
-- **Intermediate**:
-  - `result/<name>/sections/*.tex` – one file per template.
-  - `result/<name>/sections/rendered.tex` – final combined LaTeX document for that person.
+All generated artifacts are organized under a unified `output/` directory with a predictable structure:
 
-- **Final**:
-  - `output/<name>.pdf` – compiled PDF CV.
+```text
+output/
+  pdf/
+    <profile_name>/
+      <lang>/                    # en, de, fa
+        <profile>_<lang>.pdf     # e.g., ramin_en.pdf
+  latex/
+    <profile_name>/
+      <lang>/
+        main.tex                 # Combined LaTeX document
+        sections/                # Individual section .tex files
+          header.tex
+          education.tex
+          ...
+  logs/
+    run_<datetime>.log           # Generation logs (optional)
+```
 
-After generation completes, the script:
+### Example Output
 
-1. Cleans up non-PDF files in `output/`.
-2. Renames `rendered.pdf` to `<name>.pdf`.
-3. Recursively removes `result/` with a custom, retrying `rmtree_reliable()` function that:
-   - Removes the read-only attribute on Windows.
-   - Retries on `PermissionError` / certain `OSError` cases.
-   - Works better around OneDrive / Explorer / antivirus file locks.
+After running `cvgen build`, you'll find:
+
+- `output/pdf/ramin/en/ramin_en.pdf` – English PDF
+- `output/pdf/ramin/de/ramin_de.pdf` – German PDF
+- `output/pdf/ramin/fa/ramin_fa.pdf` – Persian PDF
+
+### Keeping LaTeX Sources
+
+By default, LaTeX intermediate files are cleaned up after PDF generation. To keep them for debugging:
+
+```bash
+cvgen build --keep-latex
+```
+
+This preserves the `.tex` files in `output/latex/<profile>/<lang>/`.
+
+---
+
+## Migration Notes
+
+### Migrating from `result/` + `output/` to unified `output/`
+
+**Prior versions** stored:
+- Intermediate `.tex` files in `result/<name>/<lang>/sections/`
+- Final PDFs directly in `output/<name>.pdf`
+
+**Current version** uses:
+- All artifacts under `output/` with subdirectories: `pdf/`, `latex/`, `json/`, `logs/`
+- PDFs at `output/pdf/<name>/<lang>/<name>_<lang>.pdf`
+- LaTeX sources (when kept) at `output/latex/<name>/<lang>/`
+
+**What changed:**
+1. The `result/` directory is no longer used
+2. PDFs are organized by profile and language
+3. The `--keep-intermediate` flag is now `--keep-latex`
+4. All paths are managed by the `ArtifactPaths` class for consistency
+
+**Backward compatibility:**
+- Old `result/` directories can be safely deleted
+- The CLI API remains the same, only the flag name changed
+- PDF naming convention (`<name>_<lang>.pdf`) is preserved
 
 ---
 
@@ -585,16 +640,16 @@ Common causes:
 
   and watch for Jinja `TemplateError` messages, which include the template file name.
 
-### Windows “Access is denied” when deleting `result/`
+### Windows "Access is denied" when cleaning up
 
-The script already includes robust cleanup logic (`rmtree_reliable`) with:
+The script includes robust cleanup logic (`rmtree_reliable`) with:
 
 - Read-only flag clearing via `attrib`.
 - Multiple retries with exponential backoff.
 
 If you still hit issues, ensure:
 
-- You’re not keeping `result/` open in an editor that locks files.
+- You’re not keeping `output/latex/` open in an editor that locks files.
 - OneDrive (or similar) isn’t aggressively syncing mid‑delete; pausing sync temporarily can help.
 
 ---

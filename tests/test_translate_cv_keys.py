@@ -334,11 +334,8 @@ def test_collision_error_mode():
         "key2": {"de": "Schlüssel"},
     }
     
-    try:
+    with pytest.raises(ValueError, match="collision"):
         translate_cv(cv_data, "de", lang_map, on_collision="error")
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "collision" in str(e).lower()
 
 
 def test_collision_suffix_mode():

@@ -175,8 +175,8 @@ def translate_dict_keys(
                 # Use tracked collisions instead of recomputing
                 existing_originals = collisions[translated_key]
                 raise ValueError(
-                    f"Key collision at {path}: keys {existing_originals} "
-                    f"both translate to '{translated_key}'"
+                    f"Key collision at {path}: {len(existing_originals)} keys {existing_originals} "
+                    f"all translate to '{translated_key}'"
                 )
             elif on_collision == "suffix":
                 # Add suffix to make key unique

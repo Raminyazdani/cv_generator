@@ -1,0 +1,62 @@
+{
+  "basics": [
+    {
+      "fname": "رامین",
+      "lname": "یزدانی",
+      "email": "test@example.com"
+    }
+  ],
+  "education": [
+    {
+      "institution": "دانشگاه الف",
+      "area": "علوم کامپیوتر",
+      "studyType": "کارشناسی ارشد",
+      "type_key": ["رزومه کامل"]
+    }
+  ],
+  "skills": {
+    "برنامه‌نویسی و اسکریپت‌نویسی": {
+      "زبان‌های برنامه‌نویسی": [
+        {
+          "long_name": "پایتون",
+          "short_name": "Python",
+          "type_key": ["رزومه کامل"]
+        },
+        {
+          "long_name": "جاوااسکریپت",
+          "short_name": "JS",
+          "type_key": ["رزومه کامل"]
+        }
+      ]
+    },
+    "مهارت‌های نرم": {
+      "مهارت‌های نرم اصلی": [
+        {
+          "long_name": "همکاری تیمی",
+          "short_name": "Teamwork",
+          "type_key": ["رزومه کامل"]
+        }
+      ]
+    }
+  },
+  "experiences": [
+    {
+      "role": "توسعه‌دهنده",
+      "institution": "شرکت الف",
+      "duration": "2020-01-01 - 2022-01-01",
+      "description": "توسعه نرم‌افزار"
+    }
+  ],
+  "projects": [
+    {
+      "title": "پروژه یک",
+      "description": "پروژه اول",
+      "url": "https://github.com/example/project1"
+    },
+    {
+      "title": "پروژه دو",
+      "description": "پروژه دوم",
+      "url": null
+    }
+  ]
+}

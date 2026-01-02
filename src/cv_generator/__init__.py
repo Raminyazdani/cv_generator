@@ -12,6 +12,7 @@ from .generator import generate_cv, generate_all_cvs
 from .io import discover_cv_files, load_cv_json, load_lang_map
 from .jinja_env import create_jinja_env
 from .paths import get_repo_root
+from .ensure import run_ensure, EnsureReport, EnsureIssue
 
 __all__ = [
     "generate_cv",
@@ -21,5 +22,8 @@ __all__ = [
     "load_lang_map",
     "create_jinja_env",
     "get_repo_root",
+    "run_ensure",
+    "EnsureReport",
+    "EnsureIssue",
     "__version__",
 ]

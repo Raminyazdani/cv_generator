@@ -1,346 +1,307 @@
-# scripts/make_translate_csv.py
+#!/usr/bin/env python3
+"""
+create_lang.py - Generate and merge lang.json from CV JSON keys.
 
+This script extracts all unique JSON key names from a CV JSON file
+and produces/updates a language dictionary file (lang.json) with
+translation slots for each discovered key.
+
+Usage:
+    python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
+    python create_lang.py --dry-run --verbose
+"""
+
+import argparse
 import json
-import re
-from copy import deepcopy
+import sys
 from pathlib import Path
 from typing import Any
-
-
-SENSITIVE_KEY_RX = re.compile(r"(url|uri|email|phone|doi|issn|isbn)", re.IGNORECASE)
-SENSITIVE_VALUE_RX = re.compile(
-    r"(https?://|www\.|@|cloudinary\.com|github\.com|taylorfrancis\.com)",
-    re.IGNORECASE,
-)
-
-
-def _blank_leaf(value: Any) -> Any:
-    """Blank a leaf while preserving the intent of the type."""
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return False
-    if isinstance(value, int):
-        return 0
-    if isinstance(value, float):
-        return 0.0
-    if isinstance(value, str):
-        return ""
-    return ""
-
-
-def _looks_like_skill_item(x: Any) -> bool:
-    """Heuristic: a skill entry is usually a dict with long_name/short_name/type_key."""
-    return isinstance(x, dict) and (
-        "short_name" in x or "long_name" in x or "type_key" in x
-    )
-
-
-def _trim_lists(obj: Any, max_items: int, path: tuple[str, ...] = ()) -> Any:
-    """
-    Trim lists but preserve the intended *skills* shape:
-    - Under `skills`: keep all group/subheading dict keys.
-    - Only trim the leaf lists that contain skill items.
-    """
-    if isinstance(obj, dict):
-        return {k: _trim_lists(v, max_items, path + (str(k),)) for k, v in obj.items()}
-
-    if isinstance(obj, list):
-        in_skills = "skills" in path
-        if in_skills and obj and _looks_like_skill_item(obj[0]):
-            items = obj[:max_items]
-        else:
-            items = obj[:max_items] if not in_skills else obj
-        return [_trim_lists(v, max_items, path) for v in items]
-
-    return obj
-
-
-def _anonymize_keep_shape(obj: Any) -> Any:
-    """Blank all leaves, keep full structure."""
-    if isinstance(obj, dict):
-        return {k: _anonymize_keep_shape(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_anonymize_keep_shape(v) for v in obj]
-    return _blank_leaf(obj)
-
-
-def _override_sensitive(obj: Any) -> Any:
-    """
-    Force blanking for sensitive keys and values even if they appear as non-leaves.
-    - If key looks sensitive => blank it (preserve None vs non-None intent loosely).
-    - If string value looks like a link/email => blank it.
-    """
-    if isinstance(obj, dict):
-        out: dict[str, Any] = {}
-        for k, v in obj.items():
-            if SENSITIVE_KEY_RX.search(k or ""):
-                out[k] = None if v is None else ""
-            else:
-                out[k] = _override_sensitive(v)
-        return out
-
-    if isinstance(obj, list):
-        return [_override_sensitive(v) for v in obj]
-
-    if isinstance(obj, str) and SENSITIVE_VALUE_RX.search(obj):
-        return ""
-
-    return obj
 
 
 _HERE = Path(__file__).resolve().parent
 
 
-def make_empty_example(
-    src_path: Path = _HERE.parent / "data" / "cvs" / "ramin.json",
-    dst_path: Path = _HERE.parent / "scripts" / "example" / "empty.json",
-    max_list_items: int = 1,
-) -> None:
-    data = json.loads(src_path.read_text(encoding="utf-8"))
-
-    trimmed = _trim_lists(deepcopy(data), max_items=max_list_items)
-    empty = _anonymize_keep_shape(trimmed)
-    empty = _override_sensitive(empty)
-
-    dst_path.parent.mkdir(parents=True, exist_ok=True)
-    dst_path.write_text(
-        json.dumps(empty, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-
-
-def make_minimal_example(
-    src_path: Path = _HERE.parent / "data" / "cvs" / "ramin.json",
-    dst_path: Path = _HERE.parent / "scripts" / "example" / "minimal.json",
-    max_list_items: int = 1,
-) -> None:
+def collect_keys(obj: Any) -> set[str]:
     """
-    Write a minimal-but-real example:
-    - Keep original values (do not blank content)
-    - Trim repeated list entries to `max_list_items`
-    - Blank sensitive fields/values
+    Recursively traverse the CV JSON and collect all unique key names.
+    
+    Rules:
+    - If node is a dict: add each key to the set and recurse into values
+    - If node is a list: recurse into every element
+    - If node is a scalar (str/int/float/bool/null): stop (don't add values)
+    
+    Key names are case-sensitive ("Pictures" != "pictures").
     """
-    data = json.loads(src_path.read_text(encoding="utf-8"))
+    return _collect_keys_recursive(obj, set())
 
-    minimal = _trim_lists(deepcopy(data), max_items=max_list_items)
-    minimal = _override_sensitive(minimal)
 
-    dst_path.parent.mkdir(parents=True, exist_ok=True)
-    dst_path.write_text(
-        json.dumps(minimal, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+def _collect_keys_recursive(obj: Any, out_set: set[str]) -> set[str]:
+    """Internal recursive helper for collect_keys."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            out_set.add(key)
+            _collect_keys_recursive(value, out_set)
+    elif isinstance(obj, list):
+        for item in obj:
+            _collect_keys_recursive(item, out_set)
+    # Scalars: do nothing (we only collect keys, not values)
+    
+    return out_set
 
 
 def _is_translation_dict(d: dict[str, Any]) -> bool:
-    """Detect a dict that looks like a translation leaf, e.g. {"en":"","de":"","fa":""}."""
-    if not isinstance(d, dict):
+    """
+    Detect a dict that looks like a translation leaf.
+    
+    A translation dict has only string values and all keys look like language codes
+    (2-3 character lowercase strings).
+    """
+    if not isinstance(d, dict) or len(d) == 0:
         return False
-    keys = set(d.keys())
-    return bool(keys) and keys.issubset({"en", "de", "fa"})
+    
+    # Check if all values are strings (or empty)
+    if not all(isinstance(v, str) for v in d.values()):
+        return False
+    
+    # Check if all keys look like language codes (2-3 chars, lowercase)
+    for k in d.keys():
+        if not isinstance(k, str) or not (2 <= len(k) <= 3) or not k.islower():
+            return False
+    
+    return True
 
 
-def _make_translation_leaf(langs: tuple[str, ...] = ("en", "de", "fa")) -> dict[str, str]:
-    return {k: "" for k in langs}
-
-
-def _normalize_path_parts(parts: list[str]) -> str:
-    """Join JSON path parts into a stable dot-path; list indices are represented as []."""
-    out: list[str] = []
-    for p in parts:
-        if p == "[]":
-            # attach to previous segment as suffix if possible
-            if out:
-                out[-1] = f"{out[-1]}[]"
-            else:
-                out.append("[]")
-        else:
-            out.append(p)
-    return ".".join(out)
-
-
-def _collect_leaf_paths(obj: Any, parts: list[str] | None = None) -> set[str]:
-    """Return set of dot-paths for all leaf values in obj."""
-    if parts is None:
-        parts = []
-
-    if isinstance(obj, dict):
-        paths: set[str] = set()
-        for k, v in obj.items():
-            paths |= _collect_leaf_paths(v, parts + [str(k)])
-        return paths
-
-    if isinstance(obj, list):
-        # We don’t want index-specific keys; represent list traversal as []
-        if not obj:
-            # Consider empty list as a leaf container (so translation key exists)
-            return { _normalize_path_parts(parts + ["[]"]) } if parts else set()
-        paths: set[str] = set()
-        for item in obj:
-            paths |= _collect_leaf_paths(item, parts + ["[]"])
-        return paths
-
-    # primitive leaf
-    if not parts:
-        return set()
-    return { _normalize_path_parts(parts) }
-
-
-def _extract_existing_flat(existing: Any, langs: tuple[str, ...] = ("en", "de", "fa")) -> dict[str, dict[str, str]]:
-    """Accept either an already-flat lang.json or an older structural one and return a flat map."""
-    if not isinstance(existing, dict):
-        return {}
-
-    # If it's already flat (values are translation dicts), keep it.
-    if any(isinstance(v, dict) and _is_translation_dict(v) for v in existing.values()):
-        out: dict[str, dict[str, str]] = {}
-        for k, v in existing.items():
-            if isinstance(v, dict) and _is_translation_dict(v):
-                out[k] = {lang: v.get(lang, "") for lang in langs}
-        return out
-
-    # Otherwise treat it as a structural skeleton and flatten leaf translation dicts.
-    flat: dict[str, dict[str, str]] = {}
-
-    def walk(node: Any, parts: list[str]) -> None:
-        if isinstance(node, dict) and _is_translation_dict(node):
-            flat[_normalize_path_parts(parts)] = {lang: node.get(lang, "") for lang in langs}
-            return
-        if isinstance(node, dict):
-            for kk, vv in node.items():
-                walk(vv, parts + [str(kk)])
-            return
-        if isinstance(node, list):
-            if not node:
-                return
-            # structural skeleton stores representative element at [0]
-            walk(node[0], parts + ["[]"])
-
-    walk(existing, [])
-    return flat
-
-
-def _merge_flat_lang(
+def merge_lang_data(
     existing: dict[str, Any],
-    new_paths: set[str],
-    langs: tuple[str, ...] = ("en", "de", "fa"),
-) -> dict[str, Any]:
-    """Merge flattened paths into existing lang dict without overwriting non-empty translations."""
-    out: dict[str, Any] = {}
-
-    existing_flat = _extract_existing_flat(existing, langs)
-    out.update(existing_flat)
-
-    for p in sorted(new_paths):
-        current = out.get(p)
-        if isinstance(current, dict) and _is_translation_dict(current):
-            out[p] = {k: current.get(k, "") for k in langs}
+    discovered_keys: set[str],
+    languages: list[str],
+) -> tuple[dict[str, dict[str, str]], dict[str, int]]:
+    """
+    Merge discovered keys into existing lang data without overwriting non-empty translations.
+    
+    Behavior:
+    - If key exists and has non-empty translation for a language: keep it
+    - If key exists but language is missing: add the language with ""
+    - If key is new: add it with all languages set to ""
+    - If existing file has extra languages not in requested list: keep them
+    - Do not delete keys from existing lang.json just because they're not in CV
+    
+    Returns:
+        (merged_dict, stats) where stats has counts for reporting
+    """
+    merged: dict[str, dict[str, str]] = {}
+    stats = {
+        "keys_discovered": len(discovered_keys),
+        "keys_added": 0,
+        "lang_slots_filled": 0,
+        "translations_preserved": 0,
+    }
+    
+    all_keys = set(existing.keys()) | discovered_keys
+    requested_langs = set(languages)
+    
+    for key in all_keys:
+        existing_entry = existing.get(key, {})
+        
+        # Determine if this is a new key
+        is_new_key = key not in existing
+        if is_new_key:
+            stats["keys_added"] += 1
+        
+        # Build the merged entry
+        new_entry: dict[str, str] = {}
+        
+        # Get all languages to include (existing + requested)
+        if isinstance(existing_entry, dict) and _is_translation_dict(existing_entry):
+            all_langs_for_key = set(existing_entry.keys()) | requested_langs
         else:
-            out[p] = {k: "" for k in langs}
+            all_langs_for_key = requested_langs
+        
+        for lang in all_langs_for_key:
+            if isinstance(existing_entry, dict):
+                existing_value = existing_entry.get(lang)
+            else:
+                existing_value = None
+            
+            if isinstance(existing_value, str) and existing_value.strip():
+                # Preserve non-empty translation
+                new_entry[lang] = existing_value
+                stats["translations_preserved"] += 1
+            else:
+                # Set to empty string (new or was empty/missing)
+                new_entry[lang] = ""
+                if lang in requested_langs and not is_new_key:
+                    if isinstance(existing_entry, dict) and lang not in existing_entry:
+                        stats["lang_slots_filled"] += 1
+        
+        merged[key] = new_entry
+    
+    return merged, stats
 
-    return out
 
-
-def _collect_all_paths(obj: Any, parts: list[str] | None = None, *, include_root: bool = False) -> set[str]:
+def update_lang_json(
+    cv_path: Path,
+    lang_path: Path,
+    languages: list[str],
+    dry_run: bool = False,
+    verbose: bool = False,
+) -> dict[str, int]:
     """
-    Collect dot-paths for every node in the JSON including containers and leaves.
-
-    Examples:
-      basics                  (container)
-      basics[]                (list container)
-      basics[].phone          (container)
-      basics[].phone.number   (leaf)
-
-    We still never copy actual values; these paths are only IDs for translation.
+    Main function to update lang.json from a CV JSON file.
+    
+    Args:
+        cv_path: Path to the CV JSON file
+        lang_path: Path to the lang.json output file
+        languages: List of language codes (e.g., ["de", "en", "fa"])
+        dry_run: If True, don't write file, just print summary
+        verbose: If True, print detailed output
+    
+    Returns:
+        Statistics dict with counts
     """
-    if parts is None:
-        parts = []
-
-    paths: set[str] = set()
-
-    if include_root and parts:
-        paths.add(_normalize_path_parts(parts))
-
-    if isinstance(obj, dict):
-        # Add container path for this dict (except empty root)
-        if parts:
-            paths.add(_normalize_path_parts(parts))
-        for k, v in obj.items():
-            child_parts = parts + [str(k)]
-            # Add the key path itself (container or leaf)
-            paths.add(_normalize_path_parts(child_parts))
-            paths |= _collect_all_paths(v, child_parts)
-        return paths
-
-    if isinstance(obj, list):
-        # Add container path for the list itself
-        if parts:
-            paths.add(_normalize_path_parts(parts))
-
-        list_parts = parts + ["[]"]
-        # Add list-marker path (e.g., basics[])
-        if parts:
-            paths.add(_normalize_path_parts(list_parts))
-
-        if not obj:
-            return paths
-
-        for item in obj:
-            paths |= _collect_all_paths(item, list_parts)
-        return paths
-
-    # Primitive leaf: the leaf path itself is already added by parent loop, but ensure it.
-    if parts:
-        paths.add(_normalize_path_parts(parts))
-
-    return paths
-
-
-def update_lang_json_from_ramin(
-    src_path: Path = _HERE.parent / "data" / "cvs" / "ramin.json",
-    lang_path: Path = _HERE / "lang.json",
-    langs: tuple[str, ...] = ("en", "de", "fa"),
-) -> None:
-    """
-    Read ramin.json and update lang.json with *flattened* keys (level 1).
-
-    This includes paths for:
-    - containers (dict/list)
-    - leaves
-
-    Example keys:
-      "basics"
-      "basics[]"
-      "basics[].phone"
-      "basics[].phone.number"
-
-    Existing non-empty translations are preserved.
-    """
-    data = json.loads(src_path.read_text(encoding="utf-8"))
-    paths = _collect_all_paths(data)
-
+    # Load CV data
+    if not cv_path.exists():
+        raise FileNotFoundError(f"CV file not found: {cv_path}")
+    
+    try:
+        cv_data = json.loads(cv_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in CV file: {e}")
+    
+    # Collect all keys from CV
+    discovered_keys = collect_keys(cv_data)
+    
+    if verbose:
+        print(f"Discovered {len(discovered_keys)} unique keys from CV")
+        sample_keys = sorted(discovered_keys)[:10]
+        print(f"Sample keys: {sample_keys}")
+    
+    # Load existing lang.json if present
     existing: dict[str, Any] = {}
     if lang_path.exists():
         try:
             raw = lang_path.read_text(encoding="utf-8").strip()
-            existing = json.loads(raw) if raw else {}
+            if raw:
+                existing = json.loads(raw)
         except json.JSONDecodeError:
+            if verbose:
+                print(f"Warning: Could not parse existing {lang_path}, starting fresh")
             existing = {}
+    
+    # Merge
+    merged, stats = merge_lang_data(existing, discovered_keys, languages)
+    
+    # Sort keys alphabetically for deterministic output
+    sorted_merged = dict(sorted(merged.items()))
+    
+    # Also sort language keys within each entry for consistency
+    for key in sorted_merged:
+        sorted_merged[key] = dict(sorted(sorted_merged[key].items()))
+    
+    # Output
+    if dry_run:
+        print("\n[DRY RUN] Would write to:", lang_path)
+        print(f"Total keys: {len(sorted_merged)}")
+    else:
+        lang_path.parent.mkdir(parents=True, exist_ok=True)
+        lang_path.write_text(
+            json.dumps(sorted_merged, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        if verbose:
+            print(f"Written to: {lang_path}")
+    
+    # Print summary
+    print("\n--- Summary ---")
+    print(f"Keys discovered in CV:    {stats['keys_discovered']}")
+    print(f"Keys newly added:         {stats['keys_added']}")
+    print(f"Language slots filled:    {stats['lang_slots_filled']}")
+    print(f"Translations preserved:   {stats['translations_preserved']}")
+    print(f"Total keys in output:     {len(sorted_merged)}")
+    
+    return stats
 
-    merged = _merge_flat_lang(existing, paths, langs)
 
-    lang_path.parent.mkdir(parents=True, exist_ok=True)
-    lang_path.write_text(
-        json.dumps(merged, ensure_ascii=False, indent=2),
-        encoding="utf-8",
+def parse_languages(langs_str: str) -> list[str]:
+    """Parse comma-separated language string into a list."""
+    return [lang.strip() for lang in langs_str.split(",") if lang.strip()]
+
+
+def main() -> int:
+    """CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="Generate and merge lang.json from CV JSON keys.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
+    python create_lang.py --dry-run --verbose
+    python create_lang.py --langs de,en,fa,it  # Add Italian language slots
+        """,
     )
+    
+    parser.add_argument(
+        "--cv",
+        type=Path,
+        default=_HERE.parent / "data" / "cvs" / "ramin.json",
+        help="Path to CV JSON file (default: data/cvs/ramin.json)",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=_HERE / "lang.json",
+        help="Path to output lang.json file (default: Lang_engine/lang.json)",
+    )
+    parser.add_argument(
+        "--langs",
+        type=str,
+        default="de,en,fa",
+        help="Comma-separated list of language codes (default: de,en,fa)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print summary without writing file",
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Show detailed output including sample keys",
+    )
+    
+    args = parser.parse_args()
+    
+    # Parse languages
+    languages = parse_languages(args.langs)
+    if not languages:
+        print("Error: No valid languages specified", file=sys.stderr)
+        return 1
+    
+    if args.verbose:
+        print(f"CV file:    {args.cv}")
+        print(f"Output:     {args.out}")
+        print(f"Languages:  {languages}")
+        print()
+    
+    try:
+        update_lang_json(
+            cv_path=args.cv,
+            lang_path=args.out,
+            languages=languages,
+            dry_run=args.dry_run,
+            verbose=args.verbose,
+        )
+        return 0
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
-    # Preserve existing behavior.
-    make_empty_example()
-    make_minimal_example()
-
-    # Also generate/extend Lang_engine/lang.json skeleton.
-    update_lang_json_from_ramin()
+    sys.exit(main())

@@ -9,6 +9,17 @@ translation slots for each discovered key.
 Usage:
     python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
     python create_lang.py --dry-run --verbose
+    python create_lang.py --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
+
+Options:
+    --from-lang <lang>: Auto-populate the specified language slot with the key name itself
+                        for any empty/missing translation slot. E.g., --from-lang en will set
+                        "en": "fname" for key "fname" if the en slot is empty.
+                        The specified language is automatically added to the languages list.
+
+Notes:
+    - Keys inside the top-level "skills" object (category/subcategory names, etc.) are excluded
+      from key discovery to avoid cluttering lang.json. Only the "skills" key itself is included.
 """
 
 import argparse
@@ -21,7 +32,7 @@ from typing import Any
 _HERE = Path(__file__).resolve().parent
 
 
-def collect_keys(obj: Any) -> set[str]:
+def collect_keys(obj: Any, exclude_skills_descendants: bool = True) -> set[str]:
     """
     Recursively traverse the CV JSON and collect all unique key names.
     
@@ -31,19 +42,42 @@ def collect_keys(obj: Any) -> set[str]:
     - If node is a scalar (str/int/float/bool/null): stop (don't add values)
     
     Key names are case-sensitive ("Pictures" != "pictures").
+    
+    Special handling for "skills":
+    - When exclude_skills_descendants is True (default), only the top-level "skills"
+      key is included. All descendant keys (categories, subcategories, skill item fields)
+      are excluded. This is because those keys will be translated elsewhere.
     """
-    return _collect_keys_recursive(obj, set())
+    return _collect_keys_recursive(obj, set(), exclude_skills_descendants, in_skills=False)
 
 
-def _collect_keys_recursive(obj: Any, out_set: set[str]) -> set[str]:
+def _collect_keys_recursive(
+    obj: Any,
+    out_set: set[str],
+    exclude_skills_descendants: bool = True,
+    in_skills: bool = False,
+) -> set[str]:
     """Internal recursive helper for collect_keys."""
     if isinstance(obj, dict):
         for key, value in obj.items():
+            # If we're inside the skills subtree and exclusion is enabled, skip
+            if in_skills and exclude_skills_descendants:
+                continue
+            
             out_set.add(key)
-            _collect_keys_recursive(value, out_set)
+            
+            # Check if this key is "skills" at the top level (not already in_skills)
+            is_skills_key = key == "skills" and not in_skills
+            
+            _collect_keys_recursive(
+                value,
+                out_set,
+                exclude_skills_descendants,
+                in_skills=(is_skills_key or in_skills) if exclude_skills_descendants else False,
+            )
     elif isinstance(obj, list):
         for item in obj:
-            _collect_keys_recursive(item, out_set)
+            _collect_keys_recursive(item, out_set, exclude_skills_descendants, in_skills)
     # Scalars: do nothing (we only collect keys, not values)
     
     return out_set
@@ -75,6 +109,7 @@ def merge_lang_data(
     existing: dict[str, Any],
     discovered_keys: set[str],
     languages: list[str],
+    from_lang: str | None = None,
 ) -> tuple[dict[str, dict[str, str]], dict[str, int]]:
     """
     Merge discovered keys into existing lang data without overwriting non-empty translations.
@@ -85,6 +120,8 @@ def merge_lang_data(
     - If key is new: add it with all languages set to ""
     - If existing file has extra languages not in requested list: keep them
     - Do not delete keys from existing lang.json just because they're not in CV
+    - If from_lang is specified and that language slot is empty/missing,
+      set it to the key name itself (auto-populate source language)
     
     Returns:
         (merged_dict, stats) where stats has counts for reporting
@@ -95,6 +132,7 @@ def merge_lang_data(
         "keys_added": 0,
         "lang_slots_filled": 0,
         "translations_preserved": 0,
+        "from_lang_populated": 0,
     }
     
     all_keys = set(existing.keys()) | discovered_keys
@@ -128,11 +166,18 @@ def merge_lang_data(
                 new_entry[lang] = existing_value
                 stats["translations_preserved"] += 1
             else:
-                # Set to empty string (new or was empty/missing)
-                new_entry[lang] = ""
-                if lang in requested_langs and not is_new_key:
-                    if isinstance(existing_entry, dict) and lang not in existing_entry:
-                        stats["lang_slots_filled"] += 1
+                # Slot is empty/missing - check if we should auto-populate from key
+                if from_lang and lang == from_lang:
+                    # Auto-populate with key name
+                    new_entry[lang] = key
+                    stats["from_lang_populated"] += 1
+                else:
+                    # Set to empty string (new or was empty/missing)
+                    new_entry[lang] = ""
+                    # Only count lang_slots_filled for empty slots, not auto-populated ones
+                    if lang in requested_langs and not is_new_key:
+                        if isinstance(existing_entry, dict) and lang not in existing_entry:
+                            stats["lang_slots_filled"] += 1
         
         merged[key] = new_entry
     
@@ -145,6 +190,7 @@ def update_lang_json(
     languages: list[str],
     dry_run: bool = False,
     verbose: bool = False,
+    from_lang: str | None = None,
 ) -> dict[str, int]:
     """
     Main function to update lang.json from a CV JSON file.
@@ -155,6 +201,8 @@ def update_lang_json(
         languages: List of language codes (e.g., ["de", "en", "fa"])
         dry_run: If True, don't write file, just print summary
         verbose: If True, print detailed output
+        from_lang: If specified, auto-populate this language slot with the key name
+                   for any empty/missing translation slot
     
     Returns:
         Statistics dict with counts
@@ -168,8 +216,8 @@ def update_lang_json(
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in CV file: {e}")
     
-    # Collect all keys from CV
-    discovered_keys = collect_keys(cv_data)
+    # Collect all keys from CV (excluding skills descendants)
+    discovered_keys = collect_keys(cv_data, exclude_skills_descendants=True)
     
     if verbose:
         print(f"Discovered {len(discovered_keys)} unique keys from CV")
@@ -189,7 +237,7 @@ def update_lang_json(
             existing = {}
     
     # Merge
-    merged, stats = merge_lang_data(existing, discovered_keys, languages)
+    merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang=from_lang)
     
     # Sort keys alphabetically for deterministic output
     sorted_merged = dict(sorted(merged.items()))
@@ -217,6 +265,8 @@ def update_lang_json(
     print(f"Keys newly added:         {stats['keys_added']}")
     print(f"Language slots filled:    {stats['lang_slots_filled']}")
     print(f"Translations preserved:   {stats['translations_preserved']}")
+    if from_lang:
+        print(f"From-lang populated:      {stats['from_lang_populated']}")
     print(f"Total keys in output:     {len(sorted_merged)}")
     
     return stats
@@ -237,6 +287,11 @@ Examples:
     python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
     python create_lang.py --dry-run --verbose
     python create_lang.py --langs de,en,fa,it  # Add Italian language slots
+    python create_lang.py --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
+
+Notes:
+    - Keys inside the top-level "skills" object are excluded from key discovery.
+    - The --from-lang option auto-populates empty translation slots with the key name.
         """,
     )
     
@@ -259,6 +314,15 @@ Examples:
         help="Comma-separated list of language codes (default: de,en,fa)",
     )
     parser.add_argument(
+        "--from-lang",
+        type=str,
+        default=None,
+        metavar="LANG",
+        help="Auto-populate empty slots for this language with the key name itself. "
+             "E.g., --from-lang en sets 'en': 'fname' for key 'fname' if empty. "
+             "The specified language is automatically added to the languages list.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print summary without writing file",
@@ -277,10 +341,21 @@ Examples:
         print("Error: No valid languages specified", file=sys.stderr)
         return 1
     
+    # Handle --from-lang: auto-add to languages list if not present
+    from_lang = args.from_lang
+    if from_lang:
+        from_lang = from_lang.strip()
+        if from_lang and from_lang not in languages:
+            languages.append(from_lang)
+            if args.verbose:
+                print(f"Note: Added '{from_lang}' to languages list (from --from-lang)")
+    
     if args.verbose:
         print(f"CV file:    {args.cv}")
         print(f"Output:     {args.out}")
         print(f"Languages:  {languages}")
+        if from_lang:
+            print(f"From-lang:  {from_lang}")
         print()
     
     try:
@@ -290,6 +365,7 @@ Examples:
             languages=languages,
             dry_run=args.dry_run,
             verbose=args.verbose,
+            from_lang=from_lang,
         )
         return 0
     except FileNotFoundError as e:

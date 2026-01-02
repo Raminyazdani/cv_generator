@@ -27,7 +27,7 @@ from .paths import (
     get_default_cvs_path,
     get_default_templates_path,
     get_default_output_path,
-    get_default_result_path
+    ArtifactPaths
 )
 from .errors import TemplateError, ConfigurationError
 
@@ -147,10 +147,9 @@ def generate_cv(
     *,
     templates_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
-    result_dir: Optional[Path] = None,
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
     dry_run: bool = False,
-    keep_intermediate: bool = False
+    keep_latex: bool = False
 ) -> CVGenerationResult:
     """
     Generate a PDF CV from a JSON file.
@@ -158,11 +157,10 @@ def generate_cv(
     Args:
         cv_file: Path to the CV JSON file.
         templates_dir: Path to templates directory.
-        output_dir: Path to output directory for PDFs.
-        result_dir: Path to intermediate result directory.
+        output_dir: Path to output directory root.
         lang_map: Language translation map (will be loaded if not provided).
         dry_run: If True, render LaTeX but don't compile to PDF.
-        keep_intermediate: If True, don't clean up intermediate files.
+        keep_latex: If True, keep LaTeX source files in output/latex/.
         
     Returns:
         CVGenerationResult with status and paths.
@@ -171,12 +169,15 @@ def generate_cv(
         templates_dir = get_default_templates_path()
     if output_dir is None:
         output_dir = get_default_output_path()
-    if result_dir is None:
-        result_dir = get_default_result_path()
     
     # Parse filename
     base_name, lang = parse_cv_filename(cv_file.name)
     is_rtl = lang in RTL_LANGUAGES
+    
+    # Create artifact paths for this CV
+    artifact_paths = ArtifactPaths(profile=base_name, lang=lang, output_root=output_dir)
+    artifact_paths.ensure_dirs()
+    artifact_paths.log_paths()
     
     logger.info(f"Processing CV: {base_name} ({lang})")
     
@@ -200,10 +201,9 @@ def generate_cv(
     # Create Jinja environment
     env = create_jinja_env(templates_dir, lang_map, lang)
     
-    # Set up output paths
-    people_output_dir = result_dir / base_name / lang
-    sections_dir = people_output_dir / "sections"
-    rendered_tex_path = people_output_dir / "rendered.tex"
+    # Set up output paths using unified ArtifactPaths
+    sections_dir = artifact_paths.sections_dir
+    rendered_tex_path = artifact_paths.tex_path
     
     # Prepare template variables
     data["OPT_NAME"] = base_name
@@ -234,7 +234,7 @@ def generate_cv(
     except TemplateError as e:
         return CVGenerationResult(base_name, lang, False, error=str(e))
     
-    logger.info(f"✅ Final rendered.tex generated for {base_name} ({lang}).")
+    logger.info(f"✅ Final LaTeX generated: {rendered_tex_path}")
     
     if dry_run:
         logger.info(f"➡️  Dry run: would compile with xelatex {rendered_tex_path}")
@@ -243,22 +243,24 @@ def generate_cv(
             tex_path=rendered_tex_path
         )
     
-    # Compile LaTeX
+    # Compile LaTeX to PDF directory
     logger.info(f"➡️  Compile with: xelatex {rendered_tex_path}")
     
     try:
-        pdf_path = compile_latex(rendered_tex_path, output_dir)
+        pdf_path = compile_latex(rendered_tex_path, artifact_paths.pdf_dir)
     except Exception as e:
         logger.error(f"LaTeX compilation failed: {e}")
         pdf_path = None
     
     if pdf_path is not None:
-        # Rename to final name
+        # Rename to final name (profile_lang.pdf for backward compatibility)
         pdf_name = f"{base_name}_{lang}"
-        final_pdf = rename_pdf(pdf_path, pdf_name, output_dir)
+        final_pdf = rename_pdf(pdf_path, pdf_name, artifact_paths.pdf_dir)
         
-        # Clean up LaTeX artifacts
-        cleanup_latex_artifacts(output_dir)
+        # Clean up LaTeX artifacts from PDF directory
+        cleanup_latex_artifacts(artifact_paths.pdf_dir)
+        
+        logger.info(f"✅ PDF generated: {final_pdf}")
         
         result = CVGenerationResult(
             base_name, lang, True,
@@ -272,9 +274,11 @@ def generate_cv(
             error="LaTeX compilation failed"
         )
     
-    # Clean up intermediate files
-    if not keep_intermediate:
-        cleanup_result_dir(people_output_dir)
+    # Clean up LaTeX files if not keeping them
+    if not keep_latex:
+        cleanup_result_dir(artifact_paths.latex_dir)
+    else:
+        logger.info(f"📁 LaTeX files kept at: {artifact_paths.latex_dir}")
     
     return result
 
@@ -284,10 +288,9 @@ def generate_all_cvs(
     cvs_dir: Optional[Path] = None,
     templates_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
-    result_dir: Optional[Path] = None,
     name_filter: Optional[str] = None,
     dry_run: bool = False,
-    keep_intermediate: bool = False
+    keep_latex: bool = False
 ) -> List[CVGenerationResult]:
     """
     Generate PDFs for all CV files in a directory.
@@ -295,22 +298,27 @@ def generate_all_cvs(
     Args:
         cvs_dir: Path to directory containing CV JSON files.
         templates_dir: Path to templates directory.
-        output_dir: Path to output directory for PDFs.
-        result_dir: Path to intermediate result directory.
+        output_dir: Path to output directory root.
         name_filter: If provided, only generate CVs matching this base name.
         dry_run: If True, render LaTeX but don't compile to PDF.
-        keep_intermediate: If True, don't clean up intermediate files.
+        keep_latex: If True, keep LaTeX source files in output/latex/.
         
     Returns:
         List of CVGenerationResult objects.
     """
     if cvs_dir is None:
         cvs_dir = get_default_cvs_path()
-    if result_dir is None:
-        result_dir = get_default_result_path()
+    if output_dir is None:
+        output_dir = get_default_output_path()
     
-    # Ensure result directory exists
-    result_dir.mkdir(parents=True, exist_ok=True)
+    # Log output configuration
+    logger.info(f"📁 Output root: {output_dir}")
+    logger.info(f"   PDFs will be saved to: {output_dir / 'pdf'}")
+    if keep_latex:
+        logger.info(f"   LaTeX sources will be saved to: {output_dir / 'latex'}")
+    
+    # Ensure output directory exists
+    output_dir.mkdir(parents=True, exist_ok=True)
     
     # Load language map once for all CVs
     lang_map = load_lang_map()
@@ -333,10 +341,9 @@ def generate_all_cvs(
             cv_file,
             templates_dir=templates_dir,
             output_dir=output_dir,
-            result_dir=result_dir,
             lang_map=lang_map,
             dry_run=dry_run,
-            keep_intermediate=keep_intermediate
+            keep_latex=keep_latex
         )
         results.append(result)
     

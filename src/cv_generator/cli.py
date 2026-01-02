@@ -92,8 +92,8 @@ def build_command(args: argparse.Namespace) -> int:
         logger.info(f"Building CV for: {args.name}")
     if args.dry_run:
         logger.info("Dry run mode: LaTeX will not be compiled")
-    if args.keep_intermediate:
-        logger.info("Keeping intermediate files")
+    if args.keep_latex:
+        logger.info("Keeping LaTeX source files")
     
     try:
         results = generate_all_cvs(
@@ -102,7 +102,7 @@ def build_command(args: argparse.Namespace) -> int:
             output_dir=output_dir,
             name_filter=args.name,
             dry_run=args.dry_run,
-            keep_intermediate=args.keep_intermediate
+            keep_latex=args.keep_latex
         )
     except CVGeneratorError as e:
         logger.error(str(e))
@@ -486,7 +486,7 @@ def create_parser() -> argparse.ArgumentParser:
     build_parser.add_argument(
         "--output-dir", "-o",
         type=str,
-        help=f"Output directory for generated PDFs (default: output)"
+        help=f"Output directory root (default: output). PDFs go to output/pdf/<name>/<lang>/"
     )
     build_parser.add_argument(
         "--templates-dir", "-t",
@@ -494,9 +494,10 @@ def create_parser() -> argparse.ArgumentParser:
         help=f"Templates directory (default: templates)"
     )
     build_parser.add_argument(
-        "--keep-intermediate", "-k",
+        "--keep-latex", "-k",
         action="store_true",
-        help="Keep intermediate result files (don't clean up result/ directory)"
+        dest="keep_latex",
+        help="Keep LaTeX source files in output/latex/ (default: clean up after compilation)"
     )
     build_parser.add_argument(
         "--dry-run", "-d",

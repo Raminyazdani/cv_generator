@@ -54,10 +54,14 @@ dist/
 # LaTeX intermediate directories (if any)
 latexmk/
 
-# Generated result folders
+# Generated result folders (deprecated - now uses output/latex/)
 result/
 
-# Generated PDFs (optional: track only example outputs if you want)
+# Generated output artifacts
+output/pdf/
+output/latex/
+output/json/
+output/logs/
 output/*.pdf
 
 # OneDrive sync artifacts

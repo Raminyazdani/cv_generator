@@ -174,10 +174,10 @@ def merge_lang_data(
                 else:
                     # Set to empty string (new or was empty/missing)
                     new_entry[lang] = ""
-                
-                if lang in requested_langs and not is_new_key:
-                    if isinstance(existing_entry, dict) and lang not in existing_entry:
-                        stats["lang_slots_filled"] += 1
+                    # Only count lang_slots_filled for empty slots, not auto-populated ones
+                    if lang in requested_langs and not is_new_key:
+                        if isinstance(existing_entry, dict) and lang not in existing_entry:
+                            stats["lang_slots_filled"] += 1
         
         merged[key] = new_entry
     

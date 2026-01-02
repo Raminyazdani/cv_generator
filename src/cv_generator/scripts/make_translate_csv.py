@@ -1,10 +1,18 @@
-# scripts/make_translate_csv.py
+# cv_generator/scripts/make_translate_csv.py
+"""
+Generate example CV JSON files for documentation.
+
+Usage:
+    python -m cv_generator.scripts.make_translate_csv
+"""
 
 import json
 import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+from cv_generator.paths import get_repo_root
 
 
 SENSITIVE_KEY_RX = re.compile(r"(url|uri|email|phone|doi|issn|isbn)", re.IGNORECASE)
@@ -90,10 +98,15 @@ def _override_sensitive(obj: Any) -> Any:
 
 
 def make_empty_example(
-    src_path: Path = Path("../data/cvs/ramin.json"),
-    dst_path: Path = Path("../example/empty.json"),
+    src_path: Path | None = None,
+    dst_path: Path | None = None,
     max_list_items: int = 1,
 ) -> None:
+    if src_path is None:
+        src_path = get_repo_root() / "data" / "cvs" / "ramin.json"
+    if dst_path is None:
+        dst_path = get_repo_root() / "scripts" / "example" / "empty.json"
+    
     data = json.loads(src_path.read_text(encoding="utf-8"))
 
     trimmed = _trim_lists(deepcopy(data), max_items=max_list_items)
@@ -108,8 +121,8 @@ def make_empty_example(
 
 
 def make_minimal_example(
-    src_path: Path = Path("../data/cvs/ramin.json"),
-    dst_path: Path = Path("../example/minimal.json"),
+    src_path: Path | None = None,
+    dst_path: Path | None = None,
     max_list_items: int = 1,
 ) -> None:
     """
@@ -118,6 +131,11 @@ def make_minimal_example(
     - Trim repeated list entries to `max_list_items`
     - Blank sensitive fields/values
     """
+    if src_path is None:
+        src_path = get_repo_root() / "data" / "cvs" / "ramin.json"
+    if dst_path is None:
+        dst_path = get_repo_root() / "scripts" / "example" / "minimal.json"
+    
     data = json.loads(src_path.read_text(encoding="utf-8"))
 
     minimal = _trim_lists(deepcopy(data), max_items=max_list_items)

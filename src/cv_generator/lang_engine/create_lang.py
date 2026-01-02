@@ -7,9 +7,9 @@ and produces/updates a language dictionary file (lang.json) with
 translation slots for each discovered key.
 
 Usage:
-    python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
-    python create_lang.py --dry-run --verbose
-    python create_lang.py --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
+    python -m cv_generator.lang_engine.create_lang --cv data/cvs/ramin.json --out lang.json --langs de,en,fa
+    python -m cv_generator.lang_engine.create_lang --dry-run --verbose
+    python -m cv_generator.lang_engine.create_lang --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
 
 Options:
     --from-lang <lang>: Auto-populate the specified language slot with the key name itself
@@ -31,6 +31,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+
+from cv_generator.paths import get_repo_root
 
 
 _HERE = Path(__file__).resolve().parent
@@ -339,10 +341,10 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python create_lang.py --cv data/cvs/ramin.json --out Lang_engine/lang.json --langs de,en,fa
-    python create_lang.py --dry-run --verbose
-    python create_lang.py --langs de,en,fa,it  # Add Italian language slots
-    python create_lang.py --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
+    python -m cv_generator.lang_engine.create_lang --cv data/cvs/ramin.json --out lang.json --langs de,en,fa
+    python -m cv_generator.lang_engine.create_lang --dry-run --verbose
+    python -m cv_generator.lang_engine.create_lang --langs de,en,fa,it  # Add Italian language slots
+    python -m cv_generator.lang_engine.create_lang --cv data/cvs/ramin.json --out lang.json --langs de,en,fa --from-lang en
 
 Notes:
     - Keys inside the top-level "skills" object are excluded from key discovery.
@@ -353,14 +355,14 @@ Notes:
     parser.add_argument(
         "--cv",
         type=Path,
-        default=_HERE.parent / "data" / "cvs" / "ramin.json",
+        default=get_repo_root() / "data" / "cvs" / "ramin.json",
         help="Path to CV JSON file (default: data/cvs/ramin.json)",
     )
     parser.add_argument(
         "--out",
         type=Path,
         default=_HERE / "lang.json",
-        help="Path to output lang.json file (default: Lang_engine/lang.json)",
+        help="Path to output lang.json file (default: src/cv_generator/lang_engine/lang.json)",
     )
     parser.add_argument(
         "--langs",

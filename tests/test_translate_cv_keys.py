@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for translate_cv_keys.py
+Unit tests for cv_generator.lang_engine.translate_cv_keys
 
 Tests key translation, language detection, collision handling, and skills special handling.
 """
@@ -8,11 +8,10 @@ Tests key translation, language detection, collision handling, and skills specia
 import json
 import tempfile
 from pathlib import Path
-import sys
 
-# Import from translate_cv_keys module
-sys.path.insert(0, str(Path(__file__).parent))
-from translate_cv_keys import (
+import pytest
+
+from cv_generator.lang_engine.translate_cv_keys import (
     detect_language_from_filename,
     translate_key,
     translate_cv,
@@ -335,11 +334,8 @@ def test_collision_error_mode():
         "key2": {"de": "Schlüssel"},
     }
     
-    try:
+    with pytest.raises(ValueError, match="collision"):
         translate_cv(cv_data, "de", lang_map, on_collision="error")
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "collision" in str(e).lower()
 
 
 def test_collision_suffix_mode():
@@ -464,71 +460,3 @@ def test_idempotency_translated_keys_preserved():
     assert "Institution" in translated["Ausbildung"][0]
 
 
-# ============================================================================
-# Run all tests
-# ============================================================================
-
-def run_all_tests():
-    """Run all tests and report results."""
-    import traceback
-    
-    tests = [
-        # Language detection tests
-        test_detect_language_with_hyphen,
-        test_detect_language_with_underscore,
-        test_detect_language_default,
-        test_detect_language_three_char_codes,
-        test_detect_language_case_insensitive,
-        # Key translation tests
-        test_translate_key_with_mapping,
-        test_translate_key_no_mapping,
-        test_translate_key_empty_translation,
-        test_translate_key_missing_language,
-        # CV translation tests
-        test_translate_cv_simple,
-        test_translate_cv_preserves_values,
-        test_translate_cv_nested_dicts,
-        test_translate_cv_with_lists,
-        # Skills special handling tests
-        test_translate_skills_preserves_category_labels,
-        test_translate_skills_nested_in_items,
-        test_translate_non_skills_sections_fully,
-        # Collision handling tests
-        test_collision_error_mode,
-        test_collision_suffix_mode,
-        test_collision_keep_first_mode,
-        # Process file tests
-        test_process_cv_file_creates_output,
-        test_process_cv_file_with_forced_lang,
-        # Idempotency tests
-        test_idempotency_translated_keys_preserved,
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    print("=" * 60)
-    print("Running translate_cv_keys.py unit tests")
-    print("=" * 60)
-    
-    for test in tests:
-        try:
-            test()
-            print(f"  ✅ {test.__name__}")
-            passed += 1
-        except Exception as e:
-            print(f"  ❌ {test.__name__}")
-            print(f"      Error: {e}")
-            traceback.print_exc()
-            failed += 1
-    
-    print("=" * 60)
-    print(f"Results: {passed}/{len(tests)} passed")
-    print("=" * 60)
-    
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = run_all_tests()
-    sys.exit(0 if success else 1)

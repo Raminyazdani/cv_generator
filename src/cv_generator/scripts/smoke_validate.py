@@ -8,9 +8,9 @@ This script validates CV JSON files to prevent regressions that cause:
 - Wrong data types (arrays becoming objects, etc.)
 
 Usage:
-    python scripts/smoke_validate.py         # Validate all CVs
-    python scripts/smoke_validate.py --all   # Same as above
-    python scripts/smoke_validate.py -v      # Verbose output
+    python -m cv_generator.scripts.smoke_validate         # Validate all CVs
+    python -m cv_generator.scripts.smoke_validate --all   # Same as above
+    python -m cv_generator.scripts.smoke_validate -v      # Verbose output
 """
 
 import json
@@ -19,9 +19,10 @@ import sys
 import argparse
 from pathlib import Path
 
-# Script directory and project root
-SCRIPT_DIR = Path(__file__).parent
-PROJECT_ROOT = SCRIPT_DIR.parent
+from cv_generator.paths import get_repo_root
+
+# Project root and paths
+PROJECT_ROOT = get_repo_root()
 CVS_PATH = PROJECT_ROOT / "data" / "cvs"
 
 # Required top-level keys for a valid CV

@@ -137,7 +137,7 @@ def validate_cv_data(data: Dict[str, Any], filename: str) -> bool:
 
 def load_lang_map(lang_engine_path: Optional[Path] = None) -> Dict[str, Dict[str, str]]:
     """
-    Load the translation mapping from Lang_engine/lang.json.
+    Load the translation mapping from lang_engine/lang.json.
     
     Expected format:
     {
@@ -146,7 +146,7 @@ def load_lang_map(lang_engine_path: Optional[Path] = None) -> Dict[str, Dict[str
     }
     
     Args:
-        lang_engine_path: Path to the Lang_engine directory.
+        lang_engine_path: Path to the lang_engine directory.
         
     Returns:
         Translation mapping dictionary.

@@ -94,4 +94,4 @@ def get_default_result_path() -> Path:
 
 def get_lang_engine_path() -> Path:
     """Get the path to the language engine directory."""
-    return get_repo_root() / "Lang_engine"
+    return Path(__file__).resolve().parent / "lang_engine"

@@ -7,16 +7,16 @@ to the target language using a key translation mapping file (lang.json).
 Values are preserved exactly as-is.
 
 Usage:
-    python translate_cv_keys.py --in-dir data/cvs --out-dir output/translated
-    python translate_cv_keys.py --in-file data/cvs/ramin_de.json --out-dir output/
-    python translate_cv_keys.py --in-file data/cvs/ramin.json --out-dir output/ --lang de
-    python translate_cv_keys.py --in-dir data/cvs --out-dir output/ --on-collision suffix
+    python -m cv_generator.lang_engine.translate_cv_keys --in-dir data/cvs --out-dir output/translated
+    python -m cv_generator.lang_engine.translate_cv_keys --in-file data/cvs/ramin_de.json --out-dir output/
+    python -m cv_generator.lang_engine.translate_cv_keys --in-file data/cvs/ramin.json --out-dir output/ --lang de
+    python -m cv_generator.lang_engine.translate_cv_keys --in-dir data/cvs --out-dir output/ --on-collision suffix
 
 Options:
     --in-dir:      Input directory containing CV JSON files (default: data/cvs)
     --in-file:     Single input CV JSON file (alternative to --in-dir)
     --out-dir:     Output directory for translated files (required)
-    --lang-map:    Path to lang.json mapping file (default: Lang_engine/lang.json)
+    --lang-map:    Path to lang.json mapping file (default: src/cv_generator/lang_engine/lang.json)
     --lang:        Force a specific language for all files (overrides auto-detection)
     --on-collision: How to handle key collisions: error (default), suffix, keep-first
 
@@ -45,9 +45,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from cv_generator.paths import get_repo_root
+
 
 _HERE = Path(__file__).resolve().parent
-_PROJECT_ROOT = _HERE.parent
 
 
 def detect_language_from_filename(filename: str) -> str:
@@ -174,8 +175,8 @@ def translate_dict_keys(
                 # Use tracked collisions instead of recomputing
                 existing_originals = collisions[translated_key]
                 raise ValueError(
-                    f"Key collision at {path}: keys {existing_originals} "
-                    f"both translate to '{translated_key}'"
+                    f"Key collision at {path}: {len(existing_originals)} keys {existing_originals} "
+                    f"all translate to '{translated_key}'"
                 )
             elif on_collision == "suffix":
                 # Add suffix to make key unique
@@ -307,10 +308,10 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    python translate_cv_keys.py --in-dir data/cvs --out-dir output/translated
-    python translate_cv_keys.py --in-file data/cvs/ramin_de.json --out-dir output/
-    python translate_cv_keys.py --in-file data/cvs/ramin.json --out-dir output/ --lang de
-    python translate_cv_keys.py --in-dir data/cvs --out-dir output/ --on-collision suffix
+    python -m cv_generator.lang_engine.translate_cv_keys --in-dir data/cvs --out-dir output/translated
+    python -m cv_generator.lang_engine.translate_cv_keys --in-file data/cvs/ramin_de.json --out-dir output/
+    python -m cv_generator.lang_engine.translate_cv_keys --in-file data/cvs/ramin.json --out-dir output/ --lang de
+    python -m cv_generator.lang_engine.translate_cv_keys --in-dir data/cvs --out-dir output/ --on-collision suffix
 
 Notes:
     - Original files are never modified; output goes to --out-dir
@@ -343,7 +344,7 @@ Notes:
         "--lang-map",
         type=Path,
         default=_HERE / "lang.json",
-        help="Path to lang.json mapping file (default: Lang_engine/lang.json)",
+        help="Path to lang.json mapping file (default: src/cv_generator/lang_engine/lang.json)",
     )
     parser.add_argument(
         "--lang",
@@ -383,7 +384,7 @@ Notes:
             return 1
     else:
         # Default to data/cvs
-        default_in_dir = _PROJECT_ROOT / "data" / "cvs"
+        default_in_dir = get_repo_root() / "data" / "cvs"
         if not default_in_dir.exists():
             print(f"Error: Default input directory not found: {default_in_dir}", file=sys.stderr)
             return 1

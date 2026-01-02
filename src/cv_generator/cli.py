@@ -3,13 +3,15 @@ Command-line interface for CV Generator.
 
 Provides the `cvgen` command with the following subcommands:
 - build: Generate PDF CVs from JSON files
+- ensure: Validate multilingual CV JSON consistency
 """
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from . import __version__
 from .generator import generate_all_cvs
@@ -24,6 +26,10 @@ from .errors import (
     EXIT_ERROR,
     EXIT_CONFIG_ERROR,
     EXIT_TEMPLATE_ERROR
+)
+from .ensure import (
+    run_ensure,
+    EXIT_ENSURE_ERROR,
 )
 
 # Set up module logger
@@ -122,6 +128,78 @@ def build_command(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def ensure_command(args: argparse.Namespace) -> int:
+    """
+    Execute the ensure command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code (0 if OK, 2 if mismatches found).
+    """
+    # Parse languages
+    langs = [lang.strip() for lang in args.langs.split(",")]
+    
+    # Build explicit paths if provided
+    paths: Optional[Dict[str, Path]] = None
+    if args.path_en or args.path_de or args.path_fa:
+        paths = {}
+        if args.path_en:
+            paths["en"] = Path(args.path_en)
+        if args.path_de:
+            paths["de"] = Path(args.path_de)
+        if args.path_fa:
+            paths["fa"] = Path(args.path_fa)
+    
+    # Determine CVs directory
+    cvs_dir = None
+    if args.dir:
+        cvs_dir = Path(args.dir)
+    elif args.input_dir:
+        cvs_dir = Path(args.input_dir)
+    
+    # Load language mapping if specified
+    lang_map = None
+    if args.lang_map:
+        lang_map_path = Path(args.lang_map)
+        if lang_map_path.exists():
+            with open(lang_map_path, "r", encoding="utf-8") as f:
+                lang_map = json.load(f)
+    
+    # Log configuration
+    logger.info(f"Checking CV consistency for: {args.name}")
+    logger.info(f"Languages: {', '.join(langs)}")
+    if cvs_dir:
+        logger.info(f"Input directory: {cvs_dir}")
+    
+    try:
+        report = run_ensure(
+            name=args.name,
+            langs=langs,
+            cvs_dir=cvs_dir,
+            paths=paths,
+            lang_map=lang_map,
+            max_errors=args.max_errors,
+            fail_fast=args.fail_fast,
+        )
+    except Exception as e:
+        logger.exception(f"Error during ensure check: {e}")
+        return EXIT_ERROR
+    
+    # Output the report
+    if args.format == "json":
+        print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        print(report.format_text())
+    
+    # Return appropriate exit code
+    if report.is_valid:
+        return EXIT_SUCCESS
+    else:
+        return EXIT_ENSURE_ERROR
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the argument parser for the CLI.
@@ -199,6 +277,76 @@ def create_parser() -> argparse.ArgumentParser:
     )
     
     build_parser.set_defaults(func=build_command)
+    
+    # Ensure command
+    ensure_parser = subparsers.add_parser(
+        "ensure",
+        help="Validate multilingual CV JSON consistency",
+        description="Check that multilingual CV JSON files have consistent structure."
+    )
+    
+    ensure_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        required=True,
+        help="Name of the person (e.g., 'ramin')"
+    )
+    ensure_parser.add_argument(
+        "--langs", "-l",
+        type=str,
+        default="en,de,fa",
+        help="Comma-separated language codes to check (default: en,de,fa)"
+    )
+    ensure_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    ensure_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    ensure_parser.add_argument(
+        "--dir", "-D",
+        type=str,
+        help="Directory containing CV files (e.g., data/cvs/i18n/ramin)"
+    )
+    ensure_parser.add_argument(
+        "--path-en",
+        type=str,
+        help="Explicit path to English CV file"
+    )
+    ensure_parser.add_argument(
+        "--path-de",
+        type=str,
+        help="Explicit path to German CV file"
+    )
+    ensure_parser.add_argument(
+        "--path-fa",
+        type=str,
+        help="Explicit path to Persian CV file"
+    )
+    ensure_parser.add_argument(
+        "--lang-map",
+        type=str,
+        help="Path to language mapping file (lang.json)"
+    )
+    ensure_parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        help="Stop at first batch of errors"
+    )
+    ensure_parser.add_argument(
+        "--max-errors",
+        type=int,
+        default=None,
+        help="Maximum number of errors before stopping"
+    )
+    
+    ensure_parser.set_defaults(func=ensure_command)
     
     return parser
 

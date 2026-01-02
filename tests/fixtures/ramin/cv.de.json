@@ -1,0 +1,62 @@
+{
+  "basics": [
+    {
+      "fname": "Ramin",
+      "lname": "Yazdani",
+      "email": "test@example.com"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universität A",
+      "area": "Informatik",
+      "studyType": "Master",
+      "type_key": ["Voller Lebenslauf"]
+    }
+  ],
+  "skills": {
+    "Programmierung & Skripting": {
+      "Programmiersprachen": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Voller Lebenslauf"]
+        },
+        {
+          "long_name": "JavaScript",
+          "short_name": "JS",
+          "type_key": ["Voller Lebenslauf"]
+        }
+      ]
+    },
+    "Soft Skills": {
+      "Zentrale Soft Skills": [
+        {
+          "long_name": "Teamarbeit",
+          "short_name": "Teamwork",
+          "type_key": ["Voller Lebenslauf"]
+        }
+      ]
+    }
+  },
+  "experiences": [
+    {
+      "role": "Entwickler",
+      "institution": "Firma A",
+      "duration": "2020-01-01 - 2022-01-01",
+      "description": "Softwareentwicklung"
+    }
+  ],
+  "projects": [
+    {
+      "title": "Projekt Eins",
+      "description": "Erstes Projekt",
+      "url": "https://github.com/example/project1"
+    },
+    {
+      "title": "Projekt Zwei",
+      "description": "Zweites Projekt",
+      "url": null
+    }
+  ]
+}

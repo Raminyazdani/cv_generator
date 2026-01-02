@@ -1,0 +1,47 @@
+{
+  "basics": [
+    {
+      "fname": "Test",
+      "lname": "Person",
+      "email": "test@example.com",
+      "phone": "+1234567890"
+    }
+  ],
+  "education": [
+    {
+      "institution": "University A",
+      "area": "Computer Science",
+      "studyType": "Master's",
+      "type_key": ["Full CV"]
+    },
+    {
+      "institution": "University B",
+      "area": "Mathematics",
+      "studyType": "Bachelor's",
+      "type_key": ["Full CV"]
+    }
+  ],
+  "skills": {
+    "Programming & Scripting": {
+      "Programming Languages": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Full CV"]
+        }
+      ]
+    }
+  },
+  "projects": [
+    {
+      "title": "Project One",
+      "description": "First project",
+      "url": "https://github.com/example/project1"
+    },
+    {
+      "title": "Project Two",
+      "description": "Second project",
+      "url": "https://github.com/example/project2"
+    }
+  ]
+}

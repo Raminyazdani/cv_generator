@@ -407,12 +407,15 @@ def _is_heading_level(data: Dict[str, Any]) -> bool:
     """
     Check if a dict appears to be a heading level in skills section.
     
-    Heading levels have string keys that map to dicts or lists.
+    Heading levels have string keys that map to dicts or lists of skill items.
+    Returns True only if there's positive evidence this is a heading level.
     """
     if not data:
         return False
     
-    # Check if all values are either dicts or lists of dicts
+    # Check if all values are either dicts or lists of dicts with skill items
+    has_heading_evidence = False
+    
     for key, value in data.items():
         # Schema keys indicate this is not a heading level
         if key in SCHEMA_KEYS:
@@ -420,14 +423,14 @@ def _is_heading_level(data: Dict[str, Any]) -> bool:
         # If value is a list with dicts containing 'long_name', it's a heading
         if isinstance(value, list):
             if value and isinstance(value[0], dict) and "long_name" in value[0]:
-                return True
+                has_heading_evidence = True
         # If value is a dict, could be nested heading
-        if isinstance(value, dict) and value:
+        elif isinstance(value, dict) and value:
             first_val = next(iter(value.values()))
             if isinstance(first_val, (list, dict)):
-                return True
+                has_heading_evidence = True
     
-    return True
+    return has_heading_evidence
 
 
 def _compare_skills_headings(

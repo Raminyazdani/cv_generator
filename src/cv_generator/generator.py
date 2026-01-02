@@ -8,7 +8,6 @@ Provides the main functions for:
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -83,9 +82,10 @@ def render_sections(
     output_dir.mkdir(parents=True, exist_ok=True)
     
     rendered_sections = {}
-    template_files = [f for f in os.listdir(template_dir) if f.endswith('.tex')]
+    template_files = list(template_dir.glob('*.tex'))
     
-    for tmpl_file in template_files:
+    for tmpl_path in template_files:
+        tmpl_file = tmpl_path.name
         try:
             template = env.get_template(tmpl_file)
             rendered = template.render(data)
@@ -93,7 +93,7 @@ def render_sections(
             raise TemplateError(f"[Jinja error in {tmpl_file}] {e}") from e
         
         # Write section file
-        section_name = os.path.splitext(tmpl_file)[0]
+        section_name = tmpl_path.stem
         output_path = output_dir / f"{section_name}.tex"
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(rendered)

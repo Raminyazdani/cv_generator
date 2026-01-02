@@ -170,15 +170,12 @@ class TestGenerateAllCVs:
         lang_dir.mkdir()
         (lang_dir / "lang.json").write_text(json.dumps({}))
         
-        # Patch paths for test
-        import cv_generator.paths as paths_module
-        original_lang_path = paths_module.get_lang_engine_path
-        paths_module.get_lang_engine_path = lambda: lang_dir
+        output_dir = tmp_path / "output"
+        output_dir.mkdir()
         
-        try:
-            output_dir = tmp_path / "output"
-            output_dir.mkdir()
-            
+        # Use mock.patch for clean patching with automatic cleanup
+        from unittest.mock import patch
+        with patch('cv_generator.paths.get_lang_engine_path', return_value=lang_dir):
             results = generate_all_cvs(
                 cvs_dir=cvs_dir,
                 templates_dir=get_default_templates_path(),
@@ -187,11 +184,9 @@ class TestGenerateAllCVs:
                 dry_run=True,
                 keep_intermediate=True
             )
-            
-            assert len(results) == 1
-            assert results[0].name == "user1"
-        finally:
-            paths_module.get_lang_engine_path = original_lang_path
+        
+        assert len(results) == 1
+        assert results[0].name == "user1"
 
 
 class TestCVGenerationResult:

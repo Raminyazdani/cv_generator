@@ -18,8 +18,12 @@ Options:
                         The specified language is automatically added to the languages list.
 
 Notes:
-    - Keys inside the top-level "skills" object (category/subcategory names, etc.) are excluded
-      from key discovery to avoid cluttering lang.json. Only the "skills" key itself is included.
+    - For the top-level "skills" object, we apply special handling:
+      - The "skills" key itself is included.
+      - Category label keys (immediate children of skills) are EXCLUDED.
+      - Subcategory label keys (children of categories) are EXCLUDED.
+      - Skill item object keys (e.g., long_name, short_name, type_key) ARE INCLUDED.
+    - This allows translation of skill item fields while avoiding dynamic category/subcategory names.
 """
 
 import argparse
@@ -43,44 +47,95 @@ def collect_keys(obj: Any, exclude_skills_descendants: bool = True) -> set[str]:
     
     Key names are case-sensitive ("Pictures" != "pictures").
     
-    Special handling for "skills":
-    - When exclude_skills_descendants is True (default), only the top-level "skills"
-      key is included. All descendant keys (categories, subcategories, skill item fields)
-      are excluded. This is because those keys will be translated elsewhere.
+    Special handling for "skills" (when exclude_skills_descendants=True):
+    - The "skills" key itself is included.
+    - Category label keys (immediate children of skills dict) are EXCLUDED.
+    - Subcategory label keys (children of categories) are EXCLUDED.
+    - Skill item object keys (e.g., long_name, short_name, type_key) ARE INCLUDED.
+    
+    The skills structure is expected to be:
+        skills -> category(dict) -> subcategory(dict) -> list[skill_item_dicts]
     """
-    return _collect_keys_recursive(obj, set(), exclude_skills_descendants, in_skills=False)
+    out_set: set[str] = set()
+    _collect_keys_recursive(obj, out_set, exclude_skills_descendants)
+    return out_set
+
+
+def _collect_skills_items(obj: Any, out_set: set[str]) -> None:
+    """
+    Collect keys from skill item objects within the skills subtree.
+    
+    This function is called for lists at the subcategory level of skills.
+    It collects keys from dict items in those lists (skill items).
+    """
+    if isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, dict):
+                # This is a skill item dict - collect its keys
+                for key, value in item.items():
+                    out_set.add(key)
+                    # Recurse normally into the value (for nested dicts/lists)
+                    _collect_keys_recursive(value, out_set, exclude_skills_descendants=False)
+    elif isinstance(obj, dict):
+        # If somehow we encounter a dict, collect its keys normally
+        for key, value in obj.items():
+            out_set.add(key)
+            _collect_keys_recursive(value, out_set, exclude_skills_descendants=False)
 
 
 def _collect_keys_recursive(
     obj: Any,
     out_set: set[str],
     exclude_skills_descendants: bool = True,
-    in_skills: bool = False,
-) -> set[str]:
+) -> None:
     """Internal recursive helper for collect_keys."""
     if isinstance(obj, dict):
         for key, value in obj.items():
-            # If we're inside the skills subtree and exclusion is enabled, skip
-            if in_skills and exclude_skills_descendants:
-                continue
-            
             out_set.add(key)
             
-            # Check if this key is "skills" at the top level (not already in_skills)
-            is_skills_key = key == "skills" and not in_skills
-            
-            _collect_keys_recursive(
-                value,
-                out_set,
-                exclude_skills_descendants,
-                in_skills=(is_skills_key or in_skills) if exclude_skills_descendants else False,
-            )
+            # Check if this key is "skills" - apply special handling
+            if key == "skills" and exclude_skills_descendants:
+                # For the skills value, we need to:
+                # 1. Skip category keys (direct children)
+                # 2. Skip subcategory keys (children of categories)
+                # 3. Collect skill item keys (dicts in lists at subcategory level)
+                _handle_skills_subtree(value, out_set)
+            else:
+                _collect_keys_recursive(value, out_set, exclude_skills_descendants)
     elif isinstance(obj, list):
         for item in obj:
-            _collect_keys_recursive(item, out_set, exclude_skills_descendants, in_skills)
+            _collect_keys_recursive(item, out_set, exclude_skills_descendants)
     # Scalars: do nothing (we only collect keys, not values)
+
+
+def _handle_skills_subtree(skills_value: Any, out_set: set[str]) -> None:
+    """
+    Handle the skills subtree with special traversal rules.
     
-    return out_set
+    Structure expected:
+        skills_value (dict of categories) ->
+            category_value (dict of subcategories) ->
+                subcategory_value (list of skill item dicts)
+    
+    We skip category and subcategory KEYS but descend into their values
+    to find and collect skill item dict keys.
+    """
+    if isinstance(skills_value, dict):
+        # skills_value is a dict of categories (e.g., "Programming & Scripting": {...})
+        for category_key, category_value in skills_value.items():
+            # Don't add category_key to out_set (skip category labels)
+            if isinstance(category_value, dict):
+                # category_value is a dict of subcategories
+                for subcategory_key, subcategory_value in category_value.items():
+                    # Don't add subcategory_key to out_set (skip subcategory labels)
+                    # Now look for skill item lists
+                    _collect_skills_items(subcategory_value, out_set)
+            elif isinstance(category_value, list):
+                # Robust handling: if categories directly contain lists
+                _collect_skills_items(category_value, out_set)
+    elif isinstance(skills_value, list):
+        # Robust handling: if skills is directly a list
+        _collect_skills_items(skills_value, out_set)
 
 
 def _is_translation_dict(d: dict[str, Any]) -> bool:

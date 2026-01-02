@@ -353,21 +353,23 @@ def test_from_lang_with_new_keys():
 
 
 # ============================================================================
-# Tests for Feature B: Skills subtree exclusion
+# Tests for Feature B: Skills subtree handling
 # ============================================================================
 
-def test_collect_keys_excludes_skills_descendants():
-    """Test that keys under 'skills' are excluded from discovery."""
+def test_collect_keys_skills_includes_item_keys_excludes_labels():
+    """Test that skill item keys are included but category/subcategory labels are excluded."""
     data = {
         "basics": {"fname": "John"},
         "skills": {
-            "Programming": {
-                "Languages": [
-                    {"long_name": "Python", "short_name": "Py"}
+            "Programming & Scripting": {
+                "Programming Languages": [
+                    {"long_name": "Python", "short_name": "Py", "type_key": ["Full CV"]}
                 ]
             },
             "Soft Skills": {
-                "Communication": []
+                "Core Soft Skills": [
+                    {"long_name": "Communication", "short_name": "Comm"}
+                ]
             }
         },
         "education": []
@@ -381,13 +383,16 @@ def test_collect_keys_excludes_skills_descendants():
     assert "skills" in keys
     assert "education" in keys
     
-    # Keys under skills should NOT be present
-    assert "Programming" not in keys
-    assert "Languages" not in keys
-    assert "long_name" not in keys
-    assert "short_name" not in keys
+    # Category/subcategory labels should NOT be present
+    assert "Programming & Scripting" not in keys
+    assert "Programming Languages" not in keys
     assert "Soft Skills" not in keys
-    assert "Communication" not in keys
+    assert "Core Soft Skills" not in keys
+    
+    # Skill item keys SHOULD be present
+    assert "long_name" in keys
+    assert "short_name" in keys
+    assert "type_key" in keys
 
 
 def test_collect_keys_include_skills_descendants_when_disabled():
@@ -421,11 +426,11 @@ def test_collect_keys_skills_as_empty_object():
 
 
 def test_collect_keys_skills_as_list():
-    """Test that skills exclusion works when skills is a list."""
+    """Test robust handling when skills is structured as a list of skill items."""
     data = {
         "basics": {"fname": "John"},
         "skills": [
-            {"category": "Programming", "items": ["Python"]}
+            {"long_name": "Python", "short_name": "Py"}
         ]
     }
     
@@ -433,9 +438,113 @@ def test_collect_keys_skills_as_list():
     
     # skills key should be present
     assert "skills" in keys
-    # Keys inside the skills list should NOT be present
-    assert "category" not in keys
-    assert "items" not in keys
+    # Skill item keys from the list should be present
+    assert "long_name" in keys
+    assert "short_name" in keys
+
+
+def test_collect_keys_skills_nested_in_items():
+    """Test that nested structures in skill items are traversed."""
+    data = {
+        "skills": {
+            "Category A": {
+                "Subcategory A": [
+                    {
+                        "long_name": "Skill 1",
+                        "metadata": {
+                            "nested_key": "value"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=True)
+    
+    assert "skills" in keys
+    assert "Category A" not in keys  # Category label excluded
+    assert "Subcategory A" not in keys  # Subcategory label excluded
+    assert "long_name" in keys  # Skill item key included
+    assert "metadata" in keys  # Skill item key included
+    assert "nested_key" in keys  # Nested key in skill item included
+
+
+def test_collect_keys_skills_with_real_cv_structure():
+    """Test with a structure matching the actual CV JSON format."""
+    data = {
+        "skills": {
+            "Programming & Scripting": {
+                "Programming Languages": [
+                    {
+                        "long_name": "Python",
+                        "short_name": "Python",
+                        "type_key": ["Full CV", "Programming", "Bioinformatics"]
+                    },
+                    {
+                        "long_name": "R",
+                        "short_name": "R",
+                        "type_key": ["Full CV", "Programming"]
+                    }
+                ],
+                "Machine Learning & Data Science": [
+                    {
+                        "long_name": "TensorFlow",
+                        "short_name": "TensorFlow",
+                        "type_key": ["Full CV", "Programming"]
+                    }
+                ]
+            },
+            "Laboratory Techniques": {
+                "Molecular Biology": [
+                    {
+                        "long_name": "PCR",
+                        "short_name": "PCR",
+                        "type_key": ["Full CV", "Biotechnology"]
+                    }
+                ]
+            }
+        }
+    }
+    
+    keys = collect_keys(data, exclude_skills_descendants=True)
+    
+    # "skills" key should be present
+    assert "skills" in keys
+    
+    # Category labels should NOT be present
+    assert "Programming & Scripting" not in keys
+    assert "Laboratory Techniques" not in keys
+    
+    # Subcategory labels should NOT be present
+    assert "Programming Languages" not in keys
+    assert "Machine Learning & Data Science" not in keys
+    assert "Molecular Biology" not in keys
+    
+    # Skill item keys SHOULD be present
+    assert "long_name" in keys
+    assert "short_name" in keys
+    assert "type_key" in keys
+
+
+def test_collect_keys_skills_preserves_existing_translations():
+    """Test that the merge preserves existing translations for skill item keys."""
+    existing = {
+        "long_name": {"en": "Long Name", "de": "Langer Name", "fa": ""},
+        "short_name": {"en": "", "de": "", "fa": ""}
+    }
+    discovered_keys = {"skills", "long_name", "short_name", "type_key"}
+    languages = ["en", "de", "fa"]
+    
+    merged, stats = merge_lang_data(existing, discovered_keys, languages)
+    
+    # Existing translations should be preserved
+    assert merged["long_name"]["en"] == "Long Name"
+    assert merged["long_name"]["de"] == "Langer Name"
+    
+    # New keys should be added
+    assert "skills" in merged
+    assert "type_key" in merged
 
 
 # ============================================================================
@@ -463,6 +572,45 @@ def test_idempotency_with_from_lang():
         assert first_content == second_content
 
 
+def test_idempotency_with_skills():
+    """Test that running twice with skills structure produces identical output."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cv_path = Path(tmpdir) / "test_cv.json"
+        lang_path = Path(tmpdir) / "lang.json"
+        
+        cv_data = {
+            "basics": {"fname": "John"},
+            "skills": {
+                "Programming & Scripting": {
+                    "Programming Languages": [
+                        {"long_name": "Python", "short_name": "Py", "type_key": ["Full CV"]}
+                    ]
+                }
+            }
+        }
+        cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
+        
+        # First run
+        update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
+        first_content = lang_path.read_text(encoding="utf-8")
+        
+        # Second run
+        update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
+        second_content = lang_path.read_text(encoding="utf-8")
+        
+        # Should be identical
+        assert first_content == second_content
+        
+        # Verify the content is correct
+        result = json.loads(second_content)
+        assert "skills" in result
+        assert "long_name" in result
+        assert "short_name" in result
+        assert "type_key" in result
+        assert "Programming & Scripting" not in result
+        assert "Programming Languages" not in result
+
+
 def run_all_tests():
     """Run all tests and report results."""
     import traceback
@@ -488,13 +636,17 @@ def run_all_tests():
         test_from_lang_preserves_existing_translations,
         test_from_lang_different_language,
         test_from_lang_with_new_keys,
-        # New tests for Feature B (skills exclusion)
-        test_collect_keys_excludes_skills_descendants,
+        # New tests for Feature B (skills handling - include item keys, exclude labels)
+        test_collect_keys_skills_includes_item_keys_excludes_labels,
         test_collect_keys_include_skills_descendants_when_disabled,
         test_collect_keys_skills_as_empty_object,
         test_collect_keys_skills_as_list,
+        test_collect_keys_skills_nested_in_items,
+        test_collect_keys_skills_with_real_cv_structure,
+        test_collect_keys_skills_preserves_existing_translations,
         # Idempotency with new features
         test_idempotency_with_from_lang,
+        test_idempotency_with_skills,
     ]
     
     passed = 0

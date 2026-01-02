@@ -83,7 +83,7 @@ class TestGenerateCV:
     @pytest.fixture
     def lang_map_dir(self, tmp_path):
         """Create a language map directory."""
-        lang_dir = tmp_path / "Lang_engine"
+        lang_dir = tmp_path / "lang_engine"
         lang_dir.mkdir()
         lang_data = {
             "education": {"en": "Education", "de": "Ausbildung"},
@@ -166,7 +166,7 @@ class TestGenerateAllCVs:
         (cvs_dir / "user2.json").write_text(json.dumps(cv2))
         
         # Create lang map
-        lang_dir = tmp_path / "Lang_engine"
+        lang_dir = tmp_path / "lang_engine"
         lang_dir.mkdir()
         (lang_dir / "lang.json").write_text(json.dumps({}))
         

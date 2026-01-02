@@ -6,7 +6,7 @@ This script tests the CV generation pipeline without requiring LaTeX.
 It validates that templates render correctly and produce expected output.
 
 Usage:
-    python scripts/test_cv_generation.py
+    python -m cv_generator.scripts.test_cv_generation
 """
 
 import json
@@ -14,10 +14,7 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root to path
-SCRIPT_DIR = Path(__file__).parent
-PROJECT_ROOT = SCRIPT_DIR.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+from cv_generator.paths import get_repo_root
 
 # Import Jinja2
 try:
@@ -28,6 +25,7 @@ except ImportError:
     sys.exit(1)
 
 # Paths
+PROJECT_ROOT = get_repo_root()
 CVS_PATH = PROJECT_ROOT / "data" / "cvs"
 TEMPLATE_DIR = PROJECT_ROOT / "templates"
 VISUAL_PROOF_DIR = PROJECT_ROOT / "docs" / "visual-proof"

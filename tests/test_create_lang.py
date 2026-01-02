@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for create_lang.py
+Unit tests for cv_generator.lang_engine.create_lang
 
 Tests key extraction, merge behavior, and new language addition.
 """
@@ -8,11 +8,15 @@ Tests key extraction, merge behavior, and new language addition.
 import json
 import tempfile
 from pathlib import Path
-import sys
 
-# Import from create_lang module
-sys.path.insert(0, str(Path(__file__).parent))
-from create_lang import collect_keys, merge_lang_data, update_lang_json, _is_translation_dict
+import pytest
+
+from cv_generator.lang_engine.create_lang import (
+    collect_keys,
+    merge_lang_data,
+    update_lang_json,
+    _is_translation_dict,
+)
 
 
 def test_collect_keys_simple_dict():
@@ -610,70 +614,3 @@ def test_idempotency_with_skills():
         assert "Programming & Scripting" not in result
         assert "Programming Languages" not in result
 
-
-def run_all_tests():
-    """Run all tests and report results."""
-    import traceback
-    
-    tests = [
-        test_collect_keys_simple_dict,
-        test_collect_keys_nested_dict,
-        test_collect_keys_list_of_objects,
-        test_collect_keys_case_sensitive,
-        test_collect_keys_no_values,
-        test_collect_keys_deeply_nested,
-        test_is_translation_dict_valid,
-        test_is_translation_dict_invalid,
-        test_merge_preserves_existing_translations,
-        test_merge_adds_new_language,
-        test_merge_keeps_extra_languages,
-        test_merge_non_destructive_keys,
-        test_update_lang_json_creates_file,
-        test_update_lang_json_idempotent,
-        test_update_lang_json_dry_run,
-        # New tests for Feature A (--from-lang)
-        test_from_lang_populates_empty_slots,
-        test_from_lang_preserves_existing_translations,
-        test_from_lang_different_language,
-        test_from_lang_with_new_keys,
-        # New tests for Feature B (skills handling - include item keys, exclude labels)
-        test_collect_keys_skills_includes_item_keys_excludes_labels,
-        test_collect_keys_include_skills_descendants_when_disabled,
-        test_collect_keys_skills_as_empty_object,
-        test_collect_keys_skills_as_list,
-        test_collect_keys_skills_nested_in_items,
-        test_collect_keys_skills_with_real_cv_structure,
-        test_collect_keys_skills_preserves_existing_translations,
-        # Idempotency with new features
-        test_idempotency_with_from_lang,
-        test_idempotency_with_skills,
-    ]
-    
-    passed = 0
-    failed = 0
-    
-    print("=" * 60)
-    print("Running create_lang.py unit tests")
-    print("=" * 60)
-    
-    for test in tests:
-        try:
-            test()
-            print(f"  ✅ {test.__name__}")
-            passed += 1
-        except Exception as e:
-            print(f"  ❌ {test.__name__}")
-            print(f"      Error: {e}")
-            traceback.print_exc()
-            failed += 1
-    
-    print("=" * 60)
-    print(f"Results: {passed}/{len(tests)} passed")
-    print("=" * 60)
-    
-    return failed == 0
-
-
-if __name__ == "__main__":
-    success = run_all_tests()
-    sys.exit(0 if success else 1)

@@ -21,7 +21,7 @@ from typing import Any
 _HERE = Path(__file__).resolve().parent
 
 
-def collect_keys(obj: Any, out_set: set[str] | None = None) -> set[str]:
+def collect_keys(obj: Any) -> set[str]:
     """
     Recursively traverse the CV JSON and collect all unique key names.
     
@@ -32,16 +32,18 @@ def collect_keys(obj: Any, out_set: set[str] | None = None) -> set[str]:
     
     Key names are case-sensitive ("Pictures" != "pictures").
     """
-    if out_set is None:
-        out_set = set()
-    
+    return _collect_keys_recursive(obj, set())
+
+
+def _collect_keys_recursive(obj: Any, out_set: set[str]) -> set[str]:
+    """Internal recursive helper for collect_keys."""
     if isinstance(obj, dict):
         for key, value in obj.items():
             out_set.add(key)
-            collect_keys(value, out_set)
+            _collect_keys_recursive(value, out_set)
     elif isinstance(obj, list):
         for item in obj:
-            collect_keys(item, out_set)
+            _collect_keys_recursive(item, out_set)
     # Scalars: do nothing (we only collect keys, not values)
     
     return out_set
@@ -54,7 +56,7 @@ def _is_translation_dict(d: dict[str, Any]) -> bool:
     A translation dict has only string values and all keys look like language codes
     (2-3 character lowercase strings).
     """
-    if not isinstance(d, dict) or not d:
+    if not isinstance(d, dict) or len(d) == 0:
         return False
     
     # Check if all values are strings (or empty)

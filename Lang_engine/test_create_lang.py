@@ -98,28 +98,28 @@ def test_collect_keys_deeply_nested():
 
 def test_is_translation_dict_valid():
     """Test detection of valid translation dictionaries."""
-    assert _is_translation_dict({"en": "", "de": "", "fa": ""}) == True
-    assert _is_translation_dict({"en": "Hello", "de": "Hallo"}) == True
-    assert _is_translation_dict({"it": "Ciao"}) == True
+    assert _is_translation_dict({"en": "", "de": "", "fa": ""})
+    assert _is_translation_dict({"en": "Hello", "de": "Hallo"})
+    assert _is_translation_dict({"it": "Ciao"})
 
 
 def test_is_translation_dict_invalid():
     """Test detection of invalid translation dictionaries."""
     # Not a dict
-    assert _is_translation_dict("string") == False
-    assert _is_translation_dict([]) == False
+    assert not _is_translation_dict("string")
+    assert not _is_translation_dict([])
     
     # Empty dict
-    assert _is_translation_dict({}) == False
+    assert not _is_translation_dict({})
     
     # Keys that are not language codes
-    assert _is_translation_dict({"english": ""}) == False
-    assert _is_translation_dict({"EN": ""}) == False  # uppercase
-    assert _is_translation_dict({"a": ""}) == False  # too short
+    assert not _is_translation_dict({"english": ""})
+    assert not _is_translation_dict({"EN": ""})  # uppercase
+    assert not _is_translation_dict({"a": ""})  # too short
     
     # Values that are not strings
-    assert _is_translation_dict({"en": 123}) == False
-    assert _is_translation_dict({"en": None}) == False
+    assert not _is_translation_dict({"en": 123})
+    assert not _is_translation_dict({"en": None})
 
 
 def test_merge_preserves_existing_translations():

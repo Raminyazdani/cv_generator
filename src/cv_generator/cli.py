@@ -4,6 +4,7 @@ Command-line interface for CV Generator.
 Provides the `cvgen` command with the following subcommands:
 - build: Generate PDF CVs from JSON files
 - ensure: Validate multilingual CV JSON consistency
+- db: SQLite database operations (init, import, export, diff)
 """
 
 import argparse
@@ -200,6 +201,205 @@ def ensure_command(args: argparse.Namespace) -> int:
         return EXIT_ENSURE_ERROR
 
 
+def db_init_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db init command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import init_db
+    
+    db_path = Path(args.db) if args.db else None
+    
+    try:
+        result_path = init_db(db_path, force=args.force)
+        logger.info(f"Database initialized: {result_path}")
+        print(f"✅ Database initialized: {result_path}")
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def db_import_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db import command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import import_all_cvs
+    
+    db_path = Path(args.db) if args.db else None
+    input_dir = Path(args.input_dir) if args.input_dir else None
+    
+    try:
+        results = import_all_cvs(
+            input_dir=input_dir,
+            db_path=db_path,
+            name_filter=args.name,
+            overwrite=args.overwrite,
+            backup=not args.no_backup
+        )
+        
+        print(f"\n📥 Import Results:")
+        print(f"   Files processed: {results['files_processed']}")
+        print(f"   Total entries: {results['total_entries']}")
+        
+        for file_result in results.get("files", []):
+            if file_result.get("success"):
+                print(f"   ✅ {file_result['file']}: {file_result.get('entries_imported', 0)} entries")
+            else:
+                print(f"   ❌ {file_result['file']}: {file_result.get('error', 'Unknown error')}")
+        
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error importing CVs: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def db_export_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db export command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import export_all_cvs
+    
+    db_path = Path(args.db) if args.db else None
+    output_dir = Path(args.output_dir) if args.output_dir else None
+    pretty = args.format != "min"
+    
+    try:
+        results = export_all_cvs(
+            output_dir=output_dir,
+            db_path=db_path,
+            name_filter=args.name,
+            pretty=pretty
+        )
+        
+        print(f"\n📤 Export Results:")
+        print(f"   Files exported: {results['files_exported']}")
+        
+        for file_result in results.get("files", []):
+            if file_result.get("success"):
+                print(f"   ✅ {file_result['file']}")
+            else:
+                print(f"   ❌ {file_result['slug']}: {file_result.get('error', 'Unknown error')}")
+        
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error exporting CVs: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def db_diff_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db diff command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import diff_all_cvs
+    
+    db_path = Path(args.db) if args.db else None
+    input_dir = Path(args.input_dir) if args.input_dir else None
+    
+    try:
+        results = diff_all_cvs(
+            input_dir=input_dir,
+            db_path=db_path,
+            name_filter=args.name
+        )
+        
+        if args.format == "json":
+            print(json.dumps(results, indent=2, ensure_ascii=False))
+        else:
+            print(f"\n🔍 Diff Results:")
+            print(f"   Files compared: {results['files_compared']}")
+            print(f"   Matches: {results['matches']}")
+            print(f"   Mismatches: {results['mismatches']}")
+            
+            for file_result in results.get("files", []):
+                if file_result.get("match"):
+                    print(f"   ✅ {file_result['file']}: Match")
+                elif file_result.get("error"):
+                    print(f"   ⚠️  {file_result['file']}: {file_result['error']}")
+                else:
+                    print(f"   ❌ {file_result['file']}: {file_result['difference_count']} differences")
+                    for diff in file_result.get("differences", [])[:5]:
+                        print(f"      - {diff['path']}: {diff['type']}")
+                    if len(file_result.get("differences", [])) > 5:
+                        print(f"      ... and {len(file_result['differences']) - 5} more")
+        
+        # Return non-zero if there are mismatches
+        if results['mismatches'] > 0:
+            return EXIT_ENSURE_ERROR
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error comparing CVs: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def db_list_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db list command.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import list_persons, list_tags
+    
+    db_path = Path(args.db) if args.db else None
+    
+    try:
+        if args.what == "persons":
+            items = list_persons(db_path)
+            if args.format == "json":
+                print(json.dumps(items, indent=2, ensure_ascii=False))
+            else:
+                print(f"\n👥 Persons in database: {len(items)}")
+                for item in items:
+                    print(f"   • {item['slug']}: {item['entry_count']} entries")
+                    if item.get('display_name'):
+                        print(f"     Name: {item['display_name']}")
+        else:
+            items = list_tags(db_path)
+            if args.format == "json":
+                print(json.dumps(items, indent=2, ensure_ascii=False))
+            else:
+                print(f"\n🏷️  Tags in database: {len(items)}")
+                for item in items:
+                    print(f"   • {item['name']}: used {item['usage_count']} times")
+        
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error listing database contents: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the argument parser for the CLI.
@@ -347,6 +547,159 @@ def create_parser() -> argparse.ArgumentParser:
     )
     
     ensure_parser.set_defaults(func=ensure_command)
+    
+    # DB command
+    db_parser = subparsers.add_parser(
+        "db",
+        help="SQLite database operations",
+        description="Manage CV data in SQLite database for querying and editing."
+    )
+    
+    db_subparsers = db_parser.add_subparsers(
+        dest="db_command",
+        title="db commands",
+        description="Available database commands"
+    )
+    
+    # DB init command
+    db_init_parser = db_subparsers.add_parser(
+        "init",
+        help="Initialize the database",
+        description="Create the database and apply schema."
+    )
+    db_init_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_init_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Recreate the database even if it exists"
+    )
+    db_init_parser.set_defaults(func=db_init_command)
+    
+    # DB import command
+    db_import_parser = db_subparsers.add_parser(
+        "import",
+        help="Import CV JSON files into database",
+        description="Import CV JSON files from a directory into the database."
+    )
+    db_import_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_import_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    db_import_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Import only CVs matching this base name"
+    )
+    db_import_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace existing entries for each person"
+    )
+    db_import_parser.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Don't backup database before overwrite"
+    )
+    db_import_parser.set_defaults(func=db_import_command)
+    
+    # DB export command
+    db_export_parser = db_subparsers.add_parser(
+        "export",
+        help="Export database to JSON files",
+        description="Export CV data from database to JSON files."
+    )
+    db_export_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_export_parser.add_argument(
+        "--output-dir", "-o",
+        type=str,
+        help="Output directory for JSON files (default: data/cvs)"
+    )
+    db_export_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Export only CVs matching this slug"
+    )
+    db_export_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["pretty", "min"],
+        default="pretty",
+        help="Output format (default: pretty)"
+    )
+    db_export_parser.set_defaults(func=db_export_command)
+    
+    # DB diff command
+    db_diff_parser = db_subparsers.add_parser(
+        "diff",
+        help="Compare JSON files with database",
+        description="Compare CV JSON files with their database exports."
+    )
+    db_diff_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_diff_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    db_diff_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Compare only CVs matching this base name"
+    )
+    db_diff_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    db_diff_parser.set_defaults(func=db_diff_command)
+    
+    # DB list command
+    db_list_parser = db_subparsers.add_parser(
+        "list",
+        help="List database contents",
+        description="List persons or tags in the database."
+    )
+    db_list_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_list_parser.add_argument(
+        "--what",
+        type=str,
+        choices=["persons", "tags"],
+        default="persons",
+        help="What to list (default: persons)"
+    )
+    db_list_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    db_list_parser.set_defaults(func=db_list_command)
+    
+    db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
     
     return parser
 

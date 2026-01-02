@@ -29,11 +29,11 @@
       "Pictures": [
         {
           "type_of": "profile",
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_pad,b_gen_fill,w_1200,h_1200,ar_1:1/IMG_9262.jpg"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/cv_profile_photo.jpg"
         },
         {
           "type_of": "cover",
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/c_crop,w_1200,h_900,ar_4:3,g_auto/IMG_5283_1200x1800_a2wxn9_c_pad_b_gen_fill_w_1600_h_400_1.jpg"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/cv_cover_photo.jpg"
         }
       ]
     }
@@ -224,7 +224,7 @@
           "date": "2020-9-31",
           "duration": "18 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_TUV_north.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_TUV_north_Academy_MicroArray.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -315,7 +315,7 @@
           "date": "2023-09-13",
           "duration": "15 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Histological_Techniques_and.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Histological_Techniques_and_Equipment.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -327,7 +327,7 @@
           "date": "2023-09-10",
           "duration": "45 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_Molecular.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_Molecular_Testing_Techniques.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -339,7 +339,7 @@
           "date": "2023-09-20",
           "duration": "6 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Techniques_for_Handling_Bleeding_and_Injection_of_Lab_Animals.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -351,7 +351,7 @@
           "date": "2023-09-20",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Applied_Bioinformatics.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -364,7 +364,7 @@
           "date": "2023-09-15",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Fundamental_Principles_of_In_Vitro_Cell_Culture_Techniques.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -376,7 +376,7 @@
           "date": "2023-09-17",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Introduction_to_Microbiological_Lab.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_UoT_Introduction_to_Microbiological_Lab_Techniques.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -594,7 +594,7 @@
           "date": "2023-01-18",
           "duration": "400 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabsharif.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabsharif_python_django.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -625,7 +625,7 @@
           "date": "2020-07-23",
           "duration": "57 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune_beginner_python.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -639,7 +639,7 @@
           "date": "2021-12-11",
           "duration": "57 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune.pdf",
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_maktabkhune_advanced_python.pdf",
           "type_key": [
             "Full CV",
             "Biotechnology",
@@ -675,14 +675,14 @@
           "date": "2023-07-15",
           "duration": "3 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Fundamentals_and_Roadmap_of_Data_Science.pdf"
         },
         {
           "name": "Mathematics for Data Science and Artificial Intelligence",
           "date": "2023-09-01",
           "duration": "8 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Mathematics_for_Data_Science_and.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Mathematics_for_Data_Science_and_Artificial_Intelligence.pdf"
         },
         {
           "name": "Data Mining and Business Intelligence with KNIME",
@@ -696,7 +696,7 @@
           "date": "2023-09-12",
           "duration": "12 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Comprehensive.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Comprehensive_Python_Programming.pdf"
         },
         {
           "name": "Data Visualization Tools",
@@ -710,14 +710,14 @@
           "date": "2023-10-19",
           "duration": "10 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Introductory.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Introductory_Database_Principles.pdf"
         },
         {
           "name": "Data Mining with Python",
           "date": "2023-11-01",
           "duration": "8 hours",
           "certificate": true,
-          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Data_Mining_with.pdf"
+          "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/certificate_Hamrah_academy_Data_Mining_with_Python.pdf"
         }
       ]
     },
@@ -2601,7 +2601,7 @@
     {
       "title": "Integrated Omics Pipeline for Microbial Genomics",
       "description": "Developed a comprehensive pipeline integrating metagenomic, transcriptomic, and proteomic data for functional gene analysis and microbial community profiling.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2609,131 +2609,129 @@
       ]
     },
     {
-  "title": "Policy Compliance Checker (Flask + React + SQLite)",
-  "description": "Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.",
-  "url": "https://github.com/Raminyazdani/policy-compliance-checker",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Cosmetic Shop Marketplace Template (Django)",
-  "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
-  "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Cosmetic Shop Marketplace Template (Django)",
-  "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
-  "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Maktab 78 File Store (Framework-less Python + PostgreSQL)",
-  "description": "Developed an educational, framework-less Python project featuring a nested CLI router/menu system with dynamic callbacks, a lightweight PostgreSQL persistence layer (psycopg2) with small ORM-like models and query builders for CRUD, and domain modules for users, files, comments, carts, and order items.",
-  "url": "https://github.com/Raminyazdani/m78bookstore",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Student Projects"
-  ]
-},
-{
-  "title": "Python Bootcamp Portfolio — Maktab 78 Assignments & Projects",
-  "description": "Compiled and documented a monorepo of Python Bootcamp coursework and projects, organized by homework modules (fundamentals, OOP, system scripting, data validation, databases with PostgreSQL/MongoDB, and Flask REST APIs), including multiple major subprojects in a single structured repository.",
-  "url": "https://github.com/Raminyazdani/HW_all_maktab-78",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Student Projects"
-  ]
-},
-{
-  "title": "IranDoc Ganj Research Paper & Thesis Scraper (Selenium + BeautifulSoup)",
-  "description": "Developed a Python web-scraping tool using Selenium and BeautifulSoup to crawl ganj.irandoc.ac.ir year-by-year (and page-by-page when needed), extract thesis/paper metadata (e.g., subject, type, course, year, university, contributors) with UTF-8 Persian support, and export the results to CSV with an additional CSV cleaning utility.",
-  "url": "https://github.com/Raminyazdani/irandoc",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Personal CV Website (Django + React)",
-  "description": "Built a personal CV website with a React single-page frontend and a Django backend for data storage and API services, showcasing skills, projects, and professional experience in a web format.",
-  "url": "https://github.com/Raminyazdani/My-CV-Website",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Movie/TV Discovery & Personalization App (React + Express + MySQL)",
-  "description": "Built a full-stack movie/TV discovery and personalization monorepo with a React client (Redux Toolkit, Material UI) and an Express server backed by MySQL, integrating Firebase Auth and OMDb/TMDb metadata APIs to support per-user favorites, ratings, reviews, and recommendation requests via a REST API.",
-  "url": "https://github.com/Raminyazdani/movie-rating-app",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
+      "title": "Policy Compliance Checker (Flask + React + SQLite)",
+      "description": "Built a FReMP stack web application to upload dynamic security policies and user datasets (JSON/CSV), evaluate per-user compliance server-side, and present filterable/exportable pass/fail results with explanations in a React UI.",
+      "url": "https://github.com/Raminyazdani/policy-compliance-checker",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
     {
-  "title": "Hospital Database Management System (MySQL + SQL)",
-  "description": "Developed a MySQL hospital database schema for managing patients, doctors, services, departments, surgeries, and visits, providing SQL scripts to create tables, insert sample records, and generate multiple report views, alongside an ERD for documentation.",
-  "url": "https://github.com/Raminyazdani/Hospital-Data-base",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Student Projects"
-  ]
-},
-{
-  "title": "Terminal Calculator (TUI) — Python",
-  "description": "Developed a Python 3.10 terminal calculator (TUI) with safe expression evaluation, command history (view/replay), and light/dark theming using Rich + prompt_toolkit, packaged as a CLI with pytest tests and GitHub Pages documentation.",
-  "url": "https://github.com/Raminyazdani/Calculator",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Student Projects"
-  ]
-},
-{
-  "title": "CV Generator — JSON → Awesome-CV PDF (Jinja2 + XeLaTeX)",
-  "description": "Developed a Python-based CV generator that renders structured JSON into modular Jinja2+LaTeX section templates using the Awesome-CV class, then compiles polished PDFs via XeLaTeX with multi-CV batch support, optional profile photos, StrictUndefined validation, LaTeX-escaping helpers, and reliable intermediate-file cleanup.",
-  "url": "https://github.com/Raminyazdani/cv_generator",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Academic"
-  ]
-},
-{
-  "title": "Python Projects Roadmap (Ongoing)",
-  "description": "Maintaining an ongoing curated roadmap of ~100 Python project ideas categorized by difficulty (Beginner/Intermediate/Advanced) to guide consistent practice and portfolio-building, alongside repository utilities (e.g., create_projects.py).",
-  "url": "https://github.com/Raminyazdani/Python-projects",
-  "type_key": [
-    "Full CV",
-    "Programming",
-    "Student Projects"
-  ]
-},
-
-
+      "title": "Cosmetic Shop Marketplace Template (Django)",
+      "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
+      "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Cosmetic Shop Marketplace Template (Django)",
+      "description": "Built a multi-app Django 4.1 marketplace template for a cosmetics shop with a reusable Core layer (centralized field factories, base models with soft-delete, shared mixins, and a custom app scaffolding command), plus product catalog listing/search/filtering, cart & checkout flow, and order/payment/shipment models rendered with Bootstrap templates on SQLite.",
+      "url": "https://github.com/Raminyazdani/Cosmetic_Shop",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Maktab 78 File Store (Framework-less Python + PostgreSQL)",
+      "description": "Developed an educational, framework-less Python project featuring a nested CLI router/menu system with dynamic callbacks, a lightweight PostgreSQL persistence layer (psycopg2) with small ORM-like models and query builders for CRUD, and domain modules for users, files, comments, carts, and order items.",
+      "url": "https://github.com/Raminyazdani/m78bookstore",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Student Projects"
+      ]
+    },
+    {
+      "title": "Python Bootcamp Portfolio — Maktab 78 Assignments & Projects",
+      "description": "Compiled and documented a monorepo of Python Bootcamp coursework and projects, organized by homework modules (fundamentals, OOP, system scripting, data validation, databases with PostgreSQL/MongoDB, and Flask REST APIs), including multiple major subprojects in a single structured repository.",
+      "url": "https://github.com/Raminyazdani/HW_all_maktab-78",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Student Projects"
+      ]
+    },
+    {
+      "title": "IranDoc Ganj Research Paper & Thesis Scraper (Selenium + BeautifulSoup)",
+      "description": "Developed a Python web-scraping tool using Selenium and BeautifulSoup to crawl ganj.irandoc.ac.ir year-by-year (and page-by-page when needed), extract thesis/paper metadata (e.g., subject, type, course, year, university, contributors) with UTF-8 Persian support, and export the results to CSV with an additional CSV cleaning utility.",
+      "url": "https://github.com/Raminyazdani/irandoc",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Personal CV Website (Django + React)",
+      "description": "Built a personal CV website with a React single-page frontend and a Django backend for data storage and API services, showcasing skills, projects, and professional experience in a web format.",
+      "url": "https://github.com/Raminyazdani/My-CV-Website",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Movie/TV Discovery & Personalization App (React + Express + MySQL)",
+      "description": "Built a full-stack movie/TV discovery and personalization monorepo with a React client (Redux Toolkit, Material UI) and an Express server backed by MySQL, integrating Firebase Auth and OMDb/TMDb metadata APIs to support per-user favorites, ratings, reviews, and recommendation requests via a REST API.",
+      "url": "https://github.com/Raminyazdani/movie-rating-app",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Hospital Database Management System (MySQL + SQL)",
+      "description": "Developed a MySQL hospital database schema for managing patients, doctors, services, departments, surgeries, and visits, providing SQL scripts to create tables, insert sample records, and generate multiple report views, alongside an ERD for documentation.",
+      "url": "https://github.com/Raminyazdani/Hospital-Data-base",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Student Projects"
+      ]
+    },
+    {
+      "title": "Terminal Calculator (TUI) — Python",
+      "description": "Developed a Python 3.10 terminal calculator (TUI) with safe expression evaluation, command history (view/replay), and light/dark theming using Rich + prompt_toolkit, packaged as a CLI with pytest tests and GitHub Pages documentation.",
+      "url": "https://github.com/Raminyazdani/Calculator",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Student Projects"
+      ]
+    },
+    {
+      "title": "CV Generator — JSON → Awesome-CV PDF (Jinja2 + XeLaTeX)",
+      "description": "Developed a Python-based CV generator that renders structured JSON into modular Jinja2+LaTeX section templates using the Awesome-CV class, then compiles polished PDFs via XeLaTeX with multi-CV batch support, optional profile photos, StrictUndefined validation, LaTeX-escaping helpers, and reliable intermediate-file cleanup.",
+      "url": "https://github.com/Raminyazdani/cv_generator",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Academic"
+      ]
+    },
+    {
+      "title": "Python Projects Roadmap (Ongoing)",
+      "description": "Maintaining an ongoing curated roadmap of ~100 Python project ideas categorized by difficulty (Beginner/Intermediate/Advanced) to guide consistent practice and portfolio-building, alongside repository utilities (e.g., create_projects.py).",
+      "url": "https://github.com/Raminyazdani/Python-projects",
+      "type_key": [
+        "Full CV",
+        "Programming",
+        "Student Projects"
+      ]
+    },
     {
       "title": "Single-Cell & Spatial Transcriptomics Workflow",
       "description": "Implemented analysis workflows for single-cell RNA-seq and spatial transcriptomics data, enabling cell type identification and trajectory inference.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2743,7 +2741,7 @@
     {
       "title": "Bioprocess Optimization for Protein Production",
       "description": "Optimized fed-batch fermentation processes for heterologous protein expression in Pichia pastoris, including pathway engineering and bioreactor management.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -2753,7 +2751,7 @@
     {
       "title": "Automation & Web Data Extraction Solutions",
       "description": "Designed and deployed Python-based web crawlers and automation scripts for data extraction, cleaning, and processing from diverse online sources.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2763,7 +2761,7 @@
     {
       "title": "Full-Stack Web Application for Data Visualization",
       "description": "Built interactive dashboards and visualization tools using Django, React, and Plotly for scientific data representation and reporting.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2773,7 +2771,7 @@
     {
       "title": "Machine Learning Applications in Bioinformatics",
       "description": "Developed predictive models and clustering algorithms for biological data analysis, focusing on gene expression and classification tasks.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2784,7 +2782,7 @@
     {
       "title": "Containerized Bioinformatics Workflows",
       "description": "Deployed reproducible bioinformatics pipelines using Docker and Kubernetes for scalable and collaborative research environments.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Bioinformatics",
@@ -2794,7 +2792,7 @@
     {
       "title": "CI/CD Pipeline Implementation for Web Applications",
       "description": "Configured and automated continuous integration and deployment pipelines using GitLab CI/CD and Docker for web applications, ensuring robust delivery workflows.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2804,7 +2802,7 @@
     {
       "title": "Backend API Development for Data-Driven Applications",
       "description": "Designed RESTful APIs with Django Rest Framework and FastAPI to serve as backends for data-driven applications, focusing on performance and scalability.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2814,7 +2812,7 @@
     {
       "title": "Real-Time Data Visualization Dashboard",
       "description": "Developed a real-time dashboard for monitoring and visualizing streaming data using React, WebSockets, and Plotly for interactive user experience.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2826,7 +2824,7 @@
     {
       "title": "Full-Stack E-commerce Web Platform",
       "description": "Built a scalable e-commerce platform integrating user management, product catalogs, and payment systems using Django, React, and PostgreSQL.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2836,7 +2834,7 @@
     {
       "title": "Linux System Automation & Monitoring Scripts",
       "description": "Created Bash and Python scripts for automating server maintenance tasks, log management, and resource monitoring on Linux-based systems.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2847,7 +2845,7 @@
     {
       "title": "Cloud-Based Microservices Deployment",
       "description": "Implemented microservices architecture and deployed containerized services on cloud infrastructure using Docker and Kubernetes.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Programming",
@@ -2857,7 +2855,7 @@
     {
       "title": "Robotics & Embedded Systems Developer — High School & Personal Projects (2011–2015)",
       "description": "Microcontroller programming and robot development for student competitions; designed and built embedded robotics systems and control logic.",
-      "url":null,
+      "url": null,
       "type_key": [
         "Full CV",
         "Robotics",
@@ -2865,8 +2863,6 @@
         "Student Projects"
       ]
     }
-
-
   ],
   "publications": [
     {
@@ -3256,7 +3252,7 @@
           "number": "9123961780"
         }
       ],
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Simin.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Simin_Nabizadeh.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",
@@ -3280,7 +3276,7 @@
           "number": "9105969589"
         }
       ],
-      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Mohammad_Amin.pdf",
+      "URL": "https://res.cloudinary.com/dgflx4rum/image/upload/Reference_Mohammad_Amin_Boojari.pdf",
       "type_key": [
         "Full CV",
         "Biotechnology",

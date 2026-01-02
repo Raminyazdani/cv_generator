@@ -460,9 +460,9 @@
     "fa": ""
   },
   "education": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Ausbildung",
+    "en": "Education",
+    "fa": "تحصیلات"
   },
   "education[]": {
     "de": "",
@@ -535,9 +535,9 @@
     "fa": ""
   },
   "experiences": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Berufserfahrung",
+    "en": "Experience",
+    "fa": "تجربه کاری"
   },
   "experiences[]": {
     "de": "",
@@ -635,9 +635,9 @@
     "fa": ""
   },
   "languages": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Sprachen",
+    "en": "Languages",
+    "fa": "زبان‌ها"
   },
   "languages[]": {
     "de": "",
@@ -890,9 +890,9 @@
     "fa": ""
   },
   "projects": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Projekte",
+    "en": "Projects",
+    "fa": "پروژه‌ها"
   },
   "projects[]": {
     "de": "",
@@ -925,9 +925,9 @@
     "fa": ""
   },
   "publications": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Publikationen",
+    "en": "Publications",
+    "fa": "انتشارات"
   },
   "publications[]": {
     "de": "",
@@ -1195,9 +1195,9 @@
     "fa": ""
   },
   "references": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Referenzen",
+    "en": "References",
+    "fa": "مراجع"
   },
   "references[]": {
     "de": "",
@@ -1305,9 +1305,9 @@
     "fa": ""
   },
   "skills": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Fähigkeiten",
+    "en": "Skills",
+    "fa": "مهارت‌ها"
   },
   "skills.Bioinformatics Domains": {
     "de": "",
@@ -2360,9 +2360,9 @@
     "fa": ""
   },
   "workshop_and_certifications": {
-    "de": "",
-    "en": "",
-    "fa": ""
+    "de": "Workshops & Zertifizierungen",
+    "en": "Workshops & Certifications",
+    "fa": "کارگاه‌ها و گواهینامه‌ها"
   },
   "workshop_and_certifications[]": {
     "de": "",
@@ -2428,5 +2428,10 @@
     "de": "",
     "en": "",
     "fa": ""
+  },
+  "curriculum_vitae": {
+    "de": "Lebenslauf",
+    "en": "Curriculum Vitae",
+    "fa": "رزومه"
   }
 }

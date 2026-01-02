@@ -426,7 +426,7 @@ def test_collect_keys_skills_as_empty_object():
 
 
 def test_collect_keys_skills_as_list():
-    """Test that skills exclusion works when skills is a list (robust handling)."""
+    """Test robust handling when skills is structured as a list of skill items."""
     data = {
         "basics": {"fname": "John"},
         "skills": [

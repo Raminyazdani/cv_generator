@@ -457,7 +457,6 @@ def import_cv(
             else:
                 # Skip non-list, non-dict sections (e.g., scalar values)
                 logger.debug(f"Skipping section '{section}' with type {type(section_data).__name__}")
-            stats["sections"][section] = 1
         
         # Count tags created
         cursor.execute("SELECT COUNT(*) FROM tag")

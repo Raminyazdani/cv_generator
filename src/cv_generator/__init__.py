@@ -23,6 +23,13 @@ from .db import (
     diff_all_cvs,
     list_persons,
     list_tags,
+    create_tag,
+    update_tag,
+    delete_tag,
+    update_entry_tags,
+    get_entry,
+    get_section_entries,
+    get_person_sections,
 )
 
 __all__ = [
@@ -45,5 +52,12 @@ __all__ = [
     "diff_all_cvs",
     "list_persons",
     "list_tags",
+    "create_tag",
+    "update_tag",
+    "delete_tag",
+    "update_entry_tags",
+    "get_entry",
+    "get_section_entries",
+    "get_person_sections",
     "__version__",
 ]

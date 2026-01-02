@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section | title }} - {{ person.slug }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &raquo;
+    {{ section | replace('_', ' ') | title }}
+</nav>
+
+<h2>{{ section | replace('_', ' ') | title }}</h2>
+
+{% if entries %}
+<div class="card">
+    {% for entry in entries %}
+    <div class="list-item">
+        <div style="flex: 1;">
+            <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
+                {{ entry.summary }}
+            </a>
+            <div class="entry-meta">
+                {% if entry.tags %}
+                    {% for tag in entry.tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span style="color: var(--gray-500); font-style: italic;">No tags</span>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+    <p>No entries in this section.</p>
+</div>
+{% endif %}
+{% endblock %}

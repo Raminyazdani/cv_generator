@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Entry Tags{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=entry.person_slug) }}">{{ entry.person_slug }}</a> &raquo;
+    <a href="{{ url_for('section_entries', person=entry.person_slug, section=entry.section) }}">{{ entry.section | replace('_', ' ') | title }}</a> &raquo;
+    Entry
+</nav>
+
+<h2>{{ entry.summary }}</h2>
+
+<div class="card">
+    <h3 style="margin-bottom: 1rem;">Assign Tags</h3>
+    
+    <form action="{{ url_for('update_entry_tags_route', entry_id=entry.id) }}" method="post">
+        <div class="form-group">
+            <div class="checkbox-list">
+                {% if all_tags %}
+                    {% for tag in all_tags %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="tags" value="{{ tag.name }}"
+                            {% if tag.name in entry.tags %}checked{% endif %}>
+                        {{ tag.name }}
+                        <span class="tag tag-count" style="margin-left: auto;">{{ tag.usage_count }}</span>
+                    </label>
+                    {% endfor %}
+                {% else %}
+                    <p style="padding: 1rem; color: var(--gray-500);">
+                        No tags exist yet. <a href="{{ url_for('create_tag_route') }}">Create one</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Save Tags</button>
+            <a href="{{ url_for('create_tag_route') }}" class="btn btn-secondary">+ New Tag</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3 style="margin-bottom: 1rem;">Entry Data (Read-Only)</h3>
+    <details>
+        <summary style="cursor: pointer; color: var(--primary);">Show JSON</summary>
+        <pre class="json-preview" style="margin-top: 1rem;">{{ data_json }}</pre>
+    </details>
+</div>
+{% endblock %}

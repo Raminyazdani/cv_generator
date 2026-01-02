@@ -1000,6 +1000,458 @@ def list_persons(db_path: Optional[Path] = None) -> List[Dict[str, Any]]:
         conn.close()
 
 
+def get_person_sections(person_slug: str, db_path: Optional[Path] = None) -> List[str]:
+    """
+    Get list of sections for a person.
+    
+    Args:
+        person_slug: The person's slug.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        List of section names.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM person WHERE slug = ?", (person_slug,))
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Person not found: {person_slug}")
+        
+        person_id = row[0]
+        
+        cursor.execute(
+            """SELECT DISTINCT section FROM entry WHERE person_id = ? ORDER BY section""",
+            (person_id,)
+        )
+        
+        return [row[0] for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+def get_section_entries(
+    person_slug: str,
+    section: str,
+    db_path: Optional[Path] = None
+) -> List[Dict[str, Any]]:
+    """
+    Get all entries for a person's section.
+    
+    Args:
+        person_slug: The person's slug.
+        section: The section name.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        List of entry records with id, order_idx, data, and tags.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM person WHERE slug = ?", (person_slug,))
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Person not found: {person_slug}")
+        
+        person_id = row[0]
+        
+        cursor.execute(
+            """SELECT e.id, e.order_idx, e.data_json, e.identity_key
+               FROM entry e
+               WHERE e.person_id = ? AND e.section = ?
+               ORDER BY e.order_idx""",
+            (person_id, section)
+        )
+        
+        entries = []
+        for row in cursor.fetchall():
+            entry_id, order_idx, data_json, identity_key = row
+            
+            # Skip empty list markers
+            if order_idx == -1 and data_json == "[]":
+                continue
+            
+            data = json.loads(data_json)
+            
+            # Get tags for this entry
+            cursor.execute(
+                """SELECT t.name FROM tag t
+                   JOIN entry_tag et ON t.id = et.tag_id
+                   WHERE et.entry_id = ?
+                   ORDER BY t.name""",
+                (entry_id,)
+            )
+            tags = [r[0] for r in cursor.fetchall()]
+            
+            entries.append({
+                "id": entry_id,
+                "order_idx": order_idx,
+                "data": data,
+                "identity_key": identity_key,
+                "tags": tags
+            })
+        
+        return entries
+    finally:
+        conn.close()
+
+
+def get_entry(entry_id: int, db_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+    """
+    Get a single entry by ID.
+    
+    Args:
+        entry_id: The entry ID.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Entry record with full data and tags, or None if not found.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT e.id, e.person_id, e.section, e.order_idx, e.data_json, e.identity_key, p.slug
+               FROM entry e
+               JOIN person p ON e.person_id = p.id
+               WHERE e.id = ?""",
+            (entry_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        
+        entry_id, person_id, section, order_idx, data_json, identity_key, person_slug = row
+        data = json.loads(data_json)
+        
+        # Get tags for this entry
+        cursor.execute(
+            """SELECT t.name FROM tag t
+               JOIN entry_tag et ON t.id = et.tag_id
+               WHERE et.entry_id = ?
+               ORDER BY t.name""",
+            (entry_id,)
+        )
+        tags = [r[0] for r in cursor.fetchall()]
+        
+        return {
+            "id": entry_id,
+            "person_id": person_id,
+            "person_slug": person_slug,
+            "section": section,
+            "order_idx": order_idx,
+            "data": data,
+            "identity_key": identity_key,
+            "tags": tags
+        }
+    finally:
+        conn.close()
+
+
+def create_tag(
+    name: str,
+    description: Optional[str] = None,
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Create a new tag.
+    
+    Args:
+        name: Tag name.
+        description: Optional description.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Created tag record.
+        
+    Raises:
+        ValidationError: If tag name already exists.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    name = name.strip()
+    if not name:
+        raise ValidationError("Tag name cannot be empty")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Check if tag already exists
+        cursor.execute("SELECT id FROM tag WHERE name = ?", (name,))
+        if cursor.fetchone():
+            raise ValidationError(f"Tag '{name}' already exists")
+        
+        now = _utcnow()
+        cursor.execute(
+            "INSERT INTO tag (name, description, created_at) VALUES (?, ?, ?)",
+            (name, description, now)
+        )
+        tag_id = cursor.lastrowid
+        conn.commit()
+        
+        return {
+            "id": tag_id,
+            "name": name,
+            "description": description,
+            "created_at": now,
+            "usage_count": 0
+        }
+    finally:
+        conn.close()
+
+
+def update_tag(
+    name: str,
+    new_name: Optional[str] = None,
+    description: Optional[str] = None,
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Update a tag.
+    
+    Args:
+        name: Current tag name.
+        new_name: New tag name (if renaming).
+        description: New description.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Updated tag record.
+        
+    Raises:
+        ConfigurationError: If tag not found.
+        ValidationError: If new name already exists.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Find existing tag
+        cursor.execute("SELECT id, description FROM tag WHERE name = ?", (name,))
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Tag not found: {name}")
+        
+        tag_id = row[0]
+        current_desc = row[1]
+        
+        # Check if new name conflicts
+        final_name = new_name.strip() if new_name else name
+        if final_name != name:
+            cursor.execute("SELECT id FROM tag WHERE name = ?", (final_name,))
+            if cursor.fetchone():
+                raise ValidationError(f"Tag '{final_name}' already exists")
+        
+        final_desc = description if description is not None else current_desc
+        
+        cursor.execute(
+            "UPDATE tag SET name = ?, description = ? WHERE id = ?",
+            (final_name, final_desc, tag_id)
+        )
+        conn.commit()
+        
+        # Get usage count
+        cursor.execute(
+            "SELECT COUNT(*) FROM entry_tag WHERE tag_id = ?",
+            (tag_id,)
+        )
+        usage_count = cursor.fetchone()[0]
+        
+        return {
+            "id": tag_id,
+            "name": final_name,
+            "description": final_desc,
+            "usage_count": usage_count
+        }
+    finally:
+        conn.close()
+
+
+def delete_tag(name: str, db_path: Optional[Path] = None) -> bool:
+    """
+    Delete a tag and remove it from all entries.
+    
+    Args:
+        name: Tag name.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        True if deleted, False if not found.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM tag WHERE name = ?", (name,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        
+        tag_id = row[0]
+        
+        # Delete from entry_tag (cascade should handle this but be explicit)
+        cursor.execute("DELETE FROM entry_tag WHERE tag_id = ?", (tag_id,))
+        cursor.execute("DELETE FROM tag WHERE id = ?", (tag_id,))
+        conn.commit()
+        
+        return True
+    finally:
+        conn.close()
+
+
+def update_entry_tags(
+    entry_id: int,
+    tags: List[str],
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Update tags for an entry and update its data_json type_key field.
+    
+    This function:
+    1. Updates the entry_tag relationships
+    2. Updates the type_key field in data_json
+    
+    Args:
+        entry_id: The entry ID.
+        tags: List of tag names to assign.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Updated entry record.
+        
+    Raises:
+        ConfigurationError: If entry not found.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Verify entry exists and get current data
+        cursor.execute(
+            "SELECT data_json, section FROM entry WHERE id = ?",
+            (entry_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Entry not found: {entry_id}")
+        
+        data_json, section = row
+        data = json.loads(data_json)
+        
+        # Clear existing tags for this entry
+        cursor.execute("DELETE FROM entry_tag WHERE entry_id = ?", (entry_id,))
+        
+        # Add new tags
+        for tag_name in tags:
+            tag_id = _get_or_create_tag(cursor, tag_name)
+            cursor.execute(
+                "INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
+                (entry_id, tag_id)
+            )
+        
+        # Update type_key in data_json
+        if tags:
+            data["type_key"] = tags
+        elif "type_key" in data:
+            del data["type_key"]
+        
+        new_data_json = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        cursor.execute(
+            "UPDATE entry SET data_json = ? WHERE id = ?",
+            (new_data_json, entry_id)
+        )
+        
+        conn.commit()
+        
+        return {
+            "id": entry_id,
+            "section": section,
+            "data": data,
+            "tags": tags
+        }
+    finally:
+        conn.close()
+
+
+def get_tag_by_name(name: str, db_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+    """
+    Get a tag by name.
+    
+    Args:
+        name: Tag name.
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Tag record or None if not found.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """SELECT t.id, t.name, t.description, t.created_at,
+                      COUNT(et.entry_id) as usage_count
+               FROM tag t
+               LEFT JOIN entry_tag et ON t.id = et.tag_id
+               WHERE t.name = ?
+               GROUP BY t.id""",
+            (name,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        
+        return {
+            "id": row[0],
+            "name": row[1],
+            "description": row[2],
+            "created_at": row[3],
+            "usage_count": row[4]
+        }
+    finally:
+        conn.close()
+
+
 def list_tags(db_path: Optional[Path] = None) -> List[Dict[str, Any]]:
     """
     List all tags in the database.

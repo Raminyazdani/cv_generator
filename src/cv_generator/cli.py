@@ -400,6 +400,34 @@ def db_list_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def web_tags_command(args: argparse.Namespace) -> int:
+    """
+    Execute the web tags command (start web server).
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .web import run_server
+    
+    db_path = Path(args.db) if args.db else None
+    
+    try:
+        run_server(
+            host=args.host,
+            port=args.port,
+            debug=args.debug if hasattr(args, 'debug') else False,
+            db_path=db_path
+        )
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error starting web server: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the argument parser for the CLI.
@@ -700,6 +728,46 @@ def create_parser() -> argparse.ArgumentParser:
     db_list_parser.set_defaults(func=db_list_command)
     
     db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
+    
+    # Web command
+    web_parser = subparsers.add_parser(
+        "web",
+        help="Web UI for tag management",
+        description="Start web server for managing tags and CV entries."
+    )
+    
+    web_subparsers = web_parser.add_subparsers(
+        dest="web_command",
+        title="web commands",
+        description="Available web commands"
+    )
+    
+    # Web tags command
+    web_tags_parser = web_subparsers.add_parser(
+        "tags",
+        help="Start the Tag Manager web UI",
+        description="Start local web server for managing tags on CV entries."
+    )
+    web_tags_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    web_tags_parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="Host to bind to (default: 127.0.0.1, use 0.0.0.0 for LAN access)"
+    )
+    web_tags_parser.add_argument(
+        "--port",
+        type=int,
+        default=5000,
+        help="Port to listen on (default: 5000)"
+    )
+    web_tags_parser.set_defaults(func=web_tags_command)
+    
+    web_parser.set_defaults(func=lambda args: web_parser.print_help() or EXIT_SUCCESS)
     
     return parser
 

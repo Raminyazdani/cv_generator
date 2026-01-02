@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h2>Select a Person</h2>
+
+{% if persons %}
+<div class="card-grid">
+    {% for person in persons %}
+    <div class="card">
+        <a href="{{ url_for('person_dashboard', person=person.slug) }}" class="card-link">
+            <h3>{{ person.display_name or person.slug }}</h3>
+            <p>{{ person.entry_count }} entries</p>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+    <p>No persons found in database.</p>
+    <p style="margin-top: 1rem;">
+        Run <code>cvgen db import</code> to import CV data first.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

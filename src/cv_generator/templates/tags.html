@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Tags{% endblock %}
+
+{% block content %}
+<h2>Tags</h2>
+
+<div style="margin-bottom: 1rem;">
+    <a href="{{ url_for('create_tag_route') }}" class="btn btn-primary">+ Create Tag</a>
+</div>
+
+{% if tags %}
+<div class="card">
+    {% for tag in tags %}
+    <div class="list-item">
+        <div style="flex: 1;">
+            <strong>{{ tag.name }}</strong>
+            {% if tag.description %}
+            <p style="color: var(--gray-500); font-size: 0.9rem;">{{ tag.description }}</p>
+            {% endif %}
+        </div>
+        <span class="tag tag-count">{{ tag.usage_count }} entries</span>
+        <div class="actions" style="margin-left: 1rem;">
+            <a href="{{ url_for('edit_tag_route', name=tag.name) }}" class="btn btn-secondary btn-sm">Edit</a>
+            <form action="{{ url_for('delete_tag_route', name=tag.name) }}" method="post" 
+                  onsubmit="return confirm('Delete tag &quot;{{ tag.name }}&quot;? It will be removed from all entries.');"
+                  style="display: inline;">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card empty-state">
+    <p>No tags created yet.</p>
+    <p style="margin-top: 1rem;">
+        <a href="{{ url_for('create_tag_route') }}" class="btn btn-primary">Create your first tag</a>
+    </p>
+</div>
+{% endif %}
+{% endblock %}

@@ -67,3 +67,10 @@ output/*.pdf
 # CI generated reports (not tracked, uploaded as artifacts)
 validation-report.json
 requirements-lock.txt
+
+# SQLite database files
+data/db/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

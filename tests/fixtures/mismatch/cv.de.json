@@ -1,0 +1,43 @@
+{
+  "basics": [
+    {
+      "fname": "Test",
+      "lname": "Person",
+      "email": "test@example.com"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Universität A",
+      "area": "Informatik",
+      "studyType": "Master",
+      "type_key": ["Voller Lebenslauf"]
+    }
+  ],
+  "skills": {
+    "Programmierung & Skripting": {
+      "Programmiersprachen": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Voller Lebenslauf"]
+        },
+        {
+          "long_name": "Java",
+          "short_name": "Java",
+          "type_key": ["Voller Lebenslauf"]
+        }
+      ]
+    }
+  },
+  "projects": [
+    {
+      "title": "Projekt Eins",
+      "description": "Erstes Projekt",
+      "url": "https://github.com/example/project1"
+    }
+  ],
+  "extra_section": {
+    "extra_key": "extra_value"
+  }
+}

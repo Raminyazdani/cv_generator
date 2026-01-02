@@ -270,7 +270,7 @@
     "fa": "موقعیت"
   },
   "logo_url": {
-    "de": "Logo-URL",
+    "de": "Logo-url",
     "en": "logo_url",
     "fa": "لینک لوگو"
   },
@@ -405,7 +405,7 @@
     "fa": "استان/منطقه"
   },
   "repository_url": {
-    "de": "Repository-URL",
+    "de": "Repository-url",
     "en": "repository_url",
     "fa": "لینک مخزن (Repository)"
   },
@@ -490,7 +490,7 @@
     "fa": "نوعِ"
   },
   "url": {
-    "de": "URL",
+    "de": "url",
     "en": "url",
     "fa": "لینک"
   },

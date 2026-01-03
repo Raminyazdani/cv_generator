@@ -748,6 +748,106 @@ def profile_clear_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def export_command(args: argparse.Namespace) -> int:
+    """
+    Execute the export command to generate CV in HTML/Markdown format.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .exporters import get_exporter, list_exporters
+    from .io import discover_cv_files, load_cv_json, parse_cv_filename
+
+    # Get exporter for the requested format
+    exporter = get_exporter(args.format)
+    if exporter is None:
+        available = ", ".join(list_exporters())
+        logger.error(f"Unknown export format: {args.format}")
+        print(f"❌ Unknown export format: '{args.format}'")
+        print(f"Available formats: {available}")
+        return EXIT_CONFIG_ERROR
+
+    # Determine input directory
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    # Determine output directory
+    output_dir = Path(args.output_dir) if args.output_dir else None
+    if output_dir is None:
+        from .paths import get_default_output_path
+        output_dir = get_default_output_path()
+
+    # Discover CV files
+    try:
+        cv_files = discover_cv_files(cvs_path=cvs_dir, name_filter=args.name)
+    except Exception as e:
+        logger.error(f"Error discovering CV files: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_CONFIG_ERROR
+
+    if not cv_files:
+        if args.name:
+            logger.error(f"No CV files found matching '{args.name}'")
+            print(f"❌ No CV files found matching '{args.name}'")
+        else:
+            logger.error("No CV files found")
+            print("❌ No CV files found")
+        return EXIT_CONFIG_ERROR
+
+    # Filter by language if specified
+    if args.lang:
+        filtered_files = []
+        for cv_file in cv_files:
+            _, file_lang = parse_cv_filename(cv_file.name)
+            if file_lang == args.lang:
+                filtered_files.append(cv_file)
+        cv_files = filtered_files
+
+        if not cv_files:
+            print(f"❌ No CV files found for language '{args.lang}'")
+            return EXIT_CONFIG_ERROR
+
+    logger.info(f"Exporting {len(cv_files)} CV file(s) to {args.format.upper()}")
+
+    # Export each CV
+    results = []
+    for cv_file in cv_files:
+        profile_name, lang = parse_cv_filename(cv_file.name)
+
+        try:
+            cv_data = load_cv_json(cv_file)
+        except Exception as e:
+            logger.error(f"Error loading {cv_file.name}: {e}")
+            print(f"❌ Error loading {cv_file.name}: {e}")
+            continue
+
+        result = exporter.export(
+            cv_data=cv_data,
+            output_dir=output_dir,
+            profile_name=profile_name,
+            lang=lang
+        )
+        results.append(result)
+
+        if result.success:
+            print(f"✅ Exported: {result.output_path}")
+        else:
+            print(f"❌ Failed: {profile_name}_{lang}: {result.error}")
+
+    # Summary
+    successful = sum(1 for r in results if r.success)
+    print(f"\n📊 Exported {successful}/{len(results)} CV(s) successfully")
+
+    if successful == len(results):
+        return EXIT_SUCCESS
+    elif successful > 0:
+        return EXIT_ERROR
+    else:
+        return EXIT_ERROR
+
+
 # Extended help topics for 'cvgen help <topic>'
 HELP_TOPICS = {
     "build": """
@@ -789,6 +889,41 @@ OUTPUT STRUCTURE
       pdf/<name>/<lang>/<name>_<lang>.pdf
       latex/<name>/<lang>/main.tex        (with --keep-latex)
       latex/<name>/<lang>/sections/*.tex  (with --keep-latex)
+""",
+
+    "export": """
+cvgen export — Export CVs to HTML or Markdown format
+
+SYNOPSIS
+    cvgen export [OPTIONS]
+
+DESCRIPTION
+    The export command generates CV output in alternative formats such as
+    HTML (for web preview) or Markdown (for documentation or plain text).
+
+    This is a read-only operation that does not modify source CV files.
+
+OPTIONS
+    --name, -n NAME     Export only CVs matching this base name (e.g., 'ramin')
+    --lang, -l LANG     Export only CVs with this language code (e.g., 'en')
+    --format, -f FMT    Output format: html or md (default: html)
+    --input-dir, -i     Directory containing CV JSON files (default: data/cvs)
+    --output-dir, -o    Output directory root (default: output)
+
+EXAMPLES
+    # Export all CVs to HTML
+    cvgen export
+
+    # Export ramin's English CV to Markdown
+    cvgen export --name ramin --lang en --format md
+
+    # Export to a specific output directory
+    cvgen export --output-dir ./exports
+
+OUTPUT STRUCTURE
+    output/
+      html/<name>/<lang>/cv.html
+      md/<name>/<lang>/cv.md
 """,
 
     "ensure": """
@@ -1231,6 +1366,7 @@ def help_command(args: argparse.Namespace) -> int:
         # List available topics
         print("Available help topics:\n")
         print("  build           Generate PDF CVs from JSON files")
+        print("  export          Export CVs to HTML/Markdown")
         print("  ensure          Validate multilingual CV consistency")
         print("  lint            Validate CV JSON files against schema")
         print("  doctor          System health checks")
@@ -1755,6 +1891,41 @@ def create_parser() -> argparse.ArgumentParser:
     profile_clear_parser.set_defaults(func=profile_clear_command)
 
     profile_parser.set_defaults(func=lambda args: profile_parser.print_help() or EXIT_SUCCESS)
+
+    # Export command for exporting CVs to HTML/Markdown
+    export_parser = subparsers.add_parser(
+        "export",
+        help="Export CVs to HTML or Markdown format",
+        description="Export CV data to alternative formats (HTML, Markdown)."
+    )
+    export_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Export only CVs matching this base name (e.g., 'ramin')"
+    )
+    export_parser.add_argument(
+        "--lang", "-l",
+        type=str,
+        help="Export only CVs with this language code (e.g., 'en', 'de')"
+    )
+    export_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["html", "md"],
+        default="html",
+        help="Export format: html or md (default: html)"
+    )
+    export_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    export_parser.add_argument(
+        "--output-dir", "-o",
+        type=str,
+        help="Output directory root (default: output)"
+    )
+    export_parser.set_defaults(func=export_command)
 
     # Doctor command for system health checks
     doctor_parser = subparsers.add_parser(

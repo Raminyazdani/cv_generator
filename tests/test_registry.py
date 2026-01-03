@@ -630,3 +630,131 @@ def register(registry, hook_manager):
                 manager.load_plugin(plugin_path)
 
             assert "custom_section" in registry
+
+
+class TestHooksInGenerator:
+    """Test that hooks fire correctly during CV generation."""
+
+    def setup_method(self):
+        """Reset hook manager before each test."""
+        reset_hook_manager()
+
+    def teardown_method(self):
+        """Clean up after tests."""
+        reset_hook_manager()
+
+    def test_hooks_fire_during_generate_cv(self, tmp_path):
+        """Test that hooks fire during CV generation."""
+        import json
+        from cv_generator.generator import generate_cv
+        from cv_generator.io import load_lang_map
+        from cv_generator.paths import get_default_templates_path
+
+        # Track which hooks were called
+        hooks_called = []
+
+        def pre_validate_hook(ctx: HookContext) -> None:
+            hooks_called.append("pre_validate")
+
+        def post_render_hook(ctx: HookContext) -> None:
+            hooks_called.append("post_render")
+
+        hook_manager = get_hook_manager()
+        hook_manager.register("pre_validate", pre_validate_hook, name="test_pre")
+        hook_manager.register("post_render", post_render_hook, name="test_post")
+
+        # Create a sample CV with all expected sections
+        cv_data = {
+            "basics": [{
+                "fname": "Test",
+                "lname": "User",
+                "email": "test@example.com",
+                "label": ["Software Engineer"],
+                "location": [{
+                    "city": "Berlin",
+                    "country": "Germany"
+                }],
+                "phone": {"formatted": "+49 123 456789"}
+            }],
+            "profiles": [],
+            "education": [],
+            "experiences": [],
+            "skills": {},
+            "languages": [],
+            "projects": [],
+            "publications": [],
+            "references": [],
+            "workshop_and_certifications": []
+        }
+        cv_file = tmp_path / "test.json"
+        cv_file.write_text(json.dumps(cv_data))
+
+        # Create lang map
+        lang_dir = tmp_path / "lang_engine"
+        lang_dir.mkdir()
+        (lang_dir / "lang.json").write_text(json.dumps({}))
+
+        output_dir = tmp_path / "output"
+        output_dir.mkdir()
+
+        with patch("cv_generator.paths.get_lang_engine_path", return_value=lang_dir):
+            lang_map = load_lang_map(lang_dir)
+            result = generate_cv(
+                cv_file,
+                templates_dir=get_default_templates_path(),
+                output_dir=output_dir,
+                lang_map=lang_map,
+                dry_run=True,
+                keep_latex=True,
+            )
+
+        # Check result
+        assert result.success is True, f"Generation failed: {result.error}"
+        assert "pre_validate" in hooks_called
+        assert "post_render" in hooks_called
+
+    def test_hook_abort_stops_generation(self, tmp_path):
+        """Test that aborting in a hook stops CV generation."""
+        import json
+        from cv_generator.generator import generate_cv
+        from cv_generator.io import load_lang_map
+        from cv_generator.paths import get_default_templates_path
+
+        def abort_hook(ctx: HookContext) -> None:
+            ctx.signal_abort("Test abort")
+
+        hook_manager = get_hook_manager()
+        hook_manager.register("pre_validate", abort_hook, name="abort_test")
+
+        # Create a sample CV
+        cv_data = {
+            "basics": [{
+                "fname": "Test",
+                "lname": "User",
+                "email": "test@example.com",
+            }],
+        }
+        cv_file = tmp_path / "test.json"
+        cv_file.write_text(json.dumps(cv_data))
+
+        # Create lang map
+        lang_dir = tmp_path / "lang_engine"
+        lang_dir.mkdir()
+        (lang_dir / "lang.json").write_text(json.dumps({}))
+
+        output_dir = tmp_path / "output"
+        output_dir.mkdir()
+
+        with patch("cv_generator.paths.get_lang_engine_path", return_value=lang_dir):
+            lang_map = load_lang_map(lang_dir)
+            result = generate_cv(
+                cv_file,
+                templates_dir=get_default_templates_path(),
+                output_dir=output_dir,
+                lang_map=lang_map,
+                dry_run=True,
+            )
+
+        assert result.success is False
+        assert "Aborted by plugin" in result.error
+        assert "Test abort" in result.error

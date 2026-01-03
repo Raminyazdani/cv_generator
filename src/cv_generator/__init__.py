@@ -28,18 +28,12 @@ from .db import (
 )
 from .ensure import EnsureIssue, EnsureReport, run_ensure
 from .generator import generate_all_cvs, generate_cv
-from .io import discover_cv_files, load_cv_json, load_lang_map
-from .jinja_env import create_jinja_env
-from .paths import get_repo_root
-from .validate_schema import (
-    ValidationIssue,
-    ValidationReport,
-    validate_cv_file,
-    validate_cv_json,
-)
 
 # Registry and plugin system
 from .hooks import HookContext, HookManager, HookType, get_hook_manager, register_hook
+from .io import discover_cv_files, load_cv_json, load_lang_map
+from .jinja_env import create_jinja_env
+from .paths import get_repo_root
 from .plugins import PluginInfo, PluginManager, discover_and_load_plugins, get_plugin_manager
 from .registry import (
     GenericSectionAdapter,
@@ -47,6 +41,12 @@ from .registry import (
     SectionRegistry,
     get_default_registry,
     register_section,
+)
+from .validate_schema import (
+    ValidationIssue,
+    ValidationReport,
+    validate_cv_file,
+    validate_cv_json,
 )
 
 __all__ = [

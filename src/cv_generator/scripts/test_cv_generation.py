@@ -102,7 +102,7 @@ def create_jinja_env():
         keep_trailing_newline=True,
         undefined=StrictUndefined
     )
-    
+
     # Register filters
     env.filters["latex_escape"] = latex_escape
     env.filters["debug"] = debug
@@ -113,38 +113,38 @@ def create_jinja_env():
     env.filters["get_pic"] = get_pic
     env.filters["find_pic"] = find_pic
     env.globals["SHOW_COMMENTS"] = True
-    
+
     return env
 
 
 def test_cv_rendering(cv_path: Path, env: Environment) -> tuple:
     """
     Test rendering a CV file through all templates.
-    
+
     Returns (success: bool, rendered_sections: dict, errors: list, cv_data: dict)
     """
     errors = []
     rendered_sections = {}
-    
+
     # Load CV data
     try:
         with open(cv_path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         return False, {}, [f"Failed to load {cv_path.name}: {e}"], {}
-    
+
     people_name = cv_path.stem
     data["OPT_NAME"] = people_name
     env_vars = {**data}
-    
+
     # Get template files
     template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.tex')]
-    
+
     # Render each template (except layout)
     for tmpl_file in template_files:
         if tmpl_file == "layout.tex":
             continue
-            
+
         try:
             template = env.get_template(tmpl_file)
             rendered = template.render(env_vars)
@@ -153,7 +153,7 @@ def test_cv_rendering(cv_path: Path, env: Environment) -> tuple:
             env_vars[f"{section_name}_section"] = rendered
         except TemplateError as e:
             errors.append(f"Template error in {tmpl_file}: {e}")
-    
+
     # Render layout if no errors so far
     if not errors:
         try:
@@ -162,7 +162,7 @@ def test_cv_rendering(cv_path: Path, env: Environment) -> tuple:
             rendered_sections["layout"] = rendered_layout
         except TemplateError as e:
             errors.append(f"Layout template error: {e}")
-    
+
     success = len(errors) == 0
     return success, rendered_sections, errors, data
 
@@ -170,15 +170,15 @@ def test_cv_rendering(cv_path: Path, env: Environment) -> tuple:
 def check_rendered_output(rendered_sections: dict, cv_name: str, cv_data: dict) -> list:
     """
     Check rendered output for issues like 'undefined' strings.
-    
+
     Returns list of issues found.
     """
     issues = []
-    
+
     # Mapping from template name to JSON data key
     SECTION_TO_DATA_KEY = {
         "publications": "publications",
-        "projects": "projects", 
+        "projects": "projects",
         "references": "references",
         "certificates": "workshop_and_certifications",
         "experience": "experiences",
@@ -188,28 +188,28 @@ def check_rendered_output(rendered_sections: dict, cv_name: str, cv_data: dict) 
         "header": "basics",
         "layout": None,  # Layout is always rendered
     }
-    
+
     # Sections that can be legitimately empty if source data is empty
-    OPTIONAL_SECTIONS = {"publications", "projects", "references", "certificates", 
+    OPTIONAL_SECTIONS = {"publications", "projects", "references", "certificates",
                          "experience", "skills", "language"}
-    
+
     for section_name, content in rendered_sections.items():
         # Check for literal 'undefined' (case insensitive)
         if "undefined" in content.lower():
             issues.append(f"{cv_name}/{section_name}: Contains 'undefined'")
-        
+
         # Check for empty sections (just whitespace)
         # Only flag as issue if the source data has content
         if not content.strip():
             # Get the corresponding data key using the mapping
             data_key = SECTION_TO_DATA_KEY.get(section_name)
-            
+
             if data_key is None:
                 # Layout or unknown section - skip empty check
                 continue
-                
+
             source_data = cv_data.get(data_key)
-            
+
             if section_name not in OPTIONAL_SECTIONS:
                 # Required sections should not be empty
                 issues.append(f"{cv_name}/{section_name}: Section is empty")
@@ -217,22 +217,22 @@ def check_rendered_output(rendered_sections: dict, cv_name: str, cv_data: dict) 
                 # Optional section has data but rendered empty - this is a bug
                 issues.append(f"{cv_name}/{section_name}: Section has data but rendered empty")
             # else: Optional section with no data - this is expected
-    
+
     return issues
 
 
 def save_visual_proof(rendered_sections: dict, cv_name: str):
     """Save rendered sections as visual proof."""
     VISUAL_PROOF_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     cv_dir = VISUAL_PROOF_DIR / cv_name
     cv_dir.mkdir(exist_ok=True)
-    
+
     for section_name, content in rendered_sections.items():
         output_file = cv_dir / f"{section_name}.tex"
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(content)
-    
+
     # Create a summary file
     summary_file = cv_dir / "RENDERING_PROOF.txt"
     with open(summary_file, "w", encoding="utf-8") as f:
@@ -250,50 +250,50 @@ def main():
     print("=" * 60)
     print("🧪 CV Generation Test")
     print("=" * 60)
-    
+
     # Create Jinja environment
     env = create_jinja_env()
-    
+
     # Get all CV files
     cv_files = list(CVS_PATH.glob("*.json"))
-    
+
     if not cv_files:
         print(f"❌ No CV files found in {CVS_PATH}")
         sys.exit(1)
-    
+
     print(f"\n📋 Testing {len(cv_files)} CV file(s)...\n")
-    
+
     all_passed = True
-    
+
     for cv_path in sorted(cv_files):
         cv_name = cv_path.stem
         print(f"\n🔄 Processing: {cv_name}")
-        
+
         success, rendered_sections, errors, cv_data = test_cv_rendering(cv_path, env)
-        
+
         if not success:
             all_passed = False
-            print(f"  ❌ Rendering failed")
+            print("  ❌ Rendering failed")
             for error in errors:
                 print(f"      - {error}")
             continue
-        
+
         # Check rendered output
         issues = check_rendered_output(rendered_sections, cv_name, cv_data)
         if issues:
             all_passed = False
-            print(f"  ⚠️  Output issues found")
+            print("  ⚠️  Output issues found")
             for issue in issues:
                 print(f"      - {issue}")
         else:
             print(f"  ✅ Rendered successfully ({len(rendered_sections)} sections)")
-        
+
         # Save visual proof
         save_visual_proof(rendered_sections, cv_name)
         print(f"  📁 Visual proof saved to docs/visual-proof/{cv_name}/")
-    
+
     print("\n" + "=" * 60)
-    
+
     if all_passed:
         print("✅ All CV generation tests PASSED")
         print(f"📁 Visual proofs saved to: {VISUAL_PROOF_DIR}")

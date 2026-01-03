@@ -9,7 +9,7 @@ Provides functions for:
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Callable, Any, Optional
+from typing import Any, Callable, Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
@@ -27,10 +27,10 @@ RTL_LANGUAGES = {"fa", "ar", "he"}
 def latex_escape(s: Any) -> str:
     """
     Escape LaTeX special characters in plain text.
-    
+
     Args:
         s: The string to escape.
-        
+
     Returns:
         LaTeX-escaped string.
     """
@@ -105,22 +105,22 @@ def get_pic(opt_name: str) -> str:
 def make_translate_func(lang_map: Dict[str, Dict[str, str]], lang: str) -> Callable:
     """
     Create a translation function for a specific language.
-    
+
     Returns a function t(key, default=None, escape=True) that:
     - Looks up lang_map[key][lang]
     - Falls back to default, then lang_map[key]["en"], then the raw key
     - LaTeX-escapes by default
-    
+
     Args:
         lang_map: The translation mapping dictionary.
         lang: The target language code.
-        
+
     Returns:
         Translation function.
     """
     def t(key: str, default: Optional[str] = None, escape: bool = True) -> str:
         result = None
-        
+
         # Try to get translation for current language
         if key in lang_map:
             translations = lang_map[key]
@@ -130,16 +130,16 @@ def make_translate_func(lang_map: Dict[str, Dict[str, str]], lang: str) -> Calla
                 result = default
             elif "en" in translations and translations["en"]:
                 result = translations["en"]
-        
+
         # Fallback to default or raw key
         if result is None:
             result = default if default is not None else key
-        
+
         # LaTeX escape by default
         if escape:
             return latex_escape(result)
         return result
-    
+
     return t
 
 
@@ -166,18 +166,18 @@ def create_jinja_env(
 ) -> Environment:
     """
     Create a Jinja2 environment configured for LaTeX template rendering.
-    
+
     Args:
         template_dir: Path to the templates directory.
         lang_map: Language translation mapping (optional).
         lang: Target language code (default: "en").
-        
+
     Returns:
         Configured Jinja2 Environment.
     """
     if template_dir is None:
         template_dir = get_default_templates_path()
-    
+
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
         block_start_string="<BLOCK>",
@@ -192,7 +192,7 @@ def create_jinja_env(
         keep_trailing_newline=True,
         undefined=StrictUndefined
     )
-    
+
     # Register common filters
     env.filters["latex_escape"] = latex_escape
     env.filters["debug"] = debug_filter
@@ -202,18 +202,18 @@ def create_jinja_env(
     env.filters["file_exists"] = file_exists
     env.filters["get_pic"] = get_pic
     env.filters["find_pic"] = find_pic
-    
+
     # Add translation filters if lang_map provided
     if lang_map is not None:
         env.filters["tr"] = make_tr_filter(lang_map, lang)
         env.filters["tr_raw"] = make_tr_raw_filter(lang_map, lang)
         env.globals["LANG_MAP"] = lang_map
         env.globals["t"] = make_translate_func(lang_map, lang)
-    
+
     # Add common globals
     env.globals["SHOW_COMMENTS"] = SHOW_COMMENTS
     env.globals["LANG"] = lang
     env.globals["IS_RTL"] = lang in RTL_LANGUAGES
-    
+
     logger.debug(f"Created Jinja2 environment for templates in {template_dir}")
     return env

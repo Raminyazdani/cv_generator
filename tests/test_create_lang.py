@@ -12,10 +12,10 @@ from pathlib import Path
 import pytest
 
 from cv_generator.lang_engine.create_lang import (
+    _is_translation_dict,
     collect_keys,
     merge_lang_data,
     update_lang_json,
-    _is_translation_dict,
 )
 
 
@@ -112,15 +112,15 @@ def test_is_translation_dict_invalid():
     # Not a dict
     assert not _is_translation_dict("string")
     assert not _is_translation_dict([])
-    
+
     # Empty dict
     assert not _is_translation_dict({})
-    
+
     # Keys that are not language codes
     assert not _is_translation_dict({"english": ""})
     assert not _is_translation_dict({"EN": ""})  # uppercase
     assert not _is_translation_dict({"a": ""})  # too short
-    
+
     # Values that are not strings
     assert not _is_translation_dict({"en": 123})
     assert not _is_translation_dict({"en": None})
@@ -133,17 +133,17 @@ def test_merge_preserves_existing_translations():
     }
     discovered_keys = {"fname", "lname"}
     languages = ["de", "en", "fa"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages)
-    
+
     # Existing translation should be preserved
     assert merged["fname"]["de"] == "Vorname"
     assert merged["fname"]["en"] == ""
-    
+
     # New key should be added
     assert "lname" in merged
     assert merged["lname"] == {"de": "", "en": "", "fa": ""}
-    
+
     # Stats should reflect what happened
     assert stats["translations_preserved"] == 1  # "Vorname"
     assert stats["keys_added"] == 1  # "lname"
@@ -156,13 +156,13 @@ def test_merge_adds_new_language():
     }
     discovered_keys = {"fname"}
     languages = ["de", "en", "fa", "it"]  # Adding fa and it
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages)
-    
+
     # Existing translations preserved
     assert merged["fname"]["de"] == "Vorname"
     assert merged["fname"]["en"] == "First Name"
-    
+
     # New languages added with empty string
     assert merged["fname"]["fa"] == ""
     assert merged["fname"]["it"] == ""
@@ -175,9 +175,9 @@ def test_merge_keeps_extra_languages():
     }
     discovered_keys = {"fname"}
     languages = ["de", "en"]  # Not requesting zh, but it should be kept
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages)
-    
+
     # All existing languages should be kept
     assert merged["fname"]["de"] == "Vorname"
     assert merged["fname"]["en"] == "First Name"
@@ -191,9 +191,9 @@ def test_merge_non_destructive_keys():
     }
     discovered_keys = {"new_key"}  # old_key not discovered
     languages = ["en"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages)
-    
+
     # Both keys should exist
     assert "old_key" in merged
     assert "new_key" in merged
@@ -205,35 +205,35 @@ def test_update_lang_json_creates_file():
     with tempfile.TemporaryDirectory() as tmpdir:
         cv_path = Path(tmpdir) / "test_cv.json"
         lang_path = Path(tmpdir) / "lang.json"
-        
+
         # Create a simple CV
         cv_data = {
             "basics": {"fname": "John", "lname": "Doe"},
             "education": [{"institution": "Test U"}]
         }
         cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
-        
+
         # Run update
-        stats = update_lang_json(
+        update_lang_json(
             cv_path=cv_path,
             lang_path=lang_path,
             languages=["en", "de"],
             dry_run=False,
             verbose=False,
         )
-        
+
         # Check file was created
         assert lang_path.exists()
-        
+
         # Load and verify content
         result = json.loads(lang_path.read_text(encoding="utf-8"))
-        
+
         assert "basics" in result
         assert "fname" in result
         assert "lname" in result
         assert "education" in result
         assert "institution" in result
-        
+
         # Each should have both languages
         assert result["fname"] == {"de": "", "en": ""}
 
@@ -243,18 +243,18 @@ def test_update_lang_json_idempotent():
     with tempfile.TemporaryDirectory() as tmpdir:
         cv_path = Path(tmpdir) / "test_cv.json"
         lang_path = Path(tmpdir) / "lang.json"
-        
+
         cv_data = {"name": "value"}
         cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
-        
+
         # First run
         update_lang_json(cv_path, lang_path, ["en"], dry_run=False, verbose=False)
         first_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Second run
         update_lang_json(cv_path, lang_path, ["en"], dry_run=False, verbose=False)
         second_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Should be identical
         assert first_content == second_content
 
@@ -264,13 +264,13 @@ def test_update_lang_json_dry_run():
     with tempfile.TemporaryDirectory() as tmpdir:
         cv_path = Path(tmpdir) / "test_cv.json"
         lang_path = Path(tmpdir) / "lang.json"
-        
+
         cv_data = {"name": "value"}
         cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
-        
+
         # Dry run
         update_lang_json(cv_path, lang_path, ["en"], dry_run=True, verbose=False)
-        
+
         # File should NOT exist
         assert not lang_path.exists()
 
@@ -287,17 +287,17 @@ def test_from_lang_populates_empty_slots():
     }
     discovered_keys = {"fname", "lname"}
     languages = ["de", "en", "fa"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
-    
+
     # en slots should be populated with key names
     assert merged["fname"]["en"] == "fname"
     assert merged["lname"]["en"] == "lname"
-    
+
     # Other language slots should remain empty
     assert merged["fname"]["de"] == ""
     assert merged["fname"]["fa"] == ""
-    
+
     # Stats should reflect from-lang population
     assert stats["from_lang_populated"] == 2
 
@@ -309,13 +309,13 @@ def test_from_lang_preserves_existing_translations():
     }
     discovered_keys = {"fname"}
     languages = ["de", "en", "fa"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
-    
+
     # Existing non-empty "en" translation should be preserved, NOT overwritten
     assert merged["fname"]["en"] == "First Name"
     assert merged["fname"]["de"] == "Vorname"
-    
+
     # from_lang_populated should be 0 since en slot was already filled
     assert stats["from_lang_populated"] == 0
     assert stats["translations_preserved"] == 2
@@ -328,13 +328,13 @@ def test_from_lang_different_language():
     }
     discovered_keys = {"fname"}
     languages = ["de", "en", "fa"]
-    
+
     # Test with German
     merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="de")
     assert merged["fname"]["de"] == "fname"
     assert merged["fname"]["en"] == ""
     assert stats["from_lang_populated"] == 1
-    
+
     # Test with Persian
     merged2, stats2 = merge_lang_data(existing, discovered_keys, languages, from_lang="fa")
     assert merged2["fname"]["fa"] == "fname"
@@ -346,9 +346,9 @@ def test_from_lang_with_new_keys():
     existing = {}
     discovered_keys = {"fname", "lname"}
     languages = ["en", "de"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang="en")
-    
+
     assert merged["fname"]["en"] == "fname"
     assert merged["lname"]["en"] == "lname"
     assert merged["fname"]["de"] == ""
@@ -378,21 +378,21 @@ def test_collect_keys_skills_includes_item_keys_excludes_labels():
         },
         "education": []
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=True)
-    
+
     # Top-level keys should be present
     assert "basics" in keys
     assert "fname" in keys
     assert "skills" in keys
     assert "education" in keys
-    
+
     # Category/subcategory labels should NOT be present
     assert "Programming & Scripting" not in keys
     assert "Programming Languages" not in keys
     assert "Soft Skills" not in keys
     assert "Core Soft Skills" not in keys
-    
+
     # Skill item keys SHOULD be present
     assert "long_name" in keys
     assert "short_name" in keys
@@ -407,9 +407,9 @@ def test_collect_keys_include_skills_descendants_when_disabled():
             "Programming": {"Languages": []}
         }
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=False)
-    
+
     # Skills descendants should be included
     assert "Programming" in keys
     assert "Languages" in keys
@@ -421,9 +421,9 @@ def test_collect_keys_skills_as_empty_object():
         "basics": {"fname": "John"},
         "skills": {}
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=True)
-    
+
     assert "skills" in keys
     assert "basics" in keys
     assert "fname" in keys
@@ -437,9 +437,9 @@ def test_collect_keys_skills_as_list():
             {"long_name": "Python", "short_name": "Py"}
         ]
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=True)
-    
+
     # skills key should be present
     assert "skills" in keys
     # Skill item keys from the list should be present
@@ -463,9 +463,9 @@ def test_collect_keys_skills_nested_in_items():
             }
         }
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=True)
-    
+
     assert "skills" in keys
     assert "Category A" not in keys  # Category label excluded
     assert "Subcategory A" not in keys  # Subcategory label excluded
@@ -510,21 +510,21 @@ def test_collect_keys_skills_with_real_cv_structure():
             }
         }
     }
-    
+
     keys = collect_keys(data, exclude_skills_descendants=True)
-    
+
     # "skills" key should be present
     assert "skills" in keys
-    
+
     # Category labels should NOT be present
     assert "Programming & Scripting" not in keys
     assert "Laboratory Techniques" not in keys
-    
+
     # Subcategory labels should NOT be present
     assert "Programming Languages" not in keys
     assert "Machine Learning & Data Science" not in keys
     assert "Molecular Biology" not in keys
-    
+
     # Skill item keys SHOULD be present
     assert "long_name" in keys
     assert "short_name" in keys
@@ -539,13 +539,13 @@ def test_collect_keys_skills_preserves_existing_translations():
     }
     discovered_keys = {"skills", "long_name", "short_name", "type_key"}
     languages = ["en", "de", "fa"]
-    
+
     merged, stats = merge_lang_data(existing, discovered_keys, languages)
-    
+
     # Existing translations should be preserved
     assert merged["long_name"]["en"] == "Long Name"
     assert merged["long_name"]["de"] == "Langer Name"
-    
+
     # New keys should be added
     assert "skills" in merged
     assert "type_key" in merged
@@ -560,18 +560,18 @@ def test_idempotency_with_from_lang():
     with tempfile.TemporaryDirectory() as tmpdir:
         cv_path = Path(tmpdir) / "test_cv.json"
         lang_path = Path(tmpdir) / "lang.json"
-        
+
         cv_data = {"fname": "John", "lname": "Doe"}
         cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
-        
+
         # First run with from_lang
         update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
         first_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Second run with same from_lang
         update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
         second_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Should be identical
         assert first_content == second_content
 
@@ -581,7 +581,7 @@ def test_idempotency_with_skills():
     with tempfile.TemporaryDirectory() as tmpdir:
         cv_path = Path(tmpdir) / "test_cv.json"
         lang_path = Path(tmpdir) / "lang.json"
-        
+
         cv_data = {
             "basics": {"fname": "John"},
             "skills": {
@@ -593,18 +593,18 @@ def test_idempotency_with_skills():
             }
         }
         cv_path.write_text(json.dumps(cv_data), encoding="utf-8")
-        
+
         # First run
         update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
         first_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Second run
         update_lang_json(cv_path, lang_path, ["en", "de"], dry_run=False, verbose=False, from_lang="en")
         second_content = lang_path.read_text(encoding="utf-8")
-        
+
         # Should be identical
         assert first_content == second_content
-        
+
         # Verify the content is correct
         result = json.loads(second_content)
         assert "skills" in result

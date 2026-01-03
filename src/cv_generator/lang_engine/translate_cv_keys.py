@@ -47,28 +47,27 @@ from typing import Any
 
 from cv_generator.paths import get_repo_root
 
-
 _HERE = Path(__file__).resolve().parent
 
 
 def detect_language_from_filename(filename: str) -> str:
     """
     Detect target language from filename.
-    
+
     Patterns:
         - ramin-de.json -> de
         - ramin_fa.json -> fa
         - ramin.json -> en (default)
-    
+
     Returns the detected language code (2-3 lowercase chars).
     """
     stem = Path(filename).stem
-    
+
     # Match patterns like name-de or name_de at the end
     match = re.search(r'[-_]([a-z]{2,3})$', stem, re.IGNORECASE)
     if match:
         return match.group(1).lower()
-    
+
     # Default to English
     return "en"
 
@@ -76,13 +75,13 @@ def detect_language_from_filename(filename: str) -> str:
 def load_lang_map(lang_map_path: Path) -> dict[str, dict[str, str]]:
     """
     Load the language mapping file.
-    
+
     Returns a dict where keys are original field names and values are
     dicts mapping language codes to translations.
     """
     if not lang_map_path.exists():
         raise FileNotFoundError(f"Language map not found: {lang_map_path}")
-    
+
     try:
         return json.loads(lang_map_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
@@ -96,11 +95,11 @@ def translate_key(
 ) -> str:
     """
     Translate a single key to the target language.
-    
+
     Rules:
         1. If key exists in lang_map and lang_map[key][lang] is non-empty, use it
         2. Otherwise, keep the original key
-    
+
     Returns the translated key (or original if no translation).
     """
     if key in lang_map:
@@ -109,7 +108,7 @@ def translate_key(
             translated = translations[lang]
             if isinstance(translated, str) and translated.strip():
                 return translated
-    
+
     # No translation found, keep original
     return key
 
@@ -125,7 +124,7 @@ def translate_dict_keys(
 ) -> dict[str, Any]:
     """
     Recursively translate dictionary keys.
-    
+
     Args:
         obj: The dictionary to translate
         lang: Target language code
@@ -134,41 +133,41 @@ def translate_dict_keys(
         path: Current JSON path (for error reporting)
         in_skills_subtree: Whether we're inside the skills tree
         skills_depth: Depth within skills (0 = skills itself, 1 = category, 2 = subcategory)
-    
+
     Returns a new dictionary with translated keys.
     """
     result: dict[str, Any] = {}
     collisions: dict[str, list[str]] = {}  # translated_key -> [original_keys]
-    
+
     for original_key, value in obj.items():
         current_path = f"{path}.{original_key}" if path else original_key
-        
+
         # Determine if we should translate this key
         should_translate = True
-        
+
         # Special handling for skills subtree
         if in_skills_subtree and skills_depth in (1, 2):
             # At depth 1 (category) or 2 (subcategory), don't translate the key
             should_translate = False
-        
+
         # Translate the key if allowed
         if should_translate:
             translated_key = translate_key(original_key, lang, lang_map)
         else:
             translated_key = original_key
-        
+
         # Track collisions using setdefault for cleaner code
         collisions.setdefault(translated_key, []).append(original_key)
-        
+
         # Process the value recursively
         new_in_skills = in_skills_subtree or (original_key == "skills")
         new_skills_depth = skills_depth + 1 if in_skills_subtree else (1 if original_key == "skills" else 0)
-        
+
         translated_value = translate_value(
             value, lang, lang_map, on_collision, current_path,
             new_in_skills, new_skills_depth
         )
-        
+
         # Handle collision if this key already exists
         if translated_key in result:
             if on_collision == "error":
@@ -189,9 +188,9 @@ def translate_dict_keys(
                 print(f"Warning: Collision at {current_path}: "
                       f"'{original_key}' -> '{translated_key}' (dropping, keeping first)")
                 continue
-        
+
         result[translated_key] = translated_value
-    
+
     return result
 
 
@@ -206,7 +205,7 @@ def translate_value(
 ) -> Any:
     """
     Recursively translate keys within a value.
-    
+
     Values themselves are never modified - only dictionary keys are translated.
     """
     if isinstance(value, dict):
@@ -235,13 +234,13 @@ def translate_cv(
 ) -> dict[str, Any]:
     """
     Translate all keys in a CV JSON structure.
-    
+
     Args:
         cv_data: The CV data to translate
         lang: Target language code
         lang_map: The translation mapping
         on_collision: Collision handling strategy
-    
+
     Returns the translated CV data.
     """
     return translate_dict_keys(cv_data, lang, lang_map, on_collision)
@@ -256,14 +255,14 @@ def process_cv_file(
 ) -> dict[str, Any]:
     """
     Process a single CV file.
-    
+
     Args:
         in_path: Input CV JSON file path
         out_path: Output file path
         lang_map: The translation mapping
         lang: Target language (None = auto-detect from filename)
         on_collision: Collision handling strategy
-    
+
     Returns stats dict.
     """
     stats = {
@@ -273,31 +272,31 @@ def process_cv_file(
         "success": False,
         "error": None,
     }
-    
+
     try:
         # Load CV data
         cv_data = json.loads(in_path.read_text(encoding="utf-8"))
-        
+
         # Detect or use provided language
         target_lang = lang if lang else detect_language_from_filename(in_path.name)
         stats["lang"] = target_lang
-        
+
         # Translate
         translated = translate_cv(cv_data, target_lang, lang_map, on_collision)
-        
+
         # Write output
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
             json.dumps(translated, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
-        
+
         stats["success"] = True
-        
+
     except Exception as e:
         stats["error"] = str(e)
         raise
-    
+
     return stats
 
 
@@ -319,7 +318,7 @@ Notes:
     - Use --lang to force a specific language for all files
         """,
     )
-    
+
     input_group = parser.add_mutually_exclusive_group()
     input_group.add_argument(
         "--in-dir",
@@ -333,7 +332,7 @@ Notes:
         default=None,
         help="Single input CV JSON file",
     )
-    
+
     parser.add_argument(
         "--out-dir",
         type=Path,
@@ -365,9 +364,9 @@ Notes:
         action="store_true",
         help="Show detailed output",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Determine input files
     if args.in_file:
         if not args.in_file.exists():
@@ -392,30 +391,30 @@ Notes:
         if not input_files:
             print(f"Error: No JSON files found in {default_in_dir}", file=sys.stderr)
             return 1
-    
+
     # Load language map
     try:
         lang_map = load_lang_map(args.lang_map)
     except (FileNotFoundError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-    
+
     if args.verbose:
         print(f"Loaded language map with {len(lang_map)} keys")
         print(f"Output directory: {args.out_dir}")
         if args.lang:
             print(f"Forcing language: {args.lang}")
         print()
-    
+
     # Process files
     success_count = 0
     error_count = 0
-    
+
     print(f"\n📋 Translating {len(input_files)} CV file(s)...\n")
-    
+
     for in_path in input_files:
         out_path = args.out_dir / in_path.name
-        
+
         try:
             stats = process_cv_file(
                 in_path=in_path,
@@ -424,19 +423,19 @@ Notes:
                 lang=args.lang,
                 on_collision=args.on_collision,
             )
-            
+
             print(f"  ✅ {in_path.name} -> {out_path.name} (lang: {stats['lang']})")
             success_count += 1
-            
+
         except Exception as e:
             print(f"  ❌ {in_path.name}: {e}")
             error_count += 1
-    
+
     # Summary
     print("\n" + "=" * 60)
     print(f"📊 Results: {success_count}/{len(input_files)} translated successfully")
     print("=" * 60)
-    
+
     if error_count > 0:
         print("\n❌ Some files failed to translate")
         return 1

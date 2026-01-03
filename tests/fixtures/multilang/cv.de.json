@@ -1,0 +1,100 @@
+{
+  "basics": [
+    {
+      "fname": "Test",
+      "lname": "Person",
+      "email": "test@example.com",
+      "label": ["Softwareingenieur"],
+      "summary": "Ein Softwareingenieur mit Erfahrung in mehreren Programmiersprachen.",
+      "location": [
+        {
+          "city": "Berlin",
+          "country": "Deutschland"
+        }
+      ],
+      "phone": {"formatted": "+49 123 456789"}
+    }
+  ],
+  "profiles": [],
+  "education": [
+    {
+      "institution": "Technische Universität",
+      "location": "Berlin, Deutschland",
+      "area": "Informatik",
+      "studyType": "Master",
+      "startDate": "2018-10-01",
+      "endDate": "2020-09-30",
+      "type_key": ["Voller Lebenslauf"]
+    },
+    {
+      "institution": "Staatliche Universität",
+      "location": "München, Deutschland",
+      "area": "Mathematik",
+      "studyType": "Bachelor",
+      "startDate": "2014-10-01",
+      "endDate": "2018-07-30",
+      "type_key": ["Voller Lebenslauf"]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "proficiency": {
+        "level": "Native",
+        "CEFR": null,
+        "status": "Muttersprache"
+      },
+      "certifications": []
+    }
+  ],
+  "workshop_and_certifications": [],
+  "skills": {
+    "Programmierung & Skripting": {
+      "Programmiersprachen": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Voller Lebenslauf"]
+        },
+        {
+          "long_name": "JavaScript",
+          "short_name": "JS",
+          "type_key": ["Voller Lebenslauf"]
+        }
+      ]
+    },
+    "Soft Skills": {
+      "Zentrale Soft Skills": [
+        {
+          "long_name": "Teamarbeit",
+          "short_name": "Teamwork",
+          "type_key": ["Voller Lebenslauf"]
+        }
+      ]
+    }
+  },
+  "experiences": [
+    {
+      "role": "Softwareingenieur",
+      "institution": "Technologieunternehmen",
+      "duration": "2020-10-01 - heute",
+      "description": "Entwicklung von Cloud-nativen Anwendungen."
+    }
+  ],
+  "projects": [
+    {
+      "title": "Open-Source-Projekt",
+      "description": "Eine Open-Source-Bibliothek für Datenverarbeitung.",
+      "url": "https://github.com/example/project",
+      "type_key": ["Voller Lebenslauf", "Programmierung"]
+    },
+    {
+      "title": "Forschungsprojekt",
+      "description": "Forschung zu maschinellem Lernen.",
+      "url": null,
+      "type_key": ["Voller Lebenslauf", "Akademisch"]
+    }
+  ],
+  "publications": [],
+  "references": []
+}

@@ -1,0 +1,38 @@
+{
+  "Programming & Scripting": {
+    "de": "Programmierung & Skripting",
+    "fa": "برنامه‌نویسی و اسکریپت‌نویسی"
+  },
+  "Programming Languages": {
+    "de": "Programmiersprachen",
+    "fa": "زبان‌های برنامه‌نویسی"
+  },
+  "Soft Skills": {
+    "de": "Soft Skills",
+    "fa": "مهارت‌های نرم"
+  },
+  "Core Soft Skills": {
+    "de": "Zentrale Soft Skills",
+    "fa": "مهارت‌های نرم اصلی"
+  },
+  "education": {
+    "de": "Ausbildung",
+    "fa": "تحصیلات"
+  },
+  "experiences": {
+    "de": "Berufserfahrung",
+    "fa": "تجربیات"
+  },
+  "skills": {
+    "de": "Fähigkeiten",
+    "fa": "مهارت‌ها"
+  },
+  "projects": {
+    "de": "Projekte",
+    "fa": "پروژه‌ها"
+  },
+  "curriculum_vitae": {
+    "de": "Lebenslauf",
+    "fa": "رزومه"
+  }
+}

@@ -521,7 +521,7 @@ cvgen build --name ramin --templates-dir my_templates
 
 **Notes**:
 - Template directory must contain `layout.tex` and section files
-- Use Jinja2 delimiters: `<VAR>`, `<BLOCK>`, `/*/*/*`
+- Uses custom Jinja2 delimiters to avoid LaTeX conflicts: `<VAR>`, `<BLOCK>`, `/*/*/*...*/*/*/`
 - See `cvgen help templates` for syntax details
 
 ---

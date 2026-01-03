@@ -328,3 +328,135 @@ class TestErrorHandling:
         
         with pytest.raises(ConfigurationError):
             export_cv("nonexistent", db_path)
+
+
+class TestDoctor:
+    """Tests for database doctor/health check."""
+    
+    @pytest.fixture
+    def healthy_db(self, tmp_path):
+        """Create a healthy database with some data."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+        
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["Tag1", "Tag2"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        
+        import_cv(cv_path, db_path)
+        return db_path
+    
+    def test_doctor_healthy_db(self, healthy_db):
+        """Test that doctor reports healthy database."""
+        from cv_generator.db import doctor
+        
+        results = doctor(healthy_db)
+        
+        assert results["healthy"] is True
+        assert results["stats"]["persons"] == 1
+        assert results["stats"]["entries"] > 0
+        assert results["checks"]["schema_version"]["ok"] is True
+    
+    def test_doctor_reports_stats(self, healthy_db):
+        """Test that doctor reports database statistics."""
+        from cv_generator.db import doctor
+        
+        results = doctor(healthy_db)
+        
+        assert "stats" in results
+        assert "persons" in results["stats"]
+        assert "entries" in results["stats"]
+        assert "tags" in results["stats"]
+        assert "tag_assignments" in results["stats"]
+    
+    def test_doctor_checks_orphaned_tags(self, healthy_db):
+        """Test that doctor checks for orphaned tags."""
+        from cv_generator.db import doctor, create_tag
+        
+        # Create an orphaned tag (not used by any entry)
+        create_tag("OrphanTag", None, healthy_db)
+        
+        results = doctor(healthy_db)
+        
+        assert "orphaned_tags" in results["checks"]
+        assert results["checks"]["orphaned_tags"]["count"] > 0
+        assert "OrphanTag" in results["checks"]["orphaned_tags"]["names"]
+
+
+class TestExportWithFlags:
+    """Tests for export with apply-tags flags."""
+    
+    @pytest.fixture
+    def db_with_tags(self, tmp_path):
+        """Create a database with tagged entries."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+        
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["Tag1", "Tag2"]},
+                {"title": "Project B"}  # No type_key
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        
+        import_cv(cv_path, db_path)
+        return db_path, tmp_path
+    
+    def test_export_without_apply_tags(self, db_with_tags):
+        """Test export preserves original type_key structure."""
+        db_path, tmp_path = db_with_tags
+        
+        exported = export_cv("testuser", db_path)
+        
+        # Project A should have type_key
+        assert "type_key" in exported["projects"][0]
+        # Project B should not have type_key (it didn't originally)
+        assert "type_key" not in exported["projects"][1]
+    
+    def test_export_refuses_overwrite_without_force(self, db_with_tags):
+        """Test that export refuses to overwrite without --force."""
+        from cv_generator.db import export_cv_to_file
+        
+        db_path, tmp_path = db_with_tags
+        output_path = tmp_path / "output" / "testuser.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # First export should succeed
+        export_cv_to_file("testuser", output_path, db_path, force=True)
+        
+        # Second export should fail without force
+        with pytest.raises(ConfigurationError) as exc_info:
+            export_cv_to_file("testuser", output_path, db_path, force=False)
+        
+        assert "already exists" in str(exc_info.value)
+    
+    def test_export_with_force_overwrites(self, db_with_tags):
+        """Test that export with --force overwrites existing files."""
+        from cv_generator.db import export_cv_to_file
+        
+        db_path, tmp_path = db_with_tags
+        output_path = tmp_path / "output" / "testuser.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # First export
+        export_cv_to_file("testuser", output_path, db_path, force=True)
+        first_mtime = output_path.stat().st_mtime
+        
+        import time
+        time.sleep(0.1)
+        
+        # Second export with force
+        export_cv_to_file("testuser", output_path, db_path, force=True)
+        second_mtime = output_path.stat().st_mtime
+        
+        assert second_mtime > first_mtime

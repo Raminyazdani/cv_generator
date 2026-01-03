@@ -321,7 +321,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         try:
             output_dir = get_default_cvs_path()
             output_path = output_dir / f"{person}.json"
-            export_cv_to_file(person, output_path, app.config["DB_PATH"])
+            # Use force=True for web exports (user action implies consent)
+            export_cv_to_file(person, output_path, app.config["DB_PATH"], force=True)
             flash(f"Exported CV to {output_path}", "success")
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")

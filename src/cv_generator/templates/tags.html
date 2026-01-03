@@ -11,8 +11,14 @@
 
 {% if tags %}
 <div class="card">
+    <div style="margin-bottom: 1rem;">
+        <input type="text" id="search-input" placeholder="Search tags..." 
+               style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px;">
+    </div>
+    
+    <div id="tags-list">
     {% for tag in tags %}
-    <div class="list-item">
+    <div class="list-item tag-item" data-search="{{ tag.name | lower }} {{ tag.description | default('') | lower }}">
         <div style="flex: 1;">
             <strong>{{ tag.name }}</strong>
             {% if tag.description %}
@@ -30,7 +36,33 @@
         </div>
     </div>
     {% endfor %}
+    </div>
+    
+    <div id="no-results" style="display: none; text-align: center; padding: 1rem; color: var(--gray-500);">
+        No tags match your search.
+    </div>
 </div>
+
+<script>
+document.getElementById('search-input').addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    const tags = document.querySelectorAll('.tag-item');
+    const noResults = document.getElementById('no-results');
+    let visibleCount = 0;
+    
+    tags.forEach(function(tag) {
+        const searchText = tag.getAttribute('data-search');
+        if (query === '' || searchText.includes(query)) {
+            tag.style.display = 'flex';
+            visibleCount++;
+        } else {
+            tag.style.display = 'none';
+        }
+    });
+    
+    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+});
+</script>
 {% else %}
 <div class="card empty-state">
     <p>No tags created yet.</p>

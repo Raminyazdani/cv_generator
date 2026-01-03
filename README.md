@@ -16,6 +16,10 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
   - [Running the generator](#running-the-generator)  
   - [Adding a new CV](#adding-a-new-cv)  
   - [Adding a profile picture](#adding-a-profile-picture)  
+- [SQLite Database & Tagging](#sqlite-database--tagging)
+  - [Quick Start](#quick-start)
+  - [Web UI for Tag Management](#web-ui-for-tag-management)
+  - [Detailed Documentation](#detailed-documentation)
 - [Data Format (JSON Schema Overview)](#data-format-json-schema-overview)  
   - [Basics](#basics)  
   - [Profiles / Social links](#profiles--social-links)  
@@ -42,6 +46,9 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
 - **Modular sections**: Each CV section is a separate Jinja2/LaTeX template under `templates/`:
   - `header`, `education`, `experience`, `skills`, `language`, `projects`, `certificates`, `publications`, `references`, ...
 - **Profile photo support**: Optional per-person images under `data/pics/`.
+- **SQLite database**: Store CV data in SQLite for querying and editing.
+- **Tagging system**: Apply tags (via `type_key`) to create targeted CV versions.
+- **Web UI**: Browse CV sections and manage tags via a local web interface.
 - **Robust cleanup**: Intermediate result directories are cleaned up reliably, with special handling for Windows file locks (e.g., OneDrive / antivirus).
 - **Safe templating**: Uses `StrictUndefined` to catch missing fields early; custom LaTeX-escaping filter to avoid compilation errors.
 
@@ -298,6 +305,79 @@ Exit codes:
 - `2` – Mismatches found (details printed to stdout)
 
 For more details: `cvgen help ensure`
+
+---
+
+## SQLite Database & Tagging
+
+CV Generator includes an optional SQLite-backed data layer for:
+- **Storing CV data** in a queryable database
+- **Tagging entries** with `type_key` values for creating targeted CV versions
+- **Browsing and editing** via a local web UI
+- **Round-trip import/export** that preserves all data
+
+### Quick Start
+
+```bash
+# 1. Initialize the database
+cvgen db init
+
+# 2. Import your CV JSON files
+cvgen db import
+
+# 3. Check database health
+cvgen db doctor
+
+# 4. Start the tag manager web UI
+cvgen web tags
+# Opens at http://127.0.0.1:5000
+
+# 5. Export with updated tags
+cvgen db export --apply-tags --force
+```
+
+### Web UI for Tag Management
+
+Start the local web server:
+
+```bash
+cvgen web tags
+```
+
+Then open http://127.0.0.1:5000 to:
+- Browse persons and their CV sections
+- View and edit individual entries
+- Create, rename, and delete tags
+- Assign/unassign tags to entries
+- Export CVs with tag updates
+
+### Key Commands
+
+| Command | Description |
+|---------|-------------|
+| `cvgen db init` | Create database with schema |
+| `cvgen db import` | Import CV JSON files |
+| `cvgen db export` | Export to JSON files |
+| `cvgen db diff` | Compare JSON with database |
+| `cvgen db list` | List persons or tags |
+| `cvgen db doctor` | Run health checks |
+| `cvgen web tags` | Start tag manager web UI |
+
+### Export Flags
+
+```bash
+# Apply database tags to entries that originally had type_key
+cvgen db export --apply-tags --force
+
+# Add type_key to ALL entries (even those without)
+cvgen db export --apply-tags-to-all --force
+```
+
+### Detailed Documentation
+
+For comprehensive documentation, see:
+- [SQLite Tagging Cookbook](docs/sqlite_tagging_cookbook.md) - Concepts, operations, extending the system
+- [SQLite Workflows Examples](examples/sqlite_workflows.md) - Real command examples
 
 ---
 

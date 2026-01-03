@@ -302,7 +302,10 @@ def db_export_command(args: argparse.Namespace) -> int:
             output_dir=output_dir,
             db_path=db_path,
             name_filter=args.name,
-            pretty=pretty
+            pretty=pretty,
+            apply_tags=args.apply_tags,
+            apply_tags_to_all=args.apply_tags_to_all,
+            force=args.force
         )
         
         print(f"\n📤 Export Results:")
@@ -410,6 +413,74 @@ def db_list_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     except Exception as e:
         logger.error(f"Error listing database contents: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def db_doctor_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db doctor command (health check).
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    from .db import doctor
+    
+    db_path = Path(args.db) if args.db else None
+    
+    try:
+        results = doctor(db_path)
+        
+        if args.format == "json":
+            print(json.dumps(results, indent=2, ensure_ascii=False))
+        else:
+            print(f"\n🏥 Database Health Check: {results['database']}")
+            print(f"   Status: {'✅ Healthy' if results['healthy'] else '❌ Issues Found'}")
+            print()
+            print(f"📊 Statistics:")
+            print(f"   Persons: {results['stats'].get('persons', 0)}")
+            print(f"   Entries: {results['stats'].get('entries', 0)}")
+            print(f"   Tags: {results['stats'].get('tags', 0)}")
+            print(f"   Tag Assignments: {results['stats'].get('tag_assignments', 0)}")
+            
+            if results['issues']:
+                print()
+                print(f"⚠️  Issues ({len(results['issues'])}):")
+                for issue in results['issues']:
+                    print(f"   • {issue}")
+            
+            print()
+            print(f"🔍 Checks:")
+            checks = results.get('checks', {})
+            if 'schema_version' in checks:
+                sv = checks['schema_version']
+                status = "✅" if sv.get('ok') else "❌"
+                print(f"   {status} Schema version: v{sv.get('current', '?')} (expected v{sv.get('expected', '?')})")
+            if 'orphaned_entries' in checks:
+                oe = checks['orphaned_entries']
+                status = "✅" if oe.get('ok') else "❌"
+                print(f"   {status} Orphaned entries: {oe.get('count', 0)}")
+            if 'orphaned_tags' in checks:
+                ot = checks['orphaned_tags']
+                print(f"   ℹ️  Unused tags: {ot.get('count', 0)}")
+            if 'duplicate_tags' in checks:
+                dt = checks['duplicate_tags']
+                status = "✅" if dt.get('ok') else "❌"
+                print(f"   {status} Duplicate tags: {dt.get('count', 0)}")
+            if 'missing_identity_keys' in checks:
+                mi = checks['missing_identity_keys']
+                print(f"   ℹ️  Missing identity keys: {mi.get('count', 0)}")
+            if 'invalid_json' in checks:
+                ij = checks['invalid_json']
+                status = "✅" if ij.get('ok') else "❌"
+                print(f"   {status} Invalid JSON: {ij.get('count', 0)}")
+        
+        return EXIT_SUCCESS if results['healthy'] else EXIT_ENSURE_ERROR
+    except Exception as e:
+        logger.error(f"Error running health check: {e}")
         print(f"❌ Error: {e}")
         return EXIT_ERROR
 
@@ -1025,6 +1096,21 @@ def create_parser() -> argparse.ArgumentParser:
         default="pretty",
         help="Output format (default: pretty)"
     )
+    db_export_parser.add_argument(
+        "--apply-tags",
+        action="store_true",
+        help="Rebuild type_key from database tags for entries that originally had it"
+    )
+    db_export_parser.add_argument(
+        "--apply-tags-to-all",
+        action="store_true",
+        help="Add type_key to ALL entries from database tags (not just those that had it)"
+    )
+    db_export_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing files without asking"
+    )
     db_export_parser.set_defaults(func=db_export_command)
     
     # DB diff command
@@ -1083,6 +1169,26 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_list_parser.set_defaults(func=db_list_command)
+    
+    # DB doctor command
+    db_doctor_parser = db_subparsers.add_parser(
+        "doctor",
+        help="Check database health",
+        description="Run health checks on the database and report issues."
+    )
+    db_doctor_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_doctor_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    db_doctor_parser.set_defaults(func=db_doctor_command)
     
     db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
     

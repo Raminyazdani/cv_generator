@@ -29,43 +29,11 @@ from .errors import (
 )
 from .generator import generate_all_cvs
 from .io import discover_cv_files
+from .logging_config import setup_logging
 from .validate_schema import validate_cv_file
 
 # Set up module logger
 logger = logging.getLogger(__name__)
-
-
-def setup_logging(verbose: bool = False, debug: bool = False, quiet: bool = False) -> None:
-    """
-    Configure logging based on verbosity level.
-
-    Args:
-        verbose: Enable INFO level logging.
-        debug: Enable DEBUG level logging (overrides verbose).
-        quiet: Enable ERROR level only (overrides verbose, overridden by debug).
-    """
-    if debug:
-        level = logging.DEBUG
-        format_str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    elif quiet:
-        level = logging.ERROR
-        format_str = "%(message)s"
-    elif verbose:
-        level = logging.INFO
-        format_str = "%(message)s"
-    else:
-        level = logging.WARNING
-        format_str = "%(message)s"
-
-    logging.basicConfig(
-        level=level,
-        format=format_str,
-        stream=sys.stderr
-    )
-
-    # Also configure the cv_generator logger
-    cv_logger = logging.getLogger("cv_generator")
-    cv_logger.setLevel(level)
 
 
 def build_command(args: argparse.Namespace) -> int:

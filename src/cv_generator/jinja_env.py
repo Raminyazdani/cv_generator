@@ -63,15 +63,15 @@ def file_exists(value: Any) -> bool:
 
 
 def debug_filter(value: Any) -> str:
-    """Debug filter that prints value and type to stdout."""
-    print(value)
-    print(type(value))
+    """Debug filter that logs value and type for debugging templates."""
+    logger.debug(f"Template debug - value: {value}")
+    logger.debug(f"Template debug - type: {type(value)}")
     return ""  # emit nothing in TeX
 
 
 def types_filter(value: Any) -> str:
-    """Types filter that prints the type to stdout."""
-    print(type(value))
+    """Types filter that logs the type for debugging templates."""
+    logger.debug(f"Template types - type: {type(value)}")
     return ""  # emit nothing in TeX
 
 

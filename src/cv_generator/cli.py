@@ -7,6 +7,7 @@ Provides the `cvgen` command with the following subcommands:
 - lint: Validate CV JSON files against the schema
 - db: SQLite database operations (init, import, export, diff)
 - doctor: System health checks
+- profile: Manage CV profile selection
 """
 
 import argparse
@@ -17,6 +18,15 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from . import __version__
+from .config import (
+    Config,
+    ConfigError,
+    clear_current_profile,
+    get_current_profile,
+    list_profiles,
+    load_config,
+    set_current_profile,
+)
 from .ensure import (
     EXIT_ENSURE_ERROR,
     run_ensure,
@@ -47,10 +57,31 @@ def build_command(args: argparse.Namespace) -> int:
     Returns:
         Exit code.
     """
-    # Resolve paths
+    # Load config if available
+    config = getattr(args, "_config", None)
+    if config is None:
+        config = Config()
+
+    # Resolve paths - CLI overrides config, config overrides defaults
     cvs_dir = Path(args.input_dir) if args.input_dir else None
+    if cvs_dir is None and config.paths.cvs:
+        cvs_dir = Path(config.paths.cvs)
+
     templates_dir = Path(args.templates_dir) if args.templates_dir else None
+    if templates_dir is None and config.paths.templates:
+        templates_dir = Path(config.paths.templates)
+
     output_dir = Path(args.output_dir) if args.output_dir else None
+    if output_dir is None and config.paths.output:
+        output_dir = Path(config.paths.output)
+
+    # Determine profile name: CLI --name > current profile from state
+    name_filter = args.name
+    if name_filter is None:
+        current = get_current_profile()
+        if current:
+            name_filter = current
+            logger.info(f"Using current profile: {current}")
 
     # Validate input directory if specified
     if cvs_dir and not cvs_dir.exists():
@@ -69,21 +100,27 @@ def build_command(args: argparse.Namespace) -> int:
         logger.info(f"Templates directory: {templates_dir}")
     if output_dir:
         logger.info(f"Output directory: {output_dir}")
-    if args.name:
-        logger.info(f"Building CV for: {args.name}")
+    if name_filter:
+        logger.info(f"Building CV for: {name_filter}")
     if args.dry_run:
         logger.info("Dry run mode: LaTeX will not be compiled")
     if args.keep_latex:
         logger.info("Keeping LaTeX source files")
+
+    # Resolve variant
+    variant = getattr(args, "variant", None)
+    if variant:
+        logger.info(f"Using variant filter: {variant}")
 
     try:
         results = generate_all_cvs(
             cvs_dir=cvs_dir,
             templates_dir=templates_dir,
             output_dir=output_dir,
-            name_filter=args.name,
+            name_filter=name_filter,
             dry_run=args.dry_run,
-            keep_latex=args.keep_latex
+            keep_latex=args.keep_latex,
+            variant=variant,
         )
     except CVGeneratorError as e:
         logger.error(str(e))
@@ -94,8 +131,8 @@ def build_command(args: argparse.Namespace) -> int:
 
     # Check results
     if not results:
-        if args.name:
-            logger.error(f"No CV files found matching '{args.name}'")
+        if name_filter:
+            logger.error(f"No CV files found matching '{name_filter}'")
         else:
             logger.error("No CV files found")
         return EXIT_CONFIG_ERROR
@@ -606,6 +643,111 @@ def web_tags_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def profile_list_command(args: argparse.Namespace) -> int:
+    """
+    Execute the profile list command.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    try:
+        profiles = list_profiles(cvs_dir)
+        current = get_current_profile()
+
+        if args.format == "json":
+            result = {
+                "profiles": profiles,
+                "current": current,
+            }
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            if not profiles:
+                print("No profiles found.")
+                return EXIT_SUCCESS
+
+            print("\n📋 Available Profiles:")
+            for profile in profiles:
+                if profile == current:
+                    print(f"   • {profile} (current)")
+                else:
+                    print(f"   • {profile}")
+            print()
+
+            if current:
+                print(f"Current profile: {current}")
+                print("Use 'cvgen profile use <name>' to switch profiles.")
+            else:
+                print("No profile selected.")
+                print("Use 'cvgen profile use <name>' to select a profile.")
+
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error listing profiles: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def profile_use_command(args: argparse.Namespace) -> int:
+    """
+    Execute the profile use command.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    profile_name = args.profile_name
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    try:
+        # Verify profile exists
+        profiles = list_profiles(cvs_dir)
+
+        if profile_name not in profiles:
+            print(f"❌ Profile '{profile_name}' not found.")
+            print(f"Available profiles: {', '.join(profiles)}")
+            return EXIT_CONFIG_ERROR
+
+        set_current_profile(profile_name)
+        print(f"✅ Set current profile to: {profile_name}")
+        print("Now 'cvgen build' will use this profile by default.")
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error setting profile: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def profile_clear_command(args: argparse.Namespace) -> int:
+    """
+    Execute the profile clear command.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    try:
+        current = get_current_profile()
+        if current:
+            clear_current_profile()
+            print(f"✅ Cleared current profile (was: {current})")
+        else:
+            print("No profile was set.")
+        return EXIT_SUCCESS
+    except Exception as e:
+        logger.error(f"Error clearing profile: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
 # Extended help topics for 'cvgen help <topic>'
 HELP_TOPICS = {
     "build": """
@@ -974,6 +1116,102 @@ EXIT CODES
     0  All checks passed (healthy)
     2  One or more checks failed (unhealthy)
 """,
+
+    "profile": """
+cvgen profile — Manage CV profile selection
+
+SYNOPSIS
+    cvgen profile list [OPTIONS]
+    cvgen profile use NAME [OPTIONS]
+    cvgen profile clear
+
+DESCRIPTION
+    The profile command manages the currently selected CV profile. When a
+    profile is set, 'cvgen build' will use it as the default without needing
+    the --name flag.
+
+SUBCOMMANDS
+    list              List available profiles
+    use NAME          Set the current profile to NAME
+    clear             Clear the current profile selection
+
+OPTIONS
+    --input-dir, -i   Directory containing CV JSON files (default: data/cvs)
+    --format, -f      Output format for 'list': text or json (default: text)
+
+EXAMPLES
+    # List all available profiles
+    cvgen profile list
+
+    # Set ramin as the current profile
+    cvgen profile use ramin
+
+    # Now build will use ramin by default
+    cvgen build
+
+    # Clear the current profile
+    cvgen profile clear
+
+STATE FILE
+    The current profile is stored in .cvgen/state.json (excluded from git).
+    This file is created automatically when you use 'cvgen profile use'.
+""",
+
+    "config": """
+cvgen configuration — Config file support
+
+DESCRIPTION
+    CV Generator supports an optional TOML configuration file to reduce
+    repetitive CLI flags.
+
+CONFIG FILE
+    The default config file name is 'cv_generator.toml'. It is searched for in:
+    1. Current directory
+    2. Repository root
+
+    You can also specify a custom path with --config:
+        cvgen --config path/to/config.toml build
+
+CONFIG SECTIONS
+    [project]
+    name = "My CV Project"
+    default_lang = "en"
+    variants = ["academic", "industry"]
+
+    [paths]
+    cvs = "data/cvs"
+    templates = "templates"
+    output = "output"
+    db = "data/db/cv.db"
+
+    [build]
+    latex_engine = "xelatex"
+    keep_latex = false
+    dry_run = false
+
+    [logging]
+    level = "WARNING"
+    log_file = "output/logs/cvgen.log"
+
+PRECEDENCE
+    CLI flags override config file values, which override internal defaults:
+    1. CLI flags (highest priority)
+    2. Config file values
+    3. Internal defaults (lowest priority)
+
+EXAMPLE CONFIG
+    # cv_generator.toml
+    [project]
+    name = "My CVs"
+    default_lang = "en"
+
+    [paths]
+    cvs = "data/cvs"
+    output = "output"
+
+    [build]
+    keep_latex = true
+""",
 }
 
 
@@ -996,6 +1234,8 @@ def help_command(args: argparse.Namespace) -> int:
         print("  ensure          Validate multilingual CV consistency")
         print("  lint            Validate CV JSON files against schema")
         print("  doctor          System health checks")
+        print("  profile         Manage CV profile selection")
+        print("  config          Configuration file support")
         print("  languages       Language support and translation")
         print("  templates       Template customization")
         print("  json-schema     CV JSON data format")
@@ -1010,6 +1250,8 @@ def help_command(args: argparse.Namespace) -> int:
         "langs": "languages",
         "template": "templates",
         "schema": "json-schema",
+        "profiles": "profile",
+        "configuration": "config",
         "json": "json-schema",
     }
     topic = topic_aliases.get(topic, topic)
@@ -1058,6 +1300,12 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Suppress output except errors"
     )
+    parser.add_argument(
+        "--config", "-c",
+        type=str,
+        dest="config_file",
+        help="Path to config file (default: cv_generator.toml)"
+    )
 
     # Subcommands
     subparsers = parser.add_subparsers(
@@ -1103,6 +1351,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--dry-run", "-d",
         action="store_true",
         help="Render LaTeX but skip xelatex compilation"
+    )
+    build_parser.add_argument(
+        "--variant", "-V",
+        type=str,
+        help="Filter entries by variant/type_key (e.g., 'academic', 'industry')"
     )
 
     build_parser.set_defaults(func=build_command)
@@ -1442,6 +1695,67 @@ def create_parser() -> argparse.ArgumentParser:
 
     web_parser.set_defaults(func=lambda args: web_parser.print_help() or EXIT_SUCCESS)
 
+    # Profile command for profile management
+    profile_parser = subparsers.add_parser(
+        "profile",
+        help="Manage CV profile selection",
+        description="List, select, and manage CV profiles."
+    )
+
+    profile_subparsers = profile_parser.add_subparsers(
+        dest="profile_command",
+        title="profile commands",
+        description="Available profile commands"
+    )
+
+    # Profile list command
+    profile_list_parser = profile_subparsers.add_parser(
+        "list",
+        help="List available profiles",
+        description="List all CV profiles found in the data directory."
+    )
+    profile_list_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    profile_list_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    profile_list_parser.set_defaults(func=profile_list_command)
+
+    # Profile use command
+    profile_use_parser = profile_subparsers.add_parser(
+        "use",
+        help="Set the current profile",
+        description="Set a profile as the default for build commands."
+    )
+    profile_use_parser.add_argument(
+        "profile_name",
+        type=str,
+        help="Name of the profile to use"
+    )
+    profile_use_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    profile_use_parser.set_defaults(func=profile_use_command)
+
+    # Profile clear command
+    profile_clear_parser = profile_subparsers.add_parser(
+        "clear",
+        help="Clear the current profile",
+        description="Remove the current profile selection."
+    )
+    profile_clear_parser.set_defaults(func=profile_clear_command)
+
+    profile_parser.set_defaults(func=lambda args: profile_parser.print_help() or EXIT_SUCCESS)
+
     # Doctor command for system health checks
     doctor_parser = subparsers.add_parser(
         "doctor",
@@ -1500,10 +1814,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Set up logging with quiet support
     setup_logging(verbose=args.verbose, debug=args.debug, quiet=args.quiet)
 
+    # Load config file if specified or found
+    config_path = Path(args.config_file) if args.config_file else None
+    try:
+        config = load_config(config_path)
+        args._config = config  # Attach to args for commands to use
+    except ConfigError as e:
+        logger.error(f"Config error: {e}")
+        print(f"❌ Config error: {e}")
+        return EXIT_CONFIG_ERROR
+
     # If no command specified, default to 'build'
     if not args.command:
         # Re-parse with 'build' as default
         args = parser.parse_args(['build'] + (argv if argv else sys.argv[1:]))
+        # Re-attach config
+        args._config = config
 
     # Execute the command
     if hasattr(args, 'func'):

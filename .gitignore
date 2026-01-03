@@ -77,3 +77,6 @@ data/db/
 *.db-journal
 *.db-wal
 *.db-shm
+
+# CV Generator state files (local profile selection, etc.)
+.cvgen/

@@ -212,10 +212,11 @@ def check_dependencies() -> List[CheckResult]:
             __import__(module_name)
             # Use importlib.metadata to get version (more reliable)
             try:
+                from importlib.metadata import PackageNotFoundError
                 from importlib.metadata import version as get_version
 
                 version = get_version(module_name)
-            except Exception:
+            except PackageNotFoundError:
                 version = "unknown"
             results.append(
                 CheckResult(

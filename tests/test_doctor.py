@@ -195,15 +195,17 @@ class TestCheckDependencies:
 
     def test_missing_dependency_detected(self, monkeypatch):
         """Test that missing dependency is detected."""
+        import builtins
+
         # Mock jinja2 import to fail
-        original_import = __builtins__["__import__"]
+        original_import = builtins.__import__
 
         def mock_import(name, *args, **kwargs):
             if name == "jinja2":
                 raise ImportError("No module named 'jinja2'")
             return original_import(name, *args, **kwargs)
 
-        monkeypatch.setattr("builtins.__import__", mock_import)
+        monkeypatch.setattr(builtins, "__import__", mock_import)
 
         results = check_dependencies()
         jinja_result = next(r for r in results if "jinja2" in r.name)

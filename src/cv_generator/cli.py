@@ -568,7 +568,8 @@ def doctor_command(args: argparse.Namespace) -> int:
         if args.format == "json":
             print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
         else:
-            print(report.format_text(verbose=args.verbose if hasattr(args, 'verbose') else False))
+            # args.verbose is always available (global option)
+            print(report.format_text(verbose=args.verbose))
 
         return EXIT_SUCCESS if report.is_healthy else EXIT_ENSURE_ERROR
     except Exception as e:

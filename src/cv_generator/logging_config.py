@@ -65,10 +65,12 @@ def configure_logging(
             file_handler.setLevel(level)
             file_handler.setFormatter(logging.Formatter(DEBUG_FORMAT))
             root_logger.addHandler(file_handler)
-        except (OSError, IOError):
-            # Silently skip file logging if directory creation fails
-            # This prevents builds from breaking on read-only filesystems
-            pass
+        except (OSError, IOError) as e:
+            # Log a warning when file logging fails (visible in debug mode)
+            # This helps with troubleshooting while not breaking builds on read-only filesystems
+            logging.getLogger(__name__).debug(
+                f"Could not set up file logging to {log_file}: {e}"
+            )
 
     # Configure the cv_generator package logger
     cv_logger = logging.getLogger("cv_generator")

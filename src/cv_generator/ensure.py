@@ -604,10 +604,12 @@ def load_lang_mapping(
         cvs_dir = get_default_cvs_path()
     
     # Try different locations
+    from .paths import get_lang_engine_path
     candidates = [
         cvs_dir / "i18n" / name / "lang.json",
         cvs_dir / f"{name}_lang.json",
-        cvs_dir / "lang.json",  # Global mapping
+        cvs_dir / "lang.json",  # Global mapping in cvs dir
+        get_lang_engine_path() / "lang.json",  # Main lang_engine mapping
     ]
     
     for candidate in candidates:

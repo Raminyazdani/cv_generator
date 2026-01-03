@@ -189,3 +189,17 @@ class TestDBCommands:
         assert args.output_dir == "/path/to/output"
         assert args.name == "ramin"
         assert args.format == "min"
+
+
+class TestBuildValidation:
+    """Tests for build command input validation."""
+    
+    def test_nonexistent_input_dir(self):
+        """Test that nonexistent input dir returns config error."""
+        result = main(["build", "--input-dir", "/nonexistent/path"])
+        assert result == 2  # EXIT_CONFIG_ERROR
+    
+    def test_nonexistent_templates_dir(self):
+        """Test that nonexistent templates dir returns config error."""
+        result = main(["build", "--templates-dir", "/nonexistent/path"])
+        assert result == 2  # EXIT_CONFIG_ERROR

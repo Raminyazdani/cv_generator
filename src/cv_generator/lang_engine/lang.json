@@ -523,5 +523,200 @@
     "de": "Jahr",
     "en": "year",
     "fa": "سال"
+  },
+  "Programming & Scripting": {
+    "de": "Programmierung & Skripting",
+    "en": "Programming & Scripting",
+    "fa": "برنامه‌نویسی و اسکریپت‌نویسی"
+  },
+  "Programming Languages": {
+    "de": "Programmiersprachen",
+    "en": "Programming Languages",
+    "fa": "زبان‌های برنامه‌نویسی"
+  },
+  "Machine Learning & Data Science": {
+    "de": "Maschinelles Lernen & Data Science",
+    "en": "Machine Learning & Data Science",
+    "fa": "یادگیری ماشین و علم داده"
+  },
+  "Scripting & Automation Tools": {
+    "de": "Skripting- & Automatisierungstools",
+    "en": "Scripting & Automation Tools",
+    "fa": "ابزارهای اسکریپت‌نویسی و خودکارسازی"
+  },
+  "DevOps & Infrastructure": {
+    "de": "DevOps & Infrastruktur",
+    "en": "DevOps & Infrastructure",
+    "fa": "دواپس و زیرساخت"
+  },
+  "Networking & Protocols": {
+    "de": "Netzwerk & Protokolle",
+    "en": "Networking & Protocols",
+    "fa": "شبکه و پروتکل‌ها"
+  },
+  "DevOps Tools & CI/CD Pipelines": {
+    "de": "DevOps-Tools & CI/CD-Pipelines",
+    "en": "DevOps Tools & CI/CD Pipelines",
+    "fa": "ابزارهای DevOps و پایپ‌لاین‌های CI/CD"
+  },
+  "Cloud Platforms & Authentication": {
+    "de": "Cloud-Plattformen & Authentifizierung",
+    "en": "Cloud Platforms & Authentication",
+    "fa": "پلتفرم‌های ابری و احراز هویت"
+  },
+  "Containerization & Orchestration": {
+    "de": "Containerisierung & Orchestrierung",
+    "en": "Containerization & Orchestration",
+    "fa": "کانتینرسازی و ارکستریشن"
+  },
+  "System Administration & Linux Tools": {
+    "de": "Systemadministration & Linux-Tools",
+    "en": "System Administration & Linux Tools",
+    "fa": "مدیریت سیستم و ابزارهای لینوکس"
+  },
+  "Software & Web Development": {
+    "de": "Software- & Webentwicklung",
+    "en": "Software & Web Development",
+    "fa": "توسعه نرم‌افزار و وب"
+  },
+  "Frontend Frameworks & UI Technologies": {
+    "de": "Frontend-Frameworks & UI-Technologien",
+    "en": "Frontend Frameworks & UI Technologies",
+    "fa": "فریم‌ورک‌های فرانت‌اند و فناوری‌های UI"
+  },
+  "Backend Development & APIs": {
+    "de": "Backend-Entwicklung & APIs",
+    "en": "Backend Development & APIs",
+    "fa": "توسعه بک‌اند و APIها"
+  },
+  "Databases & Data Engineering": {
+    "de": "Datenbanken & Data Engineering",
+    "en": "Databases & Data Engineering",
+    "fa": "پایگاه‌های داده و مهندسی داده"
+  },
+  "Database Modeling & Optimization": {
+    "de": "Datenbankmodellierung & -optimierung",
+    "en": "Database Modeling & Optimization",
+    "fa": "مدل‌سازی و بهینه‌سازی پایگاه داده"
+  },
+  "SQL Databases": {
+    "de": "SQL-Datenbanken",
+    "en": "SQL Databases",
+    "fa": "پایگاه‌های دادهٔ SQL"
+  },
+  "NoSQL Databases": {
+    "de": "NoSQL-Datenbanken",
+    "en": "NoSQL Databases",
+    "fa": "پایگاه‌های دادهٔ NoSQL"
+  },
+  "Data Pipelines & ETL Systems": {
+    "de": "Datenpipelines & ETL-Systeme",
+    "en": "Data Pipelines & ETL Systems",
+    "fa": "پایپ‌لاین‌های داده و سامانه‌های ETL"
+  },
+  "Data Visualization & Reporting": {
+    "de": "Datenvisualisierung & Reporting",
+    "en": "Data Visualization & Reporting",
+    "fa": "مصورسازی داده و گزارش‌دهی"
+  },
+  "Scientific Plotting Tools": {
+    "de": "Wissenschaftliche Plotting-Tools",
+    "en": "Scientific Plotting Tools",
+    "fa": "ابزارهای رسم علمی"
+  },
+  "Dashboarding & Reporting Platforms": {
+    "de": "Dashboarding- & Reporting-Plattformen",
+    "en": "Dashboarding & Reporting Platforms",
+    "fa": "پلتفرم‌های داشبورد و گزارش‌دهی"
+  },
+  "Visual Analytics & Network Tools": {
+    "de": "Visual Analytics & Network-Tools",
+    "en": "Visual Analytics & Network Tools",
+    "fa": "تحلیل بصری و ابزارهای شبکه"
+  },
+  "Bioinformatics Domains": {
+    "de": "Bioinformatik-Domänen",
+    "en": "Bioinformatics Domains",
+    "fa": "حوزه‌های بیوانفورماتیک"
+  },
+  "Statistical Modeling & Machine Learning in Bioinformatics": {
+    "de": "Statistische Modellierung & Machine Learning in der Bioinformatik",
+    "en": "Statistical Modeling & Machine Learning in Bioinformatics",
+    "fa": "مدل‌سازی آماری و یادگیری ماشین در بیوانفورماتیک"
+  },
+  "Genomics & Genome Assembly": {
+    "de": "Genomik & Genomassemblierung",
+    "en": "Genomics & Genome Assembly",
+    "fa": "ژنومیکس و مونتاژ ژنوم"
+  },
+  "Transcriptomics & Single-Cell Analysis": {
+    "de": "Transkriptomik & Single-Cell-Analyse",
+    "en": "Transcriptomics & Single-Cell Analysis",
+    "fa": "ترنسکریپتومیکس و تحلیل تک‌سلولی"
+  },
+  "Metagenomics & Microbial Ecology": {
+    "de": "Metagenomik & Mikrobielle Ökologie",
+    "en": "Metagenomics & Microbial Ecology",
+    "fa": "متاژنومیکس و بوم‌شناسی میکروبی"
+  },
+  "Functional Annotation & Systems Biology": {
+    "de": "Funktionelle Annotation & Systembiologie",
+    "en": "Functional Annotation & Systems Biology",
+    "fa": "حاشیه‌نویسی عملکردی و زیست‌شناسی سامانه‌ای"
+  },
+  "Protein Structure & Structural Bioinformatics": {
+    "de": "Proteinstruktur & Struktur-Bioinformatik",
+    "en": "Protein Structure & Structural Bioinformatics",
+    "fa": "ساختار پروتئین و بیوانفورماتیک ساختاری"
+  },
+  "Phylogeny & Comparative Genomics": {
+    "de": "Phylogenie & Vergleichende Genomik",
+    "en": "Phylogeny & Comparative Genomics",
+    "fa": "فیلوژنی و ژنومیکس مقایسه‌ای"
+  },
+  "Laboratory Techniques": {
+    "de": "Labortechniken",
+    "en": "Laboratory Techniques",
+    "fa": "تکنیک‌های آزمایشگاهی"
+  },
+  "Molecular & Microbial Biology Techniques": {
+    "de": "Molekular- & Mikrobiologie-Techniken",
+    "en": "Molecular & Microbial Biology Techniques",
+    "fa": "تکنیک‌های زیست‌شناسی مولکولی و میکروبی"
+  },
+  "In Vivo & Ex Vivo Experimental Protocols": {
+    "de": "In-vivo- & Ex-vivo-Experimentprotokolle",
+    "en": "In Vivo & Ex Vivo Experimental Protocols",
+    "fa": "پروتکل‌های آزمایشگاهی درون‌تنی و برون‌تنی"
+  },
+  "Experimental Design & Laboratory Documentation": {
+    "de": "Versuchsplanung & Labordokumentation",
+    "en": "Experimental Design & Laboratory Documentation",
+    "fa": "طراحی آزمایش و مستندسازی آزمایشگاهی"
+  },
+  "Analytical Instruments & Chromatography": {
+    "de": "Analytische Geräte & Chromatographie",
+    "en": "Analytical Instruments & Chromatography",
+    "fa": "ابزارهای تحلیلی و کروماتوگرافی"
+  },
+  "Bioprocess & Bioreactor Engineering": {
+    "de": "Bioprozess- & Bioreaktortechnik",
+    "en": "Bioprocess & Bioreactor Engineering",
+    "fa": "مهندسی بیوفرایند و بیورآکتور"
+  },
+  "Lab Safety, Compliance & Regulatory Practices": {
+    "de": "Laborsicherheit, Compliance & regulatorische Praxis",
+    "en": "Lab Safety, Compliance & Regulatory Practices",
+    "fa": "ایمنی آزمایشگاه، انطباق و الزامات قانونی"
+  },
+  "Soft Skills": {
+    "de": "Soft Skills",
+    "en": "Soft Skills",
+    "fa": "مهارت‌های نرم"
+  },
+  "Core Soft Skills": {
+    "de": "Kernkompetenzen",
+    "en": "Core Soft Skills",
+    "fa": "مهارت‌های نرمِ اصلی"
   }
 }

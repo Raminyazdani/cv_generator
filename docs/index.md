@@ -34,8 +34,18 @@ cvgen build
 # Generate a specific CV
 cvgen build --name ramin
 
-# Verbose output
+# Verbose output (INFO level)
 cvgen -v build
+
+# Quiet mode (errors only)
+cvgen -q build
+
+# Validate multilingual consistency
+cvgen ensure --name ramin
+
+# Extended help on topics
+cvgen help build
+cvgen help templates
 ```
 
 ## Requirements

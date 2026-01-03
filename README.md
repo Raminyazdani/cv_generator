@@ -180,8 +180,14 @@ cvgen build --dry-run
 # Keep LaTeX source files for debugging
 cvgen build --keep-latex
 
-# Verbose output
+# Verbose output (INFO level logging)
 cvgen -v build
+
+# Debug output (DEBUG level logging)
+cvgen --debug build
+
+# Quiet mode (show only errors)
+cvgen -q build
 
 # Custom directories
 cvgen build --input-dir data/cvs --output-dir output --templates-dir templates
@@ -189,6 +195,10 @@ cvgen build --input-dir data/cvs --output-dir output --templates-dir templates
 # Show help
 cvgen --help
 cvgen build --help
+
+# Extended help on specific topics
+cvgen help build
+cvgen help templates
 ```
 
 #### Using the original script (backward compatible)
@@ -259,6 +269,35 @@ The `header.tex` template uses:
 
 - `find_pic(OPT_NAME)` and `get_pic(OPT_NAME)` to detect and include the photo.
 - If no matching `<name>.jpg` is found, it falls back to checking for `./profile_square.jpg` (relative to the project root).
+
+---
+
+### Validating Multilingual CVs
+
+For multilingual CV projects with versions in English, German, and Persian, you can validate that all language files have consistent structure:
+
+```bash
+# Check ramin's CV consistency across all languages
+cvgen ensure --name ramin
+
+# Check specific languages only
+cvgen ensure --name ramin --langs en,de
+
+# Output as JSON for programmatic use
+cvgen ensure --name ramin --format json
+```
+
+The `ensure` command verifies that:
+
+- All languages have the same sections and fields
+- No keys are missing or extra in any language version
+- Skill headings are properly translated
+
+Exit codes:
+- `0` – All languages are consistent
+- `2` – Mismatches found (details printed to stdout)
+
+For more details: `cvgen help ensure`
 
 ---
 

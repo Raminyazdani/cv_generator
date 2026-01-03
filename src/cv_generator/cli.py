@@ -6,6 +6,7 @@ Provides the `cvgen` command with the following subcommands:
 - ensure: Validate multilingual CV JSON consistency
 - lint: Validate CV JSON files against the schema
 - db: SQLite database operations (init, import, export, diff)
+- doctor: System health checks
 """
 
 import argparse
@@ -542,6 +543,41 @@ def db_doctor_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def doctor_command(args: argparse.Namespace) -> int:
+    """
+    Execute the doctor command for system health checks.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .doctor import run_checks
+
+    template_dir = Path(args.templates_dir) if args.templates_dir else None
+    output_dir = Path(args.output_dir) if args.output_dir else None
+
+    try:
+        report = run_checks(
+            template_dir=template_dir,
+            output_dir=output_dir,
+            check_db=True,
+        )
+
+        if args.format == "json":
+            print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            # args.verbose is always available (global option)
+            print(report.format_text(verbose=args.verbose))
+
+        return EXIT_SUCCESS if report.is_healthy else EXIT_ENSURE_ERROR
+    except Exception as e:
+        logger.error(f"Error running doctor: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
 def web_tags_command(args: argparse.Namespace) -> int:
     """
     Execute the web tags command (start web server).
@@ -899,6 +935,45 @@ PROFILE PICTURE NOT SHOWING
     - Name must match CV file base name
     - Supported format: JPG
 """,
+
+    "doctor": """
+cvgen doctor — System health checks
+
+SYNOPSIS
+    cvgen doctor [OPTIONS]
+
+DESCRIPTION
+    The doctor command validates the environment and repo configuration
+    before users attempt builds. It performs read-only checks to identify
+    potential issues.
+
+    Use this to verify that:
+    - Python version meets requirements
+    - Required dependencies are installed
+    - LaTeX engine (xelatex) is available
+    - Templates are valid
+    - Output directory is writable
+    - Database is healthy (if exists)
+
+OPTIONS
+    --templates-dir, -t Templates directory to check (default: templates)
+    --output-dir, -o    Output directory to check (default: output)
+    --format, -f        Output format: text or json (default: text)
+
+EXAMPLES
+    # Run all health checks
+    cvgen doctor
+
+    # Output as JSON for CI integration
+    cvgen doctor --format json
+
+    # Verbose output with fix hints for all checks
+    cvgen -v doctor
+
+EXIT CODES
+    0  All checks passed (healthy)
+    2  One or more checks failed (unhealthy)
+""",
 }
 
 
@@ -920,6 +995,7 @@ def help_command(args: argparse.Namespace) -> int:
         print("  build           Generate PDF CVs from JSON files")
         print("  ensure          Validate multilingual CV consistency")
         print("  lint            Validate CV JSON files against schema")
+        print("  doctor          System health checks")
         print("  languages       Language support and translation")
         print("  templates       Template customization")
         print("  json-schema     CV JSON data format")
@@ -943,7 +1019,7 @@ def help_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         print(f"Unknown help topic: '{topic}'")
-        print("\nAvailable topics: build, ensure, lint, languages, templates, json-schema, troubleshooting")
+        print("\nAvailable topics: build, ensure, lint, doctor, languages, templates, json-schema, troubleshooting")
         return EXIT_ERROR
 
 
@@ -1365,6 +1441,31 @@ def create_parser() -> argparse.ArgumentParser:
     web_tags_parser.set_defaults(func=web_tags_command)
 
     web_parser.set_defaults(func=lambda args: web_parser.print_help() or EXIT_SUCCESS)
+
+    # Doctor command for system health checks
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="Run system health checks",
+        description="Validate environment and repo configuration before builds."
+    )
+    doctor_parser.add_argument(
+        "--templates-dir", "-t",
+        type=str,
+        help="Templates directory to check (default: templates)"
+    )
+    doctor_parser.add_argument(
+        "--output-dir", "-o",
+        type=str,
+        help="Output directory to check (default: output)"
+    )
+    doctor_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    doctor_parser.set_defaults(func=doctor_command)
 
     # Help command for extended help topics
     help_parser = subparsers.add_parser(

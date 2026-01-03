@@ -8,9 +8,9 @@ from typing import NoReturn
 
 class CVGeneratorError(Exception):
     """Base exception for CV Generator errors."""
-    
+
     exit_code = 1
-    
+
     def __init__(self, message: str):
         self.message = message
         super().__init__(message)
@@ -18,25 +18,25 @@ class CVGeneratorError(Exception):
 
 class ConfigurationError(CVGeneratorError):
     """Configuration or path-related errors."""
-    
+
     exit_code = 2
 
 
 class TemplateError(CVGeneratorError):
     """Template rendering errors."""
-    
+
     exit_code = 3
 
 
 class LatexError(CVGeneratorError):
     """LaTeX compilation errors."""
-    
+
     exit_code = 4
 
 
 class ValidationError(CVGeneratorError):
     """CV validation errors."""
-    
+
     exit_code = 5
 
 

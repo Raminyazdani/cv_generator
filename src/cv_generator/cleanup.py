@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def _clear_readonly_windows(root: Path) -> None:
     """
     Best-effort: remove "Read-only" attribute recursively (Windows).
-    
+
     Args:
         root: Root directory to clear read-only attributes from.
     """
@@ -41,7 +41,7 @@ def _clear_readonly_windows(root: Path) -> None:
 def _make_writable(path: str) -> None:
     """
     Make a file writable by changing its permissions.
-    
+
     Args:
         path: Path to the file to make writable.
     """
@@ -54,12 +54,12 @@ def _make_writable(path: str) -> None:
 def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
     """
     Reliably remove a directory tree, handling Windows-specific issues.
-    
+
     This function handles:
     - Read-only file attributes (Windows)
     - File locks from OneDrive, antivirus, etc.
     - Permission errors with exponential backoff retry
-    
+
     Args:
         path: Path to the directory to remove.
         attempts: Maximum number of attempts before giving up.
@@ -70,7 +70,7 @@ def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
         return
 
     p = p.resolve()
-    
+
     logger.debug(f"Removing directory: {p}")
 
     # Rename first to avoid conflicts
@@ -109,7 +109,7 @@ def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
 def cleanup_result_dir(result_dir: Path) -> None:
     """
     Clean up the result directory after CV generation.
-    
+
     Args:
         result_dir: Path to the result directory.
     """

@@ -14,7 +14,6 @@ from typing import Any
 
 from cv_generator.paths import get_repo_root
 
-
 SENSITIVE_KEY_RX = re.compile(r"(url|uri|email|phone|doi|issn|isbn)", re.IGNORECASE)
 SENSITIVE_VALUE_RX = re.compile(
     r"(https?://|www\.|@|cloudinary\.com|github\.com|taylorfrancis\.com)",
@@ -106,7 +105,7 @@ def make_empty_example(
         src_path = get_repo_root() / "data" / "cvs" / "ramin.json"
     if dst_path is None:
         dst_path = get_repo_root() / "scripts" / "example" / "empty.json"
-    
+
     data = json.loads(src_path.read_text(encoding="utf-8"))
 
     trimmed = _trim_lists(deepcopy(data), max_items=max_list_items)
@@ -135,7 +134,7 @@ def make_minimal_example(
         src_path = get_repo_root() / "data" / "cvs" / "ramin.json"
     if dst_path is None:
         dst_path = get_repo_root() / "scripts" / "example" / "minimal.json"
-    
+
     data = json.loads(src_path.read_text(encoding="utf-8"))
 
     minimal = _trim_lists(deepcopy(data), max_items=max_list_items)

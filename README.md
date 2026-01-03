@@ -812,6 +812,48 @@ pip install -e ".[dev]"
 pytest tests/
 ```
 
+### Reproducible Builds
+
+For reproducible builds with pinned dependency versions, use the lockfile:
+
+```bash
+# Install exact dependency versions from lockfile
+pip install -r requirements-lock.txt
+
+# Then install the package in editable mode
+pip install -e . --no-deps
+```
+
+To regenerate the lockfile after updating `pyproject.toml`:
+
+```bash
+pip install pip-tools
+pip-compile --extra=dev --output-file=requirements-lock.txt pyproject.toml
+```
+
+### Continuous Integration
+
+This project uses GitHub Actions for CI. The workflow runs on:
+- **Push** to `main`/`master`
+- **Pull requests** targeting `main`/`master`
+
+The CI pipeline includes:
+- **Linting**: Checks code style with `ruff`
+- **Testing**: Runs `pytest` across a matrix of:
+  - Operating systems: Ubuntu, Windows, macOS
+  - Python versions: 3.9, 3.10, 3.11, 3.12
+- **Coverage**: Generates coverage reports (uploaded as artifacts)
+
+To run CI checks locally:
+
+```bash
+# Linting
+ruff check .
+
+# Tests with coverage
+pytest tests/ --cov=src/cv_generator --cov-report=term-missing
+```
+
 ### Adding a new section
 
 1. Create a new template file in `templates/` (e.g. `volunteering.tex`).

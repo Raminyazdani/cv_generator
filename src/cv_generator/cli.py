@@ -12,26 +12,20 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 from . import __version__
-from .generator import generate_all_cvs
-from .paths import (
-    get_default_cvs_path,
-    get_default_templates_path,
-    get_default_output_path
+from .ensure import (
+    EXIT_ENSURE_ERROR,
+    run_ensure,
 )
 from .errors import (
-    CVGeneratorError,
-    EXIT_SUCCESS,
-    EXIT_ERROR,
     EXIT_CONFIG_ERROR,
-    EXIT_TEMPLATE_ERROR
+    EXIT_ERROR,
+    EXIT_SUCCESS,
+    CVGeneratorError,
 )
-from .ensure import (
-    run_ensure,
-    EXIT_ENSURE_ERROR,
-)
+from .generator import generate_all_cvs
 
 # Set up module logger
 logger = logging.getLogger(__name__)
@@ -40,7 +34,7 @@ logger = logging.getLogger(__name__)
 def setup_logging(verbose: bool = False, debug: bool = False, quiet: bool = False) -> None:
     """
     Configure logging based on verbosity level.
-    
+
     Args:
         verbose: Enable INFO level logging.
         debug: Enable DEBUG level logging (overrides verbose).
@@ -58,13 +52,13 @@ def setup_logging(verbose: bool = False, debug: bool = False, quiet: bool = Fals
     else:
         level = logging.WARNING
         format_str = "%(message)s"
-    
+
     logging.basicConfig(
         level=level,
         format=format_str,
         stream=sys.stderr
     )
-    
+
     # Also configure the cv_generator logger
     cv_logger = logging.getLogger("cv_generator")
     cv_logger.setLevel(level)
@@ -73,10 +67,10 @@ def setup_logging(verbose: bool = False, debug: bool = False, quiet: bool = Fals
 def build_command(args: argparse.Namespace) -> int:
     """
     Execute the build command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
@@ -84,17 +78,17 @@ def build_command(args: argparse.Namespace) -> int:
     cvs_dir = Path(args.input_dir) if args.input_dir else None
     templates_dir = Path(args.templates_dir) if args.templates_dir else None
     output_dir = Path(args.output_dir) if args.output_dir else None
-    
+
     # Validate input directory if specified
     if cvs_dir and not cvs_dir.exists():
         logger.error(f"Input directory not found: {cvs_dir}")
         return EXIT_CONFIG_ERROR
-    
+
     # Validate templates directory if specified
     if templates_dir and not templates_dir.exists():
         logger.error(f"Templates directory not found: {templates_dir}")
         return EXIT_CONFIG_ERROR
-    
+
     # Log configuration
     if cvs_dir:
         logger.info(f"Input directory: {cvs_dir}")
@@ -108,7 +102,7 @@ def build_command(args: argparse.Namespace) -> int:
         logger.info("Dry run mode: LaTeX will not be compiled")
     if args.keep_latex:
         logger.info("Keeping LaTeX source files")
-    
+
     try:
         results = generate_all_cvs(
             cvs_dir=cvs_dir,
@@ -124,7 +118,7 @@ def build_command(args: argparse.Namespace) -> int:
     except Exception as e:
         logger.exception(f"Unexpected error: {e}")
         return EXIT_ERROR
-    
+
     # Check results
     if not results:
         if args.name:
@@ -132,30 +126,30 @@ def build_command(args: argparse.Namespace) -> int:
         else:
             logger.error("No CV files found")
         return EXIT_CONFIG_ERROR
-    
+
     # Report results
     failed = [r for r in results if not r.success]
     if failed:
         for result in failed:
             logger.error(f"Failed: {result.name}_{result.lang}: {result.error}")
         return EXIT_ERROR
-    
+
     return EXIT_SUCCESS
 
 
 def ensure_command(args: argparse.Namespace) -> int:
     """
     Execute the ensure command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code (0 if OK, 2 if mismatches found).
     """
     # Parse languages
     langs = [lang.strip() for lang in args.langs.split(",")]
-    
+
     # Build explicit paths if provided
     paths: Optional[Dict[str, Path]] = None
     if args.path_en or args.path_de or args.path_fa:
@@ -166,14 +160,14 @@ def ensure_command(args: argparse.Namespace) -> int:
             paths["de"] = Path(args.path_de)
         if args.path_fa:
             paths["fa"] = Path(args.path_fa)
-    
+
     # Determine CVs directory
     cvs_dir = None
     if args.dir:
         cvs_dir = Path(args.dir)
     elif args.input_dir:
         cvs_dir = Path(args.input_dir)
-    
+
     # Load language mapping if specified
     lang_map = None
     if args.lang_map:
@@ -181,13 +175,13 @@ def ensure_command(args: argparse.Namespace) -> int:
         if lang_map_path.exists():
             with open(lang_map_path, "r", encoding="utf-8") as f:
                 lang_map = json.load(f)
-    
+
     # Log configuration
     logger.info(f"Checking CV consistency for: {args.name}")
     logger.info(f"Languages: {', '.join(langs)}")
     if cvs_dir:
         logger.info(f"Input directory: {cvs_dir}")
-    
+
     try:
         report = run_ensure(
             name=args.name,
@@ -201,13 +195,13 @@ def ensure_command(args: argparse.Namespace) -> int:
     except Exception as e:
         logger.exception(f"Error during ensure check: {e}")
         return EXIT_ERROR
-    
+
     # Output the report
     if args.format == "json":
         print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
     else:
         print(report.format_text())
-    
+
     # Return appropriate exit code
     if report.is_valid:
         return EXIT_SUCCESS
@@ -218,17 +212,17 @@ def ensure_command(args: argparse.Namespace) -> int:
 def db_init_command(args: argparse.Namespace) -> int:
     """
     Execute the db init command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import init_db
-    
+
     db_path = Path(args.db) if args.db else None
-    
+
     try:
         result_path = init_db(db_path, force=args.force)
         logger.info(f"Database initialized: {result_path}")
@@ -243,18 +237,18 @@ def db_init_command(args: argparse.Namespace) -> int:
 def db_import_command(args: argparse.Namespace) -> int:
     """
     Execute the db import command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import import_all_cvs
-    
+
     db_path = Path(args.db) if args.db else None
     input_dir = Path(args.input_dir) if args.input_dir else None
-    
+
     try:
         results = import_all_cvs(
             input_dir=input_dir,
@@ -263,17 +257,17 @@ def db_import_command(args: argparse.Namespace) -> int:
             overwrite=args.overwrite,
             backup=not args.no_backup
         )
-        
-        print(f"\n📥 Import Results:")
+
+        print("\n📥 Import Results:")
         print(f"   Files processed: {results['files_processed']}")
         print(f"   Total entries: {results['total_entries']}")
-        
+
         for file_result in results.get("files", []):
             if file_result.get("success"):
                 print(f"   ✅ {file_result['file']}: {file_result.get('entries_imported', 0)} entries")
             else:
                 print(f"   ❌ {file_result['file']}: {file_result.get('error', 'Unknown error')}")
-        
+
         return EXIT_SUCCESS
     except Exception as e:
         logger.error(f"Error importing CVs: {e}")
@@ -284,19 +278,19 @@ def db_import_command(args: argparse.Namespace) -> int:
 def db_export_command(args: argparse.Namespace) -> int:
     """
     Execute the db export command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import export_all_cvs
-    
+
     db_path = Path(args.db) if args.db else None
     output_dir = Path(args.output_dir) if args.output_dir else None
     pretty = args.format != "min"
-    
+
     try:
         results = export_all_cvs(
             output_dir=output_dir,
@@ -307,16 +301,16 @@ def db_export_command(args: argparse.Namespace) -> int:
             apply_tags_to_all=args.apply_tags_to_all,
             force=args.force
         )
-        
-        print(f"\n📤 Export Results:")
+
+        print("\n📤 Export Results:")
         print(f"   Files exported: {results['files_exported']}")
-        
+
         for file_result in results.get("files", []):
             if file_result.get("success"):
                 print(f"   ✅ {file_result['file']}")
             else:
                 print(f"   ❌ {file_result['slug']}: {file_result.get('error', 'Unknown error')}")
-        
+
         return EXIT_SUCCESS
     except Exception as e:
         logger.error(f"Error exporting CVs: {e}")
@@ -327,33 +321,33 @@ def db_export_command(args: argparse.Namespace) -> int:
 def db_diff_command(args: argparse.Namespace) -> int:
     """
     Execute the db diff command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import diff_all_cvs
-    
+
     db_path = Path(args.db) if args.db else None
     input_dir = Path(args.input_dir) if args.input_dir else None
-    
+
     try:
         results = diff_all_cvs(
             input_dir=input_dir,
             db_path=db_path,
             name_filter=args.name
         )
-        
+
         if args.format == "json":
             print(json.dumps(results, indent=2, ensure_ascii=False))
         else:
-            print(f"\n🔍 Diff Results:")
+            print("\n🔍 Diff Results:")
             print(f"   Files compared: {results['files_compared']}")
             print(f"   Matches: {results['matches']}")
             print(f"   Mismatches: {results['mismatches']}")
-            
+
             for file_result in results.get("files", []):
                 if file_result.get("match"):
                     print(f"   ✅ {file_result['file']}: Match")
@@ -365,7 +359,7 @@ def db_diff_command(args: argparse.Namespace) -> int:
                         print(f"      - {diff['path']}: {diff['type']}")
                     if len(file_result.get("differences", [])) > 5:
                         print(f"      ... and {len(file_result['differences']) - 5} more")
-        
+
         # Return non-zero if there are mismatches
         if results['mismatches'] > 0:
             return EXIT_ENSURE_ERROR
@@ -379,17 +373,17 @@ def db_diff_command(args: argparse.Namespace) -> int:
 def db_list_command(args: argparse.Namespace) -> int:
     """
     Execute the db list command.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import list_persons, list_tags
-    
+
     db_path = Path(args.db) if args.db else None
-    
+
     try:
         if args.what == "persons":
             items = list_persons(db_path)
@@ -409,7 +403,7 @@ def db_list_command(args: argparse.Namespace) -> int:
                 print(f"\n🏷️  Tags in database: {len(items)}")
                 for item in items:
                     print(f"   • {item['name']}: used {item['usage_count']} times")
-        
+
         return EXIT_SUCCESS
     except Exception as e:
         logger.error(f"Error listing database contents: {e}")
@@ -420,40 +414,40 @@ def db_list_command(args: argparse.Namespace) -> int:
 def db_doctor_command(args: argparse.Namespace) -> int:
     """
     Execute the db doctor command (health check).
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .db import doctor
-    
+
     db_path = Path(args.db) if args.db else None
-    
+
     try:
         results = doctor(db_path)
-        
+
         if args.format == "json":
             print(json.dumps(results, indent=2, ensure_ascii=False))
         else:
             print(f"\n🏥 Database Health Check: {results['database']}")
             print(f"   Status: {'✅ Healthy' if results['healthy'] else '❌ Issues Found'}")
             print()
-            print(f"📊 Statistics:")
+            print("📊 Statistics:")
             print(f"   Persons: {results['stats'].get('persons', 0)}")
             print(f"   Entries: {results['stats'].get('entries', 0)}")
             print(f"   Tags: {results['stats'].get('tags', 0)}")
             print(f"   Tag Assignments: {results['stats'].get('tag_assignments', 0)}")
-            
+
             if results['issues']:
                 print()
                 print(f"⚠️  Issues ({len(results['issues'])}):")
                 for issue in results['issues']:
                     print(f"   • {issue}")
-            
+
             print()
-            print(f"🔍 Checks:")
+            print("🔍 Checks:")
             checks = results.get('checks', {})
             if 'schema_version' in checks:
                 sv = checks['schema_version']
@@ -477,7 +471,7 @@ def db_doctor_command(args: argparse.Namespace) -> int:
                 ij = checks['invalid_json']
                 status = "✅" if ij.get('ok') else "❌"
                 print(f"   {status} Invalid JSON: {ij.get('count', 0)}")
-        
+
         return EXIT_SUCCESS if results['healthy'] else EXIT_ENSURE_ERROR
     except Exception as e:
         logger.error(f"Error running health check: {e}")
@@ -488,17 +482,17 @@ def db_doctor_command(args: argparse.Namespace) -> int:
 def web_tags_command(args: argparse.Namespace) -> int:
     """
     Execute the web tags command (start web server).
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     from .web import run_server
-    
+
     db_path = Path(args.db) if args.db else None
-    
+
     try:
         run_server(
             host=args.host,
@@ -555,7 +549,7 @@ OUTPUT STRUCTURE
       latex/<name>/<lang>/main.tex        (with --keep-latex)
       latex/<name>/<lang>/sections/*.tex  (with --keep-latex)
 """,
-    
+
     "ensure": """
 cvgen ensure — Validate multilingual CV JSON consistency
 
@@ -596,25 +590,25 @@ EXIT CODES
     0  All languages are consistent
     2  Mismatches found
 """,
-    
+
     "languages": """
 cvgen languages — Language support and translation
 
 DESCRIPTION
     CV Generator supports multilingual CVs with the following languages:
-    
+
     - en: English (canonical/reference)
-    - de: German  
+    - de: German
     - fa: Persian (with RTL support)
 
 FILE NAMING
     Multilingual CV files follow these naming patterns:
-    
+
     1. Preferred (i18n directory):
        data/cvs/i18n/<name>/cv.en.json
        data/cvs/i18n/<name>/cv.de.json
        data/cvs/i18n/<name>/cv.fa.json
-    
+
     2. Alternative (flat structure):
        data/cvs/<name>.en.json
        data/cvs/<name>.de.json
@@ -623,7 +617,7 @@ FILE NAMING
 
 TRANSLATION MAPPING
     Skill headings and categories can be translated using a lang.json file:
-    
+
     {
       "Technical Skills": {
         "de": "Technische Fähigkeiten",
@@ -643,7 +637,7 @@ RTL SUPPORT
 VALIDATING TRANSLATIONS
     Use 'cvgen ensure' to verify consistency across language versions.
 """,
-    
+
     "templates": """
 cvgen templates — Template customization
 
@@ -665,7 +659,7 @@ TEMPLATE FILES
 
 JINJA2 SYNTAX
     Templates use custom delimiters to avoid LaTeX conflicts:
-    
+
     Blocks:    <BLOCK> ... </BLOCK>
     Variables: <VAR> ... </VAR>
     Comments:  /*/*/* ... */*/*/
@@ -688,7 +682,7 @@ ADDING A NEW SECTION
     2. Add to layout.tex: <VAR> newsection_section | default('') </VAR>
     3. Add corresponding data to your CV JSON
 """,
-    
+
     "json-schema": """
 cvgen json-schema — CV JSON data format
 
@@ -748,13 +742,13 @@ SKILLS STRUCTURE
 VALIDATION
     Use 'cvgen ensure' to validate consistency across language versions.
 """,
-    
+
     "troubleshooting": """
 cvgen troubleshooting — Common issues and solutions
 
 XELATEX NOT FOUND
     Symptom: 'xelatex' is not recognized as a command
-    
+
     Solution:
     1. Install TeX Live or MiKTeX
     2. Add xelatex to your PATH
@@ -762,11 +756,11 @@ XELATEX NOT FOUND
 
 LATEX COMPILATION ERRORS
     Symptom: PDF not produced, LaTeX log shows errors
-    
+
     Common causes:
     - Unescaped special characters in JSON (#, %, _, &, $)
     - Missing fields referenced in templates
-    
+
     Solutions:
     - Use | latex_escape filter in templates
     - Ensure all required keys exist in JSON
@@ -774,14 +768,14 @@ LATEX COMPILATION ERRORS
 
 MISSING FONTS
     Symptom: Font warnings or substitutions in PDF
-    
+
     Solution:
     - Install fonts used by Awesome-CV (Roboto, Source Sans Pro)
     - Or modify templates to use available fonts
 
 WINDOWS FILE LOCKS
     Symptom: "Access is denied" when cleaning up
-    
+
     Solution:
     - Close files in editors that lock them
     - Pause OneDrive/antivirus sync temporarily
@@ -789,7 +783,7 @@ WINDOWS FILE LOCKS
 
 TEMPLATE ERRORS
     Symptom: Jinja TemplateError with file name
-    
+
     Solution:
     - Check the referenced template file
     - Verify JSON data matches template expectations
@@ -797,7 +791,7 @@ TEMPLATE ERRORS
 
 PROFILE PICTURE NOT SHOWING
     Symptom: CV generates without photo
-    
+
     Solution:
     - Place photo at data/pics/<name>.jpg
     - Name must match CV file base name
@@ -809,15 +803,15 @@ PROFILE PICTURE NOT SHOWING
 def help_command(args: argparse.Namespace) -> int:
     """
     Execute the help command to show extended help topics.
-    
+
     Args:
         args: Parsed command-line arguments.
-        
+
     Returns:
         Exit code.
     """
     topic = args.topic.lower() if args.topic else None
-    
+
     if not topic:
         # List available topics
         print("Available help topics:\n")
@@ -829,7 +823,7 @@ def help_command(args: argparse.Namespace) -> int:
         print("  troubleshooting Common issues and solutions")
         print("\nUse 'cvgen help <topic>' for detailed information.")
         return EXIT_SUCCESS
-    
+
     # Normalize topic names
     topic_aliases = {
         "generate": "build",
@@ -840,7 +834,7 @@ def help_command(args: argparse.Namespace) -> int:
         "json": "json-schema",
     }
     topic = topic_aliases.get(topic, topic)
-    
+
     if topic in HELP_TOPICS:
         print(HELP_TOPICS[topic].strip())
         return EXIT_SUCCESS
@@ -853,7 +847,7 @@ def help_command(args: argparse.Namespace) -> int:
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the argument parser for the CLI.
-    
+
     Returns:
         Configured ArgumentParser.
     """
@@ -862,13 +856,13 @@ def create_parser() -> argparse.ArgumentParser:
         description="Generate beautiful PDF CVs from JSON data using Jinja2 templates and Awesome-CV.",
         epilog="Example: cvgen build --name ramin"
     )
-    
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"cvgen {__version__}"
     )
-    
+
     # Global options
     parser.add_argument(
         "-v", "--verbose",
@@ -885,21 +879,21 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Suppress output except errors"
     )
-    
+
     # Subcommands
     subparsers = parser.add_subparsers(
         dest="command",
         title="commands",
         description="Available commands"
     )
-    
+
     # Build command
     build_parser = subparsers.add_parser(
         "build",
         help="Build PDF CVs from JSON files",
         description="Generate PDF CVs from JSON files in the input directory."
     )
-    
+
     build_parser.add_argument(
         "--name", "-n",
         type=str,
@@ -908,17 +902,17 @@ def create_parser() -> argparse.ArgumentParser:
     build_parser.add_argument(
         "--input-dir", "-i",
         type=str,
-        help=f"Input directory containing CV JSON files (default: data/cvs)"
+        help="Input directory containing CV JSON files (default: data/cvs)"
     )
     build_parser.add_argument(
         "--output-dir", "-o",
         type=str,
-        help=f"Output directory root (default: output). PDFs go to output/pdf/<name>/<lang>/"
+        help="Output directory root (default: output). PDFs go to output/pdf/<name>/<lang>/"
     )
     build_parser.add_argument(
         "--templates-dir", "-t",
         type=str,
-        help=f"Templates directory (default: templates)"
+        help="Templates directory (default: templates)"
     )
     build_parser.add_argument(
         "--keep-latex", "-k",
@@ -931,16 +925,16 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Render LaTeX but skip xelatex compilation"
     )
-    
+
     build_parser.set_defaults(func=build_command)
-    
+
     # Ensure command
     ensure_parser = subparsers.add_parser(
         "ensure",
         help="Validate multilingual CV JSON consistency",
         description="Check that multilingual CV JSON files have consistent structure."
     )
-    
+
     ensure_parser.add_argument(
         "--name", "-n",
         type=str,
@@ -1001,22 +995,22 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Maximum number of errors before stopping"
     )
-    
+
     ensure_parser.set_defaults(func=ensure_command)
-    
+
     # DB command
     db_parser = subparsers.add_parser(
         "db",
         help="SQLite database operations",
         description="Manage CV data in SQLite database for querying and editing."
     )
-    
+
     db_subparsers = db_parser.add_subparsers(
         dest="db_command",
         title="db commands",
         description="Available database commands"
     )
-    
+
     # DB init command
     db_init_parser = db_subparsers.add_parser(
         "init",
@@ -1034,7 +1028,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Recreate the database even if it exists"
     )
     db_init_parser.set_defaults(func=db_init_command)
-    
+
     # DB import command
     db_import_parser = db_subparsers.add_parser(
         "import",
@@ -1067,7 +1061,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Don't backup database before overwrite"
     )
     db_import_parser.set_defaults(func=db_import_command)
-    
+
     # DB export command
     db_export_parser = db_subparsers.add_parser(
         "export",
@@ -1112,7 +1106,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Overwrite existing files without asking"
     )
     db_export_parser.set_defaults(func=db_export_command)
-    
+
     # DB diff command
     db_diff_parser = db_subparsers.add_parser(
         "diff",
@@ -1142,7 +1136,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_diff_parser.set_defaults(func=db_diff_command)
-    
+
     # DB list command
     db_list_parser = db_subparsers.add_parser(
         "list",
@@ -1169,7 +1163,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_list_parser.set_defaults(func=db_list_command)
-    
+
     # DB doctor command
     db_doctor_parser = db_subparsers.add_parser(
         "doctor",
@@ -1189,22 +1183,22 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_doctor_parser.set_defaults(func=db_doctor_command)
-    
+
     db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
-    
+
     # Web command
     web_parser = subparsers.add_parser(
         "web",
         help="Web UI for tag management",
         description="Start web server for managing tags and CV entries."
     )
-    
+
     web_subparsers = web_parser.add_subparsers(
         dest="web_command",
         title="web commands",
         description="Available web commands"
     )
-    
+
     # Web tags command
     web_tags_parser = web_subparsers.add_parser(
         "tags",
@@ -1229,9 +1223,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Port to listen on (default: 5000)"
     )
     web_tags_parser.set_defaults(func=web_tags_command)
-    
+
     web_parser.set_defaults(func=lambda args: web_parser.print_help() or EXIT_SUCCESS)
-    
+
     # Help command for extended help topics
     help_parser = subparsers.add_parser(
         "help",
@@ -1245,31 +1239,31 @@ def create_parser() -> argparse.ArgumentParser:
         help="Topic to get help on (build, ensure, languages, templates, json-schema, troubleshooting)"
     )
     help_parser.set_defaults(func=help_command)
-    
+
     return parser
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     """
     Main entry point for the CLI.
-    
+
     Args:
         argv: Command-line arguments (defaults to sys.argv).
-        
+
     Returns:
         Exit code.
     """
     parser = create_parser()
     args = parser.parse_args(argv)
-    
+
     # Set up logging with quiet support
     setup_logging(verbose=args.verbose, debug=args.debug, quiet=args.quiet)
-    
+
     # If no command specified, default to 'build'
     if not args.command:
         # Re-parse with 'build' as default
         args = parser.parse_args(['build'] + (argv if argv else sys.argv[1:]))
-    
+
     # Execute the command
     if hasattr(args, 'func'):
         return args.func(args)
@@ -1281,7 +1275,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 def main_cli() -> None:
     """
     CLI entry point for setuptools console_scripts.
-    
+
     Calls main() and exits with the returned code.
     """
     sys.exit(main())

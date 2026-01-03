@@ -34,27 +34,26 @@ from typing import Any
 
 from cv_generator.paths import get_repo_root
 
-
 _HERE = Path(__file__).resolve().parent
 
 
 def collect_keys(obj: Any, exclude_skills_descendants: bool = True) -> set[str]:
     """
     Recursively traverse the CV JSON and collect all unique key names.
-    
+
     Rules:
     - If node is a dict: add each key to the set and recurse into values
     - If node is a list: recurse into every element
     - If node is a scalar (str/int/float/bool/null): stop (don't add values)
-    
+
     Key names are case-sensitive ("Pictures" != "pictures").
-    
+
     Special handling for "skills" (when exclude_skills_descendants=True):
     - The "skills" key itself is included.
     - Category label keys (immediate children of skills dict) are EXCLUDED.
     - Subcategory label keys (children of categories) are EXCLUDED.
     - Skill item object keys (e.g., long_name, short_name, type_key) ARE INCLUDED.
-    
+
     The skills structure is expected to be:
         skills -> category(dict) -> subcategory(dict) -> list[skill_item_dicts]
     """
@@ -66,7 +65,7 @@ def collect_keys(obj: Any, exclude_skills_descendants: bool = True) -> set[str]:
 def _collect_skills_items(obj: Any, out_set: set[str]) -> None:
     """
     Collect keys from skill item objects within the skills subtree.
-    
+
     This function is called for lists at the subcategory level of skills.
     It collects keys from dict items in those lists (skill items).
     """
@@ -94,7 +93,7 @@ def _collect_keys_recursive(
     if isinstance(obj, dict):
         for key, value in obj.items():
             out_set.add(key)
-            
+
             # Check if this key is "skills" - apply special handling
             if key == "skills" and exclude_skills_descendants:
                 # For the skills value, we need to:
@@ -113,12 +112,12 @@ def _collect_keys_recursive(
 def _handle_skills_subtree(skills_value: Any, out_set: set[str]) -> None:
     """
     Handle the skills subtree with special traversal rules.
-    
+
     Structure expected:
         skills_value (dict of categories) ->
             category_value (dict of subcategories) ->
                 subcategory_value (list of skill item dicts)
-    
+
     We skip category and subcategory KEYS but descend into their values
     to find and collect skill item dict keys.
     """
@@ -143,22 +142,22 @@ def _handle_skills_subtree(skills_value: Any, out_set: set[str]) -> None:
 def _is_translation_dict(d: dict[str, Any]) -> bool:
     """
     Detect a dict that looks like a translation leaf.
-    
+
     A translation dict has only string values and all keys look like language codes
     (2-3 character lowercase strings).
     """
     if not isinstance(d, dict) or len(d) == 0:
         return False
-    
+
     # Check if all values are strings (or empty)
     if not all(isinstance(v, str) for v in d.values()):
         return False
-    
+
     # Check if all keys look like language codes (2-3 chars, lowercase)
     for k in d.keys():
         if not isinstance(k, str) or not (2 <= len(k) <= 3) or not k.islower():
             return False
-    
+
     return True
 
 
@@ -170,7 +169,7 @@ def merge_lang_data(
 ) -> tuple[dict[str, dict[str, str]], dict[str, int]]:
     """
     Merge discovered keys into existing lang data without overwriting non-empty translations.
-    
+
     Behavior:
     - If key exists and has non-empty translation for a language: keep it
     - If key exists but language is missing: add the language with ""
@@ -179,7 +178,7 @@ def merge_lang_data(
     - Do not delete keys from existing lang.json just because they're not in CV
     - If from_lang is specified and that language slot is empty/missing,
       set it to the key name itself (auto-populate source language)
-    
+
     Returns:
         (merged_dict, stats) where stats has counts for reporting
     """
@@ -191,33 +190,33 @@ def merge_lang_data(
         "translations_preserved": 0,
         "from_lang_populated": 0,
     }
-    
+
     all_keys = set(existing.keys()) | discovered_keys
     requested_langs = set(languages)
-    
+
     for key in all_keys:
         existing_entry = existing.get(key, {})
-        
+
         # Determine if this is a new key
         is_new_key = key not in existing
         if is_new_key:
             stats["keys_added"] += 1
-        
+
         # Build the merged entry
         new_entry: dict[str, str] = {}
-        
+
         # Get all languages to include (existing + requested)
         if isinstance(existing_entry, dict) and _is_translation_dict(existing_entry):
             all_langs_for_key = set(existing_entry.keys()) | requested_langs
         else:
             all_langs_for_key = requested_langs
-        
+
         for lang in all_langs_for_key:
             if isinstance(existing_entry, dict):
                 existing_value = existing_entry.get(lang)
             else:
                 existing_value = None
-            
+
             if isinstance(existing_value, str) and existing_value.strip():
                 # Preserve non-empty translation
                 new_entry[lang] = existing_value
@@ -235,9 +234,9 @@ def merge_lang_data(
                     if lang in requested_langs and not is_new_key:
                         if isinstance(existing_entry, dict) and lang not in existing_entry:
                             stats["lang_slots_filled"] += 1
-        
+
         merged[key] = new_entry
-    
+
     return merged, stats
 
 
@@ -251,7 +250,7 @@ def update_lang_json(
 ) -> dict[str, int]:
     """
     Main function to update lang.json from a CV JSON file.
-    
+
     Args:
         cv_path: Path to the CV JSON file
         lang_path: Path to the lang.json output file
@@ -260,27 +259,27 @@ def update_lang_json(
         verbose: If True, print detailed output
         from_lang: If specified, auto-populate this language slot with the key name
                    for any empty/missing translation slot
-    
+
     Returns:
         Statistics dict with counts
     """
     # Load CV data
     if not cv_path.exists():
         raise FileNotFoundError(f"CV file not found: {cv_path}")
-    
+
     try:
         cv_data = json.loads(cv_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in CV file: {e}")
-    
+
     # Collect all keys from CV (excluding skills descendants)
     discovered_keys = collect_keys(cv_data, exclude_skills_descendants=True)
-    
+
     if verbose:
         print(f"Discovered {len(discovered_keys)} unique keys from CV")
         sample_keys = sorted(discovered_keys)[:10]
         print(f"Sample keys: {sample_keys}")
-    
+
     # Load existing lang.json if present
     existing: dict[str, Any] = {}
     if lang_path.exists():
@@ -292,17 +291,17 @@ def update_lang_json(
             if verbose:
                 print(f"Warning: Could not parse existing {lang_path}, starting fresh")
             existing = {}
-    
+
     # Merge
     merged, stats = merge_lang_data(existing, discovered_keys, languages, from_lang=from_lang)
-    
+
     # Sort keys alphabetically for deterministic output
     sorted_merged = dict(sorted(merged.items()))
-    
+
     # Also sort language keys within each entry for consistency
     for key in sorted_merged:
         sorted_merged[key] = dict(sorted(sorted_merged[key].items()))
-    
+
     # Output
     if dry_run:
         print("\n[DRY RUN] Would write to:", lang_path)
@@ -315,7 +314,7 @@ def update_lang_json(
         )
         if verbose:
             print(f"Written to: {lang_path}")
-    
+
     # Print summary
     print("\n--- Summary ---")
     print(f"Keys discovered in CV:    {stats['keys_discovered']}")
@@ -325,7 +324,7 @@ def update_lang_json(
     if from_lang:
         print(f"From-lang populated:      {stats['from_lang_populated']}")
     print(f"Total keys in output:     {len(sorted_merged)}")
-    
+
     return stats
 
 
@@ -351,7 +350,7 @@ Notes:
     - The --from-lang option auto-populates empty translation slots with the key name.
         """,
     )
-    
+
     parser.add_argument(
         "--cv",
         type=Path,
@@ -389,15 +388,15 @@ Notes:
         action="store_true",
         help="Show detailed output including sample keys",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Parse languages
     languages = parse_languages(args.langs)
     if not languages:
         print("Error: No valid languages specified", file=sys.stderr)
         return 1
-    
+
     # Handle --from-lang: auto-add to languages list if not present
     from_lang = args.from_lang
     if from_lang:
@@ -406,7 +405,7 @@ Notes:
             languages.append(from_lang)
             if args.verbose:
                 print(f"Note: Added '{from_lang}' to languages list (from --from-lang)")
-    
+
     if args.verbose:
         print(f"CV file:    {args.cv}")
         print(f"Output:     {args.out}")
@@ -414,7 +413,7 @@ Notes:
         if from_lang:
             print(f"From-lang:  {from_lang}")
         print()
-    
+
     try:
         update_lang_json(
             cv_path=args.cv,

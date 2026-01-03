@@ -13,10 +13,9 @@ Usage:
     python -m cv_generator.scripts.smoke_validate -v      # Verbose output
 """
 
-import json
-import os
-import sys
 import argparse
+import json
+import sys
 from pathlib import Path
 
 from cv_generator.paths import get_repo_root
@@ -33,7 +32,7 @@ REQUIRED_KEYS = ["basics"]
 # 1. Catch cases where a new section is accidentally defined as wrong type
 # 2. Serve as documentation of expected CV structure
 # Add new section types here when extending the CV schema
-ARRAY_KEYS = ["basics", "profiles", "education", "experiences", "languages", 
+ARRAY_KEYS = ["basics", "profiles", "education", "experiences", "languages",
               "projects", "publications", "references", "workshop_and_certifications"]
 
 # Keys within basics that are critical
@@ -43,21 +42,21 @@ REQUIRED_BASICS_KEYS = ["fname", "lname"]
 def validate_json_structure(data: dict, filename: str, verbose: bool = False) -> list:
     """
     Validate the JSON structure of a CV file.
-    
+
     Returns a list of error messages (empty if valid).
     """
     errors = []
-    
+
     # Check required top-level keys
     for key in REQUIRED_KEYS:
         if key not in data:
             errors.append(f"Missing required key: '{key}'")
-    
+
     # Check array keys are actually arrays
     for key in ARRAY_KEYS:
         if key in data and not isinstance(data[key], list):
             errors.append(f"Key '{key}' should be an array, got {type(data[key]).__name__}")
-    
+
     # Check basics structure
     if "basics" in data:
         basics = data["basics"]
@@ -72,12 +71,12 @@ def validate_json_structure(data: dict, filename: str, verbose: bool = False) ->
                     errors.append(f"basics.{key} should be a string")
         elif isinstance(basics, list) and len(basics) == 0:
             errors.append("basics array is empty")
-    
+
     # Check for null values that would render as "undefined" or empty
     null_fields = find_null_fields(data)
     if verbose and null_fields:
         print(f"  Warning: Found null fields in {filename}: {null_fields[:5]}...")
-    
+
     return errors
 
 
@@ -87,7 +86,7 @@ def find_null_fields(obj, path="") -> list:
     Returns a list of paths to null fields.
     """
     null_paths = []
-    
+
     if isinstance(obj, dict):
         for key, value in obj.items():
             current_path = f"{path}.{key}" if path else key
@@ -99,7 +98,7 @@ def find_null_fields(obj, path="") -> list:
         for i, item in enumerate(obj):
             current_path = f"{path}[{i}]"
             null_paths.extend(find_null_fields(item, current_path))
-    
+
     return null_paths
 
 
@@ -109,7 +108,7 @@ def check_for_undefined_strings(data: dict) -> list:
     Returns a list of paths where these values are found.
     """
     issues = []
-    
+
     def check_recursive(obj, path=""):
         if isinstance(obj, dict):
             for key, value in obj.items():
@@ -123,7 +122,7 @@ def check_for_undefined_strings(data: dict) -> list:
             if lower_val == "undefined":
                 issues.append(f"{path}: contains 'undefined'")
             # Note: 'null' as a string might be valid in some contexts
-    
+
     check_recursive(data)
     return issues
 
@@ -131,15 +130,15 @@ def check_for_undefined_strings(data: dict) -> list:
 def validate_cv_file(filepath: Path, verbose: bool = False) -> tuple:
     """
     Validate a single CV JSON file.
-    
+
     Returns (success: bool, errors: list)
     """
     errors = []
-    
+
     # Check file exists
     if not filepath.exists():
         return False, [f"File not found: {filepath}"]
-    
+
     # Try to parse JSON
     try:
         with open(filepath, encoding="utf-8") as f:
@@ -148,22 +147,22 @@ def validate_cv_file(filepath: Path, verbose: bool = False) -> tuple:
         return False, [f"Invalid JSON: {e}"]
     except Exception as e:
         return False, [f"Error reading file: {e}"]
-    
+
     # Validate structure
     structure_errors = validate_json_structure(data, filepath.name, verbose)
     errors.extend(structure_errors)
-    
+
     # Check for undefined strings
     undefined_issues = check_for_undefined_strings(data)
     errors.extend(undefined_issues)
-    
+
     return len(errors) == 0, errors
 
 
 def validate_all_cvs(verbose: bool = False) -> dict:
     """
     Validate all CV JSON files in the data/cvs directory.
-    
+
     Returns a dict with validation results.
     """
     results = {
@@ -172,30 +171,30 @@ def validate_all_cvs(verbose: bool = False) -> dict:
         "failed": 0,
         "files": {}
     }
-    
+
     if not CVS_PATH.exists():
         print(f"❌ CVs directory not found: {CVS_PATH}")
         sys.exit(1)
-    
+
     json_files = list(CVS_PATH.glob("*.json"))
-    
+
     if not json_files:
         print(f"❌ No JSON files found in {CVS_PATH}")
         sys.exit(1)
-    
+
     results["total"] = len(json_files)
-    
+
     print(f"\n📋 Validating {len(json_files)} CV file(s)...\n")
-    
+
     for filepath in sorted(json_files):
         filename = filepath.name
         success, errors = validate_cv_file(filepath, verbose)
-        
+
         results["files"][filename] = {
             "success": success,
             "errors": errors
         }
-        
+
         if success:
             results["passed"] += 1
             print(f"  ✅ {filename}")
@@ -204,7 +203,7 @@ def validate_all_cvs(verbose: bool = False) -> dict:
             print(f"  ❌ {filename}")
             for error in errors:
                 print(f"      - {error}")
-    
+
     return results
 
 
@@ -221,20 +220,20 @@ def main():
     parser.add_argument("--all", action="store_true", help="Validate all CV files")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     args = parser.parse_args()
-    
+
     print("=" * 60)
     print("🔍 CV Generator Smoke Validation")
     print("=" * 60)
-    
+
     results = validate_all_cvs(verbose=args.verbose)
-    
+
     print("\n" + "=" * 60)
     print(f"📊 Results: {results['passed']}/{results['total']} passed")
     print("=" * 60)
-    
+
     # Generate report
     generate_report(results)
-    
+
     # Exit with appropriate code
     if results["failed"] > 0:
         print("\n❌ Validation FAILED")

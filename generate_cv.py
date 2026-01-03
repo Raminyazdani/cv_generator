@@ -24,12 +24,11 @@ if _src_dir.exists():
 
 from cv_generator.cli import main
 
-
 if __name__ == "__main__":
     # Default to 'build' command if no command specified
     # and no help flags are present
     args = sys.argv[1:]
-    
+
     # If no arguments, run build command with verbose output
     if not args:
         args = ["-v", "build"]
@@ -44,5 +43,5 @@ if __name__ == "__main__":
             while idx < len(args) and args[idx] in ("-v", "--verbose", "--debug"):
                 idx += 1
             args = args[:idx] + ["build"] + args[idx:]
-    
+
     sys.exit(main(args))

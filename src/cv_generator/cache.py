@@ -12,7 +12,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -224,7 +224,7 @@ def compute_input_hashes(
 def needs_rebuild(
     cached: Optional[BuildCacheEntry],
     current: BuildCacheEntry,
-) -> tuple[bool, str]:
+) -> Tuple[bool, str]:
     """
     Determine if a rebuild is needed by comparing cache entries.
 

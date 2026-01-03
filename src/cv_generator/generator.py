@@ -358,8 +358,11 @@ def generate_cv(
     if lang_map is None:
         lang_map = load_lang_map()
 
-    # Create Jinja environment
-    env = create_jinja_env(templates_dir, lang_map, lang)
+    # Create Jinja environment with template caching if incremental mode is enabled
+    jinja_cache_dir = None
+    if incremental and cache is not None:
+        jinja_cache_dir = get_cache_dir(output_dir)
+    env = create_jinja_env(templates_dir, lang_map, lang, cache_dir=jinja_cache_dir)
 
     # Set up output paths using unified ArtifactPaths
     sections_dir = artifact_paths.sections_dir

@@ -5,7 +5,6 @@ Tests the build caching system for incremental builds.
 """
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest

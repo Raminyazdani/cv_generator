@@ -13,8 +13,14 @@
 
 {% if entries %}
 <div class="card">
+    <div style="margin-bottom: 1rem;">
+        <input type="text" id="search-input" placeholder="Search entries..." 
+               style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px;">
+    </div>
+    
+    <div id="entries-list">
     {% for entry in entries %}
-    <div class="list-item">
+    <div class="list-item entry-item" data-search="{{ entry.summary | lower }} {{ entry.tags | default([]) | join(' ') | lower }}">
         <div style="flex: 1;">
             <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
                 {{ entry.summary }}
@@ -32,7 +38,33 @@
         <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
     </div>
     {% endfor %}
+    </div>
+    
+    <div id="no-results" style="display: none; text-align: center; padding: 1rem; color: var(--gray-500);">
+        No entries match your search.
+    </div>
 </div>
+
+<script>
+document.getElementById('search-input').addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    const entries = document.querySelectorAll('.entry-item');
+    const noResults = document.getElementById('no-results');
+    let visibleCount = 0;
+    
+    entries.forEach(function(entry) {
+        const searchText = entry.getAttribute('data-search');
+        if (query === '' || searchText.includes(query)) {
+            entry.style.display = 'flex';
+            visibleCount++;
+        } else {
+            entry.style.display = 'none';
+        }
+    });
+    
+    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+});
+</script>
 {% else %}
 <div class="card empty-state">
     <p>No entries in this section.</p>

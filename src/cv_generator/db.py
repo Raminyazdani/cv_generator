@@ -40,6 +40,9 @@ DEFAULT_DB_PATH = Path("data/db/cv.db")
 # Schema version for migrations
 SCHEMA_VERSION = 1
 
+# Maximum number of errors to report in doctor command
+MAX_DOCTOR_ERRORS = 5
+
 # SQL schema for the database
 SCHEMA_SQL = """
 -- Meta table for schema version tracking
@@ -1636,13 +1639,13 @@ def doctor(db_path: Optional[Path] = None) -> Dict[str, Any]:
         orphaned_tags = [row[0] for row in cursor.fetchall()]
         results["checks"]["orphaned_tags"] = {
             "count": len(orphaned_tags),
-            "names": orphaned_tags[:10],  # Limit to first 10
+            "names": orphaned_tags[:MAX_DOCTOR_ERRORS * 2],  # Limit to first few
             "ok": True  # Orphaned tags are not critical
         }
         if orphaned_tags:
             results["issues"].append(
-                f"Found {len(orphaned_tags)} unused tags: {', '.join(orphaned_tags[:5])}"
-                + ("..." if len(orphaned_tags) > 5 else "")
+                f"Found {len(orphaned_tags)} unused tags: {', '.join(orphaned_tags[:MAX_DOCTOR_ERRORS])}"
+                + ("..." if len(orphaned_tags) > MAX_DOCTOR_ERRORS else "")
             )
         
         # Check 5: Duplicate tags (case-insensitive)
@@ -1690,7 +1693,7 @@ def doctor(db_path: Optional[Path] = None) -> Dict[str, Any]:
                 json.loads(data_json)
             except (json.JSONDecodeError, TypeError):
                 invalid_json_count += 1
-                if invalid_json_count <= 5:
+                if invalid_json_count <= MAX_DOCTOR_ERRORS:
                     results["issues"].append(f"Entry {entry_id} has invalid JSON")
         
         results["checks"]["invalid_json"] = {

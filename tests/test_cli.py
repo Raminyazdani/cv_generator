@@ -191,6 +191,48 @@ class TestDBCommands:
         assert args.format == "min"
 
 
+class TestExportCommands:
+    """Tests for export CLI commands."""
+
+    def test_export_help(self, capsys):
+        """Test that export --help works."""
+        with pytest.raises(SystemExit) as exc_info:
+            main(["export", "--help"])
+
+        assert exc_info.value.code == 0
+        captured = capsys.readouterr()
+        assert "--name" in captured.out
+        assert "--format" in captured.out
+        assert "html" in captured.out
+        assert "md" in captured.out
+
+    def test_parser_export_command(self):
+        """Test parsing export command."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "export",
+            "--name", "ramin",
+            "--lang", "en",
+            "--format", "html"
+        ])
+
+        assert args.command == "export"
+        assert args.name == "ramin"
+        assert args.lang == "en"
+        assert args.format == "html"
+
+    def test_parser_export_md_format(self):
+        """Test parsing export command with markdown format."""
+        parser = create_parser()
+        args = parser.parse_args([
+            "export",
+            "--format", "md"
+        ])
+
+        assert args.command == "export"
+        assert args.format == "md"
+
+
 class TestBuildValidation:
     """Tests for build command input validation."""
 

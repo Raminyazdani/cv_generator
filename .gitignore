@@ -62,6 +62,8 @@ output/pdf/
 output/latex/
 output/json/
 output/logs/
+output/html/
+output/md/
 output/*.pdf
 
 # OneDrive sync artifacts

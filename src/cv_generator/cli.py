@@ -112,6 +112,27 @@ def build_command(args: argparse.Namespace) -> int:
     if variant:
         logger.info(f"Using variant filter: {variant}")
 
+    # Resolve incremental mode
+    incremental = getattr(args, "incremental", False)
+    no_incremental = getattr(args, "no_incremental", False)
+    if no_incremental:
+        incremental = False
+    if incremental:
+        logger.info("Incremental build enabled")
+
+    # Check for watch mode
+    watch_mode = getattr(args, "watch", False)
+    if watch_mode:
+        return _run_watch_mode(
+            cvs_dir=cvs_dir,
+            templates_dir=templates_dir,
+            output_dir=output_dir,
+            name_filter=name_filter,
+            dry_run=args.dry_run,
+            keep_latex=args.keep_latex,
+            variant=variant,
+        )
+
     try:
         results = generate_all_cvs(
             cvs_dir=cvs_dir,
@@ -121,6 +142,7 @@ def build_command(args: argparse.Namespace) -> int:
             dry_run=args.dry_run,
             keep_latex=args.keep_latex,
             variant=variant,
+            incremental=incremental,
         )
     except CVGeneratorError as e:
         logger.error(str(e))
@@ -143,6 +165,87 @@ def build_command(args: argparse.Namespace) -> int:
         for result in failed:
             logger.error(f"Failed: {result.name}_{result.lang}: {result.error}")
         return EXIT_ERROR
+
+    return EXIT_SUCCESS
+
+
+def _run_watch_mode(
+    *,
+    cvs_dir: Optional[Path],
+    templates_dir: Optional[Path],
+    output_dir: Optional[Path],
+    name_filter: Optional[str],
+    dry_run: bool,
+    keep_latex: bool,
+    variant: Optional[str],
+) -> int:
+    """
+    Run build in watch mode, rebuilding on file changes.
+
+    Args:
+        cvs_dir: Directory containing CV JSON files.
+        templates_dir: Templates directory.
+        output_dir: Output directory.
+        name_filter: Name filter for CVs.
+        dry_run: Dry run mode.
+        keep_latex: Keep LaTeX files.
+        variant: Variant filter.
+
+    Returns:
+        Exit code.
+    """
+    from .paths import get_default_cvs_path, get_default_templates_path
+    from .watch import FileWatcher, format_change_reason
+
+    # Resolve paths for watching
+    watch_cvs_dir = cvs_dir or get_default_cvs_path()
+    watch_templates_dir = templates_dir or get_default_templates_path()
+
+    # Set up paths to watch
+    watch_paths = [watch_cvs_dir, watch_templates_dir]
+    watcher = FileWatcher(watch_paths, patterns=["*.json", "*.tex"])
+
+    def do_build() -> None:
+        """Execute a build."""
+        try:
+            results = generate_all_cvs(
+                cvs_dir=cvs_dir,
+                templates_dir=templates_dir,
+                output_dir=output_dir,
+                name_filter=name_filter,
+                dry_run=dry_run,
+                keep_latex=keep_latex,
+                variant=variant,
+                incremental=True,  # Always use incremental in watch mode
+            )
+            successful = sum(1 for r in results if r.success)
+            skipped = sum(1 for r in results if r.skipped)
+            if skipped > 0:
+                print(f"✅ Built {successful}/{len(results)} CVs ({skipped} skipped)")
+            else:
+                print(f"✅ Built {successful}/{len(results)} CVs")
+        except Exception as e:
+            logger.error(f"Build failed: {e}")
+            print(f"❌ Build failed: {e}")
+
+    def on_change(events) -> None:
+        """Handle file change events."""
+        reason = format_change_reason(events)
+        print(f"\n🔄 Rebuilding: {reason}")
+        do_build()
+
+    def on_start() -> None:
+        """Initial build when watch mode starts."""
+        print("🔍 Watch mode: performing initial build...")
+        do_build()
+        print("\n👀 Watching for changes in:")
+        print(f"   - {watch_cvs_dir}")
+        print(f"   - {watch_templates_dir}")
+
+    try:
+        watcher.watch(callback=on_change, on_start=on_start)
+    except KeyboardInterrupt:
+        print("\n👋 Watch mode stopped")
 
     return EXIT_SUCCESS
 
@@ -870,6 +973,21 @@ OPTIONS
     --templates-dir, -t Templates directory (default: templates)
     --keep-latex, -k    Keep LaTeX sources in output/latex/ for debugging
     --dry-run, -d       Render LaTeX but skip PDF compilation
+    --incremental       Skip rebuilding CVs whose inputs haven't changed
+    --no-incremental    Force full rebuild, ignoring cache
+    --watch, -w         Watch for file changes and rebuild automatically
+
+INCREMENTAL BUILDS
+    Use --incremental to enable incremental builds. This hashes the CV JSON,
+    template files, and assets. If nothing has changed, the build is skipped.
+
+    Cache is stored in output/.cache/ and is never written to data/.
+
+WATCH MODE
+    Use --watch to continuously watch for changes and rebuild automatically.
+    This is useful during development when iterating on templates or CV data.
+
+    Watch mode uses incremental builds by default for efficiency.
 
 EXAMPLES
     # Generate all CVs
@@ -884,11 +1002,18 @@ EXAMPLES
     # Keep LaTeX files for debugging
     cvgen build --keep-latex
 
+    # Incremental build (skip unchanged)
+    cvgen build --incremental
+
+    # Watch mode for development
+    cvgen build --watch
+
 OUTPUT STRUCTURE
     output/
       pdf/<name>/<lang>/<name>_<lang>.pdf
       latex/<name>/<lang>/main.tex        (with --keep-latex)
       latex/<name>/<lang>/sections/*.tex  (with --keep-latex)
+      .cache/<name>_<lang>.json           (incremental build cache)
 """,
 
     "export": """
@@ -1492,6 +1617,24 @@ def create_parser() -> argparse.ArgumentParser:
         "--variant", "-V",
         type=str,
         help="Filter entries by variant/type_key (e.g., 'academic', 'industry')"
+    )
+    build_parser.add_argument(
+        "--incremental",
+        action="store_true",
+        dest="incremental",
+        help="Enable incremental builds (skip unchanged CVs based on input hashing)"
+    )
+    build_parser.add_argument(
+        "--no-incremental",
+        action="store_true",
+        dest="no_incremental",
+        help="Force full rebuild, ignoring cache"
+    )
+    build_parser.add_argument(
+        "--watch", "-w",
+        action="store_true",
+        dest="watch",
+        help="Watch for file changes and rebuild automatically"
     )
 
     build_parser.set_defaults(func=build_command)

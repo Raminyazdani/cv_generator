@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from jinja2.bccache import FileSystemBytecodeCache
 
 from .paths import get_default_templates_path, get_repo_root
 
@@ -162,7 +163,8 @@ def make_tr_raw_filter(lang_map: Dict[str, Dict[str, str]], lang: str) -> Callab
 def create_jinja_env(
     template_dir: Optional[Path] = None,
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
-    lang: str = "en"
+    lang: str = "en",
+    cache_dir: Optional[Path] = None,
 ) -> Environment:
     """
     Create a Jinja2 environment configured for LaTeX template rendering.
@@ -171,12 +173,22 @@ def create_jinja_env(
         template_dir: Path to the templates directory.
         lang_map: Language translation mapping (optional).
         lang: Target language code (default: "en").
+        cache_dir: Directory for template bytecode cache (optional).
+                   If provided, enables template caching for faster reloads.
 
     Returns:
         Configured Jinja2 Environment.
     """
     if template_dir is None:
         template_dir = get_default_templates_path()
+
+    # Set up bytecode cache if cache_dir is provided
+    bytecode_cache = None
+    if cache_dir is not None:
+        cache_path = Path(cache_dir) / "jinja2"
+        cache_path.mkdir(parents=True, exist_ok=True)
+        bytecode_cache = FileSystemBytecodeCache(str(cache_path))
+        logger.debug(f"Enabled Jinja2 bytecode cache at {cache_path}")
 
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
@@ -190,7 +202,9 @@ def create_jinja_env(
         trim_blocks=True,
         lstrip_blocks=True,
         keep_trailing_newline=True,
-        undefined=StrictUndefined
+        undefined=StrictUndefined,
+        bytecode_cache=bytecode_cache,
+        auto_reload=True,  # Ensure templates are reloaded when changed
     )
 
     # Register common filters

@@ -5,6 +5,7 @@ Provides the main functions for:
 - Rendering individual CVs from JSON to LaTeX
 - Compiling LaTeX to PDF
 - Orchestrating the full CV generation pipeline
+- Incremental builds with caching
 """
 
 import copy
@@ -14,6 +15,12 @@ from typing import Any, Dict, List, Optional
 
 from jinja2.exceptions import TemplateError as JinjaTemplateError
 
+from .cache import (
+    BuildCache,
+    compute_input_hashes,
+    get_cache_dir,
+    needs_rebuild,
+)
 from .cleanup import cleanup_result_dir
 from .errors import TemplateError
 from .hooks import HookContext, HookType, get_hook_manager
@@ -25,6 +32,7 @@ from .paths import (
     get_default_cvs_path,
     get_default_output_path,
     get_default_templates_path,
+    get_repo_root,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,7 +85,8 @@ class CVGenerationResult:
         success: bool,
         pdf_path: Optional[Path] = None,
         tex_path: Optional[Path] = None,
-        error: Optional[str] = None
+        error: Optional[str] = None,
+        skipped: bool = False,
     ):
         self.name = name
         self.lang = lang
@@ -85,9 +94,15 @@ class CVGenerationResult:
         self.pdf_path = pdf_path
         self.tex_path = tex_path
         self.error = error
+        self.skipped = skipped
 
     def __repr__(self) -> str:
-        status = "✅" if self.success else "❌"
+        if self.skipped:
+            status = "⏭️"
+        elif self.success:
+            status = "✅"
+        else:
+            status = "❌"
         return f"CVGenerationResult({status} {self.name}_{self.lang})"
 
 
@@ -243,7 +258,9 @@ def generate_cv(
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
     dry_run: bool = False,
     keep_latex: bool = False,
-    variant: Optional[str] = None
+    variant: Optional[str] = None,
+    incremental: bool = False,
+    cache: Optional[BuildCache] = None,
 ) -> CVGenerationResult:
     """
     Generate a PDF CV from a JSON file.
@@ -256,6 +273,8 @@ def generate_cv(
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
         variant: If provided, filter entries by type_key matching this variant.
+        incremental: If True, skip rebuild if inputs haven't changed.
+        cache: BuildCache instance for incremental builds.
 
     Returns:
         CVGenerationResult with status and paths.
@@ -271,6 +290,33 @@ def generate_cv(
 
     # Create artifact paths for this CV
     artifact_paths = ArtifactPaths(profile=base_name, lang=lang, output_root=output_dir)
+
+    # Check for incremental build skip
+    if incremental and cache is not None:
+        # Compute current input hashes
+        assets = []
+        pic_path = get_repo_root() / "data" / "pics" / f"{base_name}.jpg"
+        if pic_path.exists():
+            assets.append(pic_path)
+
+        current_hashes = compute_input_hashes(cv_file, templates_dir, assets)
+        cached_hashes = cache.get_entry(base_name, lang)
+
+        rebuild_needed, reason = needs_rebuild(cached_hashes, current_hashes)
+
+        if not rebuild_needed:
+            # Check if output PDF exists
+            expected_pdf = artifact_paths.pdf_dir / f"{base_name}_{lang}.pdf"
+            if expected_pdf.exists():
+                logger.info(f"⏭️  Skipping {base_name}_{lang}: {reason}")
+                return CVGenerationResult(
+                    base_name, lang, True,
+                    pdf_path=expected_pdf,
+                    skipped=True,
+                )
+
+        logger.debug(f"Rebuild needed for {base_name}_{lang}: {reason}")
+
     artifact_paths.ensure_dirs()
     artifact_paths.log_paths()
 
@@ -312,8 +358,11 @@ def generate_cv(
     if lang_map is None:
         lang_map = load_lang_map()
 
-    # Create Jinja environment
-    env = create_jinja_env(templates_dir, lang_map, lang)
+    # Create Jinja environment with template caching if incremental mode is enabled
+    jinja_cache_dir = None
+    if incremental and cache is not None:
+        jinja_cache_dir = get_cache_dir(output_dir)
+    env = create_jinja_env(templates_dir, lang_map, lang, cache_dir=jinja_cache_dir)
 
     # Set up output paths using unified ArtifactPaths
     sections_dir = artifact_paths.sections_dir
@@ -411,6 +460,15 @@ def generate_cv(
             tex_path=rendered_tex_path
         )
 
+        # Save cache for incremental builds
+        if incremental and cache is not None:
+            assets = []
+            pic_path = get_repo_root() / "data" / "pics" / f"{base_name}.jpg"
+            if pic_path.exists():
+                assets.append(pic_path)
+            cache_entry = compute_input_hashes(cv_file, templates_dir, assets)
+            cache.save_entry(base_name, lang, cache_entry)
+
         # Execute post_export hook
         _execute_hook(
             HookType.POST_EXPORT,
@@ -445,7 +503,8 @@ def generate_all_cvs(
     name_filter: Optional[str] = None,
     dry_run: bool = False,
     keep_latex: bool = False,
-    variant: Optional[str] = None
+    variant: Optional[str] = None,
+    incremental: bool = False,
 ) -> List[CVGenerationResult]:
     """
     Generate PDFs for all CV files in a directory.
@@ -458,6 +517,7 @@ def generate_all_cvs(
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
         variant: If provided, filter entries by type_key matching this variant.
+        incremental: If True, skip rebuild if inputs haven't changed.
 
     Returns:
         List of CVGenerationResult objects.
@@ -466,15 +526,25 @@ def generate_all_cvs(
         cvs_dir = get_default_cvs_path()
     if output_dir is None:
         output_dir = get_default_output_path()
+    if templates_dir is None:
+        templates_dir = get_default_templates_path()
 
     # Log output configuration
     logger.info(f"📁 Output root: {output_dir}")
     logger.info(f"   PDFs will be saved to: {output_dir / 'pdf'}")
     if keep_latex:
         logger.info(f"   LaTeX sources will be saved to: {output_dir / 'latex'}")
+    if incremental:
+        logger.info("   Incremental build enabled")
 
     # Ensure output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Set up build cache if incremental mode is enabled
+    cache = None
+    if incremental:
+        cache_dir = get_cache_dir(output_dir)
+        cache = BuildCache(cache_dir)
 
     # Load language map once for all CVs
     lang_map = load_lang_map()
@@ -502,12 +572,18 @@ def generate_all_cvs(
             lang_map=lang_map,
             dry_run=dry_run,
             keep_latex=keep_latex,
-            variant=variant
+            variant=variant,
+            incremental=incremental,
+            cache=cache,
         )
         results.append(result)
 
     # Summary
     successful = sum(1 for r in results if r.success)
-    logger.info(f"Generated {successful}/{len(results)} CVs successfully")
+    skipped = sum(1 for r in results if r.skipped)
+    if skipped > 0:
+        logger.info(f"Generated {successful}/{len(results)} CVs successfully ({skipped} skipped - up to date)")
+    else:
+        logger.info(f"Generated {successful}/{len(results)} CVs successfully")
 
     return results

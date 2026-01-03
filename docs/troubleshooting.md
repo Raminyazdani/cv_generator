@@ -19,7 +19,7 @@ Common issues and their solutions when using CV Generator.
    - **Linux:** `sudo apt install texlive-xetex`
 
 2. Add XeLaTeX to your PATH:
-   - **Windows:** Add `C:\texlive\2024\bin\windows` or similar to PATH
+   - **Windows:** Add `C:\texlive\<version>\bin\windows` (e.g., `C:\texlive\2023\bin\windows`) to PATH
    - **macOS/Linux:** Usually automatic with package managers
 
 3. Verify installation:

@@ -10,7 +10,7 @@ These options apply to all commands:
 |--------|-------------|
 | `-v, --verbose` | Enable INFO level logging |
 | `--debug` | Enable DEBUG level logging |
-| `-q, --quiet` | Suppress output except errors |
+| `-q, --quiet` | Show only error messages |
 | `--version` | Show version number |
 | `-h, --help` | Show help message |
 

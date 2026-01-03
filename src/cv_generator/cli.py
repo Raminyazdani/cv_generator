@@ -1157,8 +1157,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
     
     # Set up logging with quiet support
-    quiet = getattr(args, 'quiet', False)
-    setup_logging(verbose=args.verbose, debug=args.debug, quiet=quiet)
+    setup_logging(verbose=args.verbose, debug=args.debug, quiet=args.quiet)
     
     # If no command specified, default to 'build'
     if not args.command:

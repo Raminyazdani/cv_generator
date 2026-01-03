@@ -14,6 +14,9 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
 - [Installation](#installation)  
 - [Usage](#usage)  
   - [Running the generator](#running-the-generator)  
+  - [Configuration File](#configuration-file)
+  - [Profile Management](#profile-management)
+  - [Variant Filtering](#variant-filtering)
   - [Adding a new CV](#adding-a-new-cv)  
   - [Adding a profile picture](#adding-a-profile-picture)  
 - [SQLite Database & Tagging](#sqlite-database--tagging)
@@ -46,6 +49,9 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
 - **Modular sections**: Each CV section is a separate Jinja2/LaTeX template under `templates/`:
   - `header`, `education`, `experience`, `skills`, `language`, `projects`, `certificates`, `publications`, `references`, ...
 - **Profile photo support**: Optional per-person images under `data/pics/`.
+- **Configuration file**: Optional TOML config (`cv_generator.toml`) to reduce repetitive CLI flags.
+- **Profile management**: Set a default profile with `cvgen profile use <name>`.
+- **Variant filtering**: Create targeted CV versions with `--variant` flag.
 - **SQLite database**: Store CV data in SQLite for querying and editing.
 - **Tagging system**: Apply tags (via `type_key`) to create targeted CV versions.
 - **Web UI**: Browse CV sections and manage tags via a local web interface.
@@ -238,6 +244,83 @@ For example:
 
 - `output/mahsa.pdf`
 - `output/ramin.pdf`
+
+---
+
+### Configuration File
+
+CV Generator supports an optional TOML configuration file (`cv_generator.toml`) to reduce repetitive CLI flags:
+
+```toml
+# cv_generator.toml - Example configuration
+
+[project]
+name = "My CV Project"
+default_lang = "en"
+variants = ["academic", "industry", "onepage"]
+
+[paths]
+cvs = "data/cvs"
+templates = "templates"
+output = "output"
+
+[build]
+keep_latex = true
+dry_run = false
+
+[logging]
+level = "INFO"
+```
+
+Place this file in your project root. Use `--config path/to/config.toml` to specify a different location.
+
+**Precedence**: CLI flags override config values, which override defaults.
+
+See [docs/config-reference.md](docs/config-reference.md) for full documentation.
+
+---
+
+### Profile Management
+
+Instead of specifying `--name` every time, you can set a default profile:
+
+```bash
+# List available profiles
+cvgen profile list
+
+# Set ramin as the default profile
+cvgen profile use ramin
+
+# Now 'cvgen build' uses ramin automatically
+cvgen build
+
+# Switch to a different profile
+cvgen profile use mahsa
+
+# Clear the profile selection
+cvgen profile clear
+```
+
+Profile state is stored in `.cvgen/state.json` (automatically excluded from git).
+
+---
+
+### Variant Filtering
+
+Create targeted CV versions without modifying source JSON using variants:
+
+```bash
+# Build CV with only "academic" entries
+cvgen build --name ramin --variant academic
+
+# Build CV with only "industry" entries
+cvgen build --name ramin --variant industry
+```
+
+Entries are filtered by their `type_key` field:
+- Entries with matching `type_key` → included
+- Entries with `type_key` as a list containing the variant → included
+- Entries without `type_key` → always included (universal)
 
 ---
 

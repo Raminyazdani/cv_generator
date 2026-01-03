@@ -7,6 +7,7 @@ Provides the main functions for:
 - Orchestrating the full CV generation pipeline
 """
 
+import copy
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -136,6 +137,66 @@ def render_layout(
     return rendered_layout
 
 
+def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
+    """
+    Filter CV data entries by variant (type_key).
+
+    This filters list sections (like experiences, education, etc.) to only
+    include entries that have a matching type_key. Entries without type_key
+    are always included (they are considered "universal").
+
+    Args:
+        data: CV data dictionary.
+        variant: Variant name to filter by (matched against type_key).
+
+    Returns:
+        Filtered CV data dictionary.
+    """
+    # Sections that contain list of entries with potential type_key
+    list_sections = [
+        "education", "experiences", "projects", "publications",
+        "workshop_and_certifications", "references", "awards", "honors"
+    ]
+
+    filtered = copy.deepcopy(data)
+
+    for section in list_sections:
+        if section not in filtered:
+            continue
+
+        items = filtered[section]
+        if not isinstance(items, list):
+            continue
+
+        # Filter items: include if no type_key OR type_key matches variant
+        filtered_items = []
+        for item in items:
+            if not isinstance(item, dict):
+                filtered_items.append(item)
+                continue
+
+            type_key = item.get("type_key")
+            if type_key is None:
+                # No type_key means include in all variants
+                filtered_items.append(item)
+            elif isinstance(type_key, list):
+                # type_key is a list of variants
+                if variant in type_key:
+                    filtered_items.append(item)
+            elif type_key == variant:
+                # type_key matches exactly
+                filtered_items.append(item)
+
+        filtered[section] = filtered_items
+        if len(filtered_items) < len(items):
+            logger.debug(
+                f"Filtered {section}: {len(items)} -> {len(filtered_items)} items "
+                f"(variant={variant})"
+            )
+
+    return filtered
+
+
 def generate_cv(
     cv_file: Path,
     *,
@@ -143,7 +204,8 @@ def generate_cv(
     output_dir: Optional[Path] = None,
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
     dry_run: bool = False,
-    keep_latex: bool = False
+    keep_latex: bool = False,
+    variant: Optional[str] = None
 ) -> CVGenerationResult:
     """
     Generate a PDF CV from a JSON file.
@@ -155,6 +217,7 @@ def generate_cv(
         lang_map: Language translation map (will be loaded if not provided).
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
+        variant: If provided, filter entries by type_key matching this variant.
 
     Returns:
         CVGenerationResult with status and paths.
@@ -187,6 +250,10 @@ def generate_cv(
             base_name, lang, False,
             error="Missing 'basics' key (incompatible schema)"
         )
+
+    # Apply variant filtering if specified
+    if variant:
+        data = filter_by_variant(data, variant)
 
     # Load language map if needed
     if lang_map is None:
@@ -284,7 +351,8 @@ def generate_all_cvs(
     output_dir: Optional[Path] = None,
     name_filter: Optional[str] = None,
     dry_run: bool = False,
-    keep_latex: bool = False
+    keep_latex: bool = False,
+    variant: Optional[str] = None
 ) -> List[CVGenerationResult]:
     """
     Generate PDFs for all CV files in a directory.
@@ -296,6 +364,7 @@ def generate_all_cvs(
         name_filter: If provided, only generate CVs matching this base name.
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
+        variant: If provided, filter entries by type_key matching this variant.
 
     Returns:
         List of CVGenerationResult objects.
@@ -328,6 +397,8 @@ def generate_all_cvs(
         return []
 
     logger.info(f"Found {len(cv_files)} CV file(s) to process")
+    if variant:
+        logger.info(f"Filtering entries by variant: {variant}")
 
     results = []
     for cv_file in cv_files:
@@ -337,7 +408,8 @@ def generate_all_cvs(
             output_dir=output_dir,
             lang_map=lang_map,
             dry_run=dry_run,
-            keep_latex=keep_latex
+            keep_latex=keep_latex,
+            variant=variant
         )
         results.append(result)
 

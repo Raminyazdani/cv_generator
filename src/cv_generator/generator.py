@@ -16,6 +16,7 @@ from jinja2.exceptions import TemplateError as JinjaTemplateError
 
 from .cleanup import cleanup_result_dir
 from .errors import TemplateError
+from .hooks import HookContext, HookType, get_hook_manager
 from .io import discover_cv_files, load_cv_json, load_lang_map, parse_cv_filename, validate_cv_data
 from .jinja_env import RTL_LANGUAGES, create_jinja_env
 from .latex import cleanup_latex_artifacts, compile_latex, rename_pdf
@@ -27,6 +28,43 @@ from .paths import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _execute_hook(
+    hook_type: HookType,
+    cv_name: str,
+    lang: str,
+    data: Dict[str, Any],
+    rendered_sections: Optional[Dict[str, str]] = None,
+    tex_path: Optional[Path] = None,
+    pdf_path: Optional[Path] = None,
+) -> HookContext:
+    """
+    Execute a hook with the given context.
+
+    Args:
+        hook_type: The type of hook to execute.
+        cv_name: Name of the CV being processed.
+        lang: Language code.
+        data: CV data dictionary.
+        rendered_sections: Rendered section content (for post_render, pre_compile).
+        tex_path: Path to .tex file (for pre_compile, post_export).
+        pdf_path: Path to .pdf file (for post_export).
+
+    Returns:
+        HookContext after hook execution.
+    """
+    context = HookContext(
+        cv_name=cv_name,
+        lang=lang,
+        data=data,
+        rendered_sections=rendered_sections or {},
+        tex_path=tex_path,
+        pdf_path=pdf_path,
+    )
+
+    hook_manager = get_hook_manager()
+    return hook_manager.execute(hook_type, context)
 
 
 class CVGenerationResult:
@@ -255,6 +293,21 @@ def generate_cv(
     if variant:
         data = filter_by_variant(data, variant)
 
+    # Execute pre_validate hook
+    hook_ctx = _execute_hook(
+        HookType.PRE_VALIDATE,
+        cv_name=base_name,
+        lang=lang,
+        data=data,
+    )
+    if hook_ctx.abort:
+        return CVGenerationResult(
+            base_name, lang, False,
+            error=f"Aborted by plugin: {hook_ctx.abort_reason}"
+        )
+    # Allow plugins to modify data
+    data = hook_ctx.data
+
     # Load language map if needed
     if lang_map is None:
         lang_map = load_lang_map()
@@ -289,6 +342,20 @@ def generate_cv(
 
     logger.info(f"✅ Sections rendered to '{sections_dir}'.")
 
+    # Execute post_render hook
+    hook_ctx = _execute_hook(
+        HookType.POST_RENDER,
+        cv_name=base_name,
+        lang=lang,
+        data=env_vars,
+        rendered_sections=rendered_sections,
+    )
+    if hook_ctx.abort:
+        return CVGenerationResult(
+            base_name, lang, False,
+            error=f"Aborted by plugin: {hook_ctx.abort_reason}"
+        )
+
     # Render layout
     try:
         render_layout(env, env_vars, rendered_tex_path)
@@ -302,6 +369,21 @@ def generate_cv(
         return CVGenerationResult(
             base_name, lang, True,
             tex_path=rendered_tex_path
+        )
+
+    # Execute pre_compile hook
+    hook_ctx = _execute_hook(
+        HookType.PRE_COMPILE,
+        cv_name=base_name,
+        lang=lang,
+        data=env_vars,
+        rendered_sections=rendered_sections,
+        tex_path=rendered_tex_path,
+    )
+    if hook_ctx.abort:
+        return CVGenerationResult(
+            base_name, lang, False,
+            error=f"Aborted by plugin: {hook_ctx.abort_reason}"
         )
 
     # Compile LaTeX to PDF directory
@@ -327,6 +409,17 @@ def generate_cv(
             base_name, lang, True,
             pdf_path=final_pdf,
             tex_path=rendered_tex_path
+        )
+
+        # Execute post_export hook
+        _execute_hook(
+            HookType.POST_EXPORT,
+            cv_name=base_name,
+            lang=lang,
+            data=env_vars,
+            rendered_sections=rendered_sections,
+            tex_path=rendered_tex_path,
+            pdf_path=final_pdf,
         )
     else:
         result = CVGenerationResult(

@@ -132,12 +132,15 @@ class TestLoadConfig:
         assert isinstance(config, Config)
         assert config.project.default_lang == "en"
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 11) and not pytest.importorskip("tomli", reason="tomli not installed"),
-        reason="TOML parsing not available"
-    )
     def test_load_valid_config(self, tmp_path, monkeypatch):
         """Test loading a valid TOML config file."""
+        # Skip if TOML parsing is not available
+        if sys.version_info < (3, 11):
+            try:
+                import tomli  # noqa: F401
+            except ImportError:
+                pytest.skip("tomli not installed for Python < 3.11")
+
         config_content = """
 [project]
 name = "Test CV"

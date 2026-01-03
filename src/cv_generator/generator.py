@@ -7,6 +7,7 @@ Provides the main functions for:
 - Orchestrating the full CV generation pipeline
 """
 
+import copy
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -157,7 +158,7 @@ def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
         "workshop_and_certifications", "references", "awards", "honors"
     ]
 
-    filtered = data.copy()
+    filtered = copy.deepcopy(data)
 
     for section in list_sections:
         if section not in filtered:

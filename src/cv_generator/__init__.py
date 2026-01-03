@@ -38,6 +38,17 @@ from .validate_schema import (
     validate_cv_json,
 )
 
+# Registry and plugin system
+from .hooks import HookContext, HookManager, HookType, get_hook_manager, register_hook
+from .plugins import PluginInfo, PluginManager, discover_and_load_plugins, get_plugin_manager
+from .registry import (
+    GenericSectionAdapter,
+    SectionAdapter,
+    SectionRegistry,
+    get_default_registry,
+    register_section,
+)
+
 __all__ = [
     "generate_cv",
     "generate_all_cvs",
@@ -70,4 +81,19 @@ __all__ = [
     "get_section_entries",
     "get_person_sections",
     "__version__",
+    # Registry and plugin system
+    "SectionAdapter",
+    "GenericSectionAdapter",
+    "SectionRegistry",
+    "get_default_registry",
+    "register_section",
+    "HookType",
+    "HookContext",
+    "HookManager",
+    "get_hook_manager",
+    "register_hook",
+    "PluginInfo",
+    "PluginManager",
+    "get_plugin_manager",
+    "discover_and_load_plugins",
 ]

@@ -27,6 +27,9 @@ from .registry import (
 
 logger = logging.getLogger(__name__)
 
+# Prefix for plugin module names in sys.modules
+PLUGIN_MODULE_PREFIX = "cv_generator.plugins"
+
 
 class PluginError(Exception):
     """Exception raised when a plugin fails to load or execute."""
@@ -99,21 +102,33 @@ class PluginManager:
         """
         discovered = []
 
+        # Files to exclude from plugin discovery
+        excluded_patterns = {"__init__", "__pycache__", "__main__"}
+
         for plugin_dir in self._plugin_dirs:
             if not plugin_dir.exists():
                 continue
 
-            # Look for Python files (excluding __init__.py and __pycache__)
+            # Look for Python files (excluding private/special files)
             for py_file in plugin_dir.glob("*.py"):
-                if py_file.name.startswith("_"):
+                stem = py_file.stem
+                # Skip files starting with underscore or in excluded patterns
+                if stem.startswith("_") or stem in excluded_patterns:
+                    continue
+                # Skip compiled Python files
+                if py_file.suffix in (".pyc", ".pyo"):
                     continue
                 discovered.append(py_file)
 
             # Also look for plugin packages (directories with __init__.py)
             for subdir in plugin_dir.iterdir():
-                if subdir.is_dir() and (subdir / "__init__.py").exists():
-                    if not subdir.name.startswith("_"):
-                        discovered.append(subdir / "__init__.py")
+                if not subdir.is_dir():
+                    continue
+                # Skip __pycache__ and other special directories
+                if subdir.name.startswith("_") or subdir.name in excluded_patterns:
+                    continue
+                if (subdir / "__init__.py").exists():
+                    discovered.append(subdir / "__init__.py")
 
         logger.debug(f"Discovered {len(discovered)} plugin files")
         return discovered
@@ -141,9 +156,10 @@ class PluginManager:
         logger.info(f"Loading plugin: {plugin_name}")
 
         try:
-            # Create module spec
+            # Create module spec with configurable prefix
+            module_name = f"{PLUGIN_MODULE_PREFIX}.{plugin_name}"
             spec = importlib.util.spec_from_file_location(
-                f"cv_generator.plugins.{plugin_name}",
+                module_name,
                 path,
             )
 
@@ -243,8 +259,8 @@ class PluginManager:
         if name in self._plugins:
             plugin = self._plugins[name]
             if plugin.module:
-                # Remove from sys.modules
-                module_name = f"cv_generator.plugins.{name}"
+                # Remove from sys.modules using the configurable prefix
+                module_name = f"{PLUGIN_MODULE_PREFIX}.{name}"
                 if module_name in sys.modules:
                     del sys.modules[module_name]
 

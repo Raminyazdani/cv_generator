@@ -313,24 +313,29 @@ def create_default_registry() -> SectionRegistry:
 
     # Define default sections in order
     # These match the existing template files in templates/
+    # Each dict has: name, template, data_key, required
     default_sections = [
-        ("header", "header.tex", "basics", True),
-        ("education", "education.tex", "education", False),
-        ("experience", "experience.tex", "experiences", False),
-        ("skills", "skills.tex", "skills", False),
-        ("projects", "projects.tex", "projects", False),
-        ("publications", "publications.tex", "publications", False),
-        ("certificates", "certificates.tex", "workshop_and_certifications", False),
-        ("language", "language.tex", "languages", False),
-        ("references", "references.tex", "references", False),
+        {"name": "header", "template": "header.tex", "data_key": "basics", "required": True},
+        {"name": "education", "template": "education.tex", "data_key": "education"},
+        {"name": "experience", "template": "experience.tex", "data_key": "experiences"},
+        {"name": "skills", "template": "skills.tex", "data_key": "skills"},
+        {"name": "projects", "template": "projects.tex", "data_key": "projects"},
+        {"name": "publications", "template": "publications.tex", "data_key": "publications"},
+        {
+            "name": "certificates",
+            "template": "certificates.tex",
+            "data_key": "workshop_and_certifications",
+        },
+        {"name": "language", "template": "language.tex", "data_key": "languages"},
+        {"name": "references", "template": "references.tex", "data_key": "references"},
     ]
 
-    for name, template, data_key, required in default_sections:
+    for section_config in default_sections:
         adapter = GenericSectionAdapter(
-            name=name,
-            template=template,
-            data_key=data_key,
-            required=required,
+            name=section_config["name"],
+            template=section_config["template"],
+            data_key=section_config.get("data_key"),
+            required=section_config.get("required", False),
         )
         registry.register(adapter)
 

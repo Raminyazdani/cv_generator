@@ -573,7 +573,9 @@ def _rebuild_type_keys(cursor: sqlite3.Cursor, entry_id: int) -> List[str]:
 def export_cv(
     person_slug: str,
     db_path: Optional[Path] = None,
-    pretty: bool = True
+    pretty: bool = True,
+    apply_tags: bool = False,
+    apply_tags_to_all: bool = False
 ) -> Dict[str, Any]:
     """
     Export a person's CV from the database to a dict.
@@ -582,6 +584,8 @@ def export_cv(
         person_slug: The person's slug.
         db_path: Path to the database file. Uses default if None.
         pretty: If True, format JSON with indentation.
+        apply_tags: If True, rebuild type_key from entry_tag for entries that originally had it.
+        apply_tags_to_all: If True, add type_key to ALL entries (even those that didn't have it).
         
     Returns:
         CV data dictionary.
@@ -615,7 +619,7 @@ def export_cv(
             (person_id,)
         )
         
-        cv_data = {}
+        cv_data: Dict[str, Any] = {}
         
         for entry_id, section, order_idx, data_json in cursor.fetchall():
             # Check for empty list marker
@@ -625,9 +629,24 @@ def export_cv(
             
             item = json.loads(data_json)
             
-            # Note: type_key is already stored in data_json, so we don't need
-            # to rebuild it from entry_tag relationships. The entry_tag table
-            # is for querying/filtering, not for reconstruction.
+            # Handle type_key based on apply_tags flags
+            if apply_tags or apply_tags_to_all:
+                # Get tags from entry_tag table
+                db_tags = _rebuild_type_keys(cursor, entry_id)
+                
+                if apply_tags_to_all:
+                    # Always add type_key, even if empty
+                    if db_tags:
+                        item["type_key"] = db_tags
+                    elif "type_key" in item:
+                        del item["type_key"]
+                elif apply_tags:
+                    # Only add type_key if the entry originally had it
+                    original_had_type_key = "type_key" in item
+                    if original_had_type_key and db_tags:
+                        item["type_key"] = db_tags
+                    elif original_had_type_key and not db_tags:
+                        del item["type_key"]
             
             # Check if this is a dict section (stored as single entry with identity_key ending in :full)
             # We detect this by checking if the item is a dict with nested dicts (typical for skills)
@@ -665,7 +684,10 @@ def export_cv_to_file(
     person_slug: str,
     output_path: Path,
     db_path: Optional[Path] = None,
-    pretty: bool = True
+    pretty: bool = True,
+    apply_tags: bool = False,
+    apply_tags_to_all: bool = False,
+    force: bool = False
 ) -> Path:
     """
     Export a person's CV from the database to a JSON file.
@@ -675,11 +697,23 @@ def export_cv_to_file(
         output_path: Path to output JSON file.
         db_path: Path to the database file. Uses default if None.
         pretty: If True, format JSON with indentation.
+        apply_tags: If True, rebuild type_key from entry_tag for entries that originally had it.
+        apply_tags_to_all: If True, add type_key to ALL entries.
+        force: If True, overwrite existing files.
         
     Returns:
         Path to the created file.
+        
+    Raises:
+        ConfigurationError: If file exists and force is False.
     """
-    cv_data = export_cv(person_slug, db_path, pretty)
+    # Check if file exists and force is not set
+    if output_path.exists() and not force:
+        raise ConfigurationError(
+            f"Output file already exists: {output_path}. Use --force to overwrite."
+        )
+    
+    cv_data = export_cv(person_slug, db_path, pretty, apply_tags, apply_tags_to_all)
     
     # Ensure parent directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -698,7 +732,10 @@ def export_all_cvs(
     output_dir: Optional[Path] = None,
     db_path: Optional[Path] = None,
     name_filter: Optional[str] = None,
-    pretty: bool = True
+    pretty: bool = True,
+    apply_tags: bool = False,
+    apply_tags_to_all: bool = False,
+    force: bool = False
 ) -> Dict[str, Any]:
     """
     Export all CVs from the database to JSON files.
@@ -708,6 +745,9 @@ def export_all_cvs(
         db_path: Path to the database file. Uses default if None.
         name_filter: If provided, only export CVs matching this slug.
         pretty: If True, format JSON with indentation.
+        apply_tags: If True, rebuild type_key from entry_tag for entries that originally had it.
+        apply_tags_to_all: If True, add type_key to ALL entries.
+        force: If True, overwrite existing files.
         
     Returns:
         Dict with export statistics.
@@ -746,7 +786,7 @@ def export_all_cvs(
         logger.warning("No persons found in database")
         return {"files_exported": 0}
     
-    results = {
+    results: Dict[str, Any] = {
         "files_exported": 0,
         "files": []
     }
@@ -754,7 +794,10 @@ def export_all_cvs(
     for slug in persons:
         try:
             output_path = output_dir / f"{slug}.json"
-            export_cv_to_file(slug, output_path, db_path, pretty)
+            export_cv_to_file(
+                slug, output_path, db_path, pretty,
+                apply_tags, apply_tags_to_all, force
+            )
             results["files"].append({
                 "slug": slug,
                 "file": output_path.name,
@@ -1490,3 +1533,189 @@ def list_tags(db_path: Optional[Path] = None) -> List[Dict[str, Any]]:
         ]
     finally:
         conn.close()
+
+
+def doctor(db_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Check database health and report any issues.
+    
+    Performs the following checks:
+    - Schema version compatibility
+    - Orphaned entries (entries without valid person)
+    - Orphaned tags (tags not assigned to any entry)
+    - Duplicate tags
+    - Missing identity keys
+    - Invalid JSON in data_json fields
+    
+    Args:
+        db_path: Path to the database file. Uses default if None.
+        
+    Returns:
+        Dict with health check results.
+        
+    Raises:
+        ConfigurationError: If database doesn't exist.
+    """
+    db_path = get_db_path(db_path)
+    
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+    
+    logger.info(f"Running health check on: {db_path}")
+    
+    results: Dict[str, Any] = {
+        "database": str(db_path),
+        "healthy": True,
+        "issues": [],
+        "stats": {},
+        "checks": {}
+    }
+    
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+        
+        # Check 1: Schema version
+        logger.debug("Checking schema version...")
+        cursor.execute("SELECT value FROM meta WHERE key = 'schema_version'")
+        row = cursor.fetchone()
+        if row:
+            db_version = int(row[0])
+            results["checks"]["schema_version"] = {
+                "current": db_version,
+                "expected": SCHEMA_VERSION,
+                "ok": db_version == SCHEMA_VERSION
+            }
+            if db_version != SCHEMA_VERSION:
+                results["healthy"] = False
+                results["issues"].append(
+                    f"Schema version mismatch: DB has v{db_version}, expected v{SCHEMA_VERSION}"
+                )
+        else:
+            results["checks"]["schema_version"] = {"ok": False, "error": "No version found"}
+            results["healthy"] = False
+            results["issues"].append("Schema version not found in meta table")
+        
+        # Check 2: Basic stats
+        logger.debug("Gathering statistics...")
+        cursor.execute("SELECT COUNT(*) FROM person")
+        results["stats"]["persons"] = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM entry")
+        results["stats"]["entries"] = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM tag")
+        results["stats"]["tags"] = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM entry_tag")
+        results["stats"]["tag_assignments"] = cursor.fetchone()[0]
+        
+        # Check 3: Orphaned entries (entries without valid person)
+        logger.debug("Checking for orphaned entries...")
+        cursor.execute(
+            """SELECT COUNT(*) FROM entry e
+               LEFT JOIN person p ON e.person_id = p.id
+               WHERE p.id IS NULL"""
+        )
+        orphaned_entries = cursor.fetchone()[0]
+        results["checks"]["orphaned_entries"] = {
+            "count": orphaned_entries,
+            "ok": orphaned_entries == 0
+        }
+        if orphaned_entries > 0:
+            results["healthy"] = False
+            results["issues"].append(f"Found {orphaned_entries} orphaned entries (no valid person)")
+        
+        # Check 4: Orphaned tags (tags not used by any entry)
+        logger.debug("Checking for orphaned tags...")
+        cursor.execute(
+            """SELECT t.name FROM tag t
+               LEFT JOIN entry_tag et ON t.id = et.tag_id
+               WHERE et.tag_id IS NULL"""
+        )
+        orphaned_tags = [row[0] for row in cursor.fetchall()]
+        results["checks"]["orphaned_tags"] = {
+            "count": len(orphaned_tags),
+            "names": orphaned_tags[:10],  # Limit to first 10
+            "ok": True  # Orphaned tags are not critical
+        }
+        if orphaned_tags:
+            results["issues"].append(
+                f"Found {len(orphaned_tags)} unused tags: {', '.join(orphaned_tags[:5])}"
+                + ("..." if len(orphaned_tags) > 5 else "")
+            )
+        
+        # Check 5: Duplicate tags (case-insensitive)
+        logger.debug("Checking for duplicate tags...")
+        cursor.execute(
+            """SELECT LOWER(name), COUNT(*) as cnt
+               FROM tag
+               GROUP BY LOWER(name)
+               HAVING cnt > 1"""
+        )
+        duplicates = cursor.fetchall()
+        results["checks"]["duplicate_tags"] = {
+            "count": len(duplicates),
+            "duplicates": [{"name": d[0], "count": d[1]} for d in duplicates],
+            "ok": len(duplicates) == 0
+        }
+        if duplicates:
+            results["healthy"] = False
+            results["issues"].append(
+                f"Found {len(duplicates)} duplicate tag names (case-insensitive)"
+            )
+        
+        # Check 6: Missing identity keys
+        logger.debug("Checking for missing identity keys...")
+        cursor.execute(
+            """SELECT COUNT(*) FROM entry
+               WHERE identity_key IS NULL OR identity_key = ''"""
+        )
+        missing_identity = cursor.fetchone()[0]
+        results["checks"]["missing_identity_keys"] = {
+            "count": missing_identity,
+            "ok": True  # Missing identity keys are not critical
+        }
+        if missing_identity > 0:
+            results["issues"].append(
+                f"Found {missing_identity} entries without identity keys"
+            )
+        
+        # Check 7: Invalid JSON in data_json
+        logger.debug("Checking for invalid JSON...")
+        cursor.execute("SELECT id, data_json FROM entry")
+        invalid_json_count = 0
+        for entry_id, data_json in cursor.fetchall():
+            try:
+                json.loads(data_json)
+            except (json.JSONDecodeError, TypeError):
+                invalid_json_count += 1
+                if invalid_json_count <= 5:
+                    results["issues"].append(f"Entry {entry_id} has invalid JSON")
+        
+        results["checks"]["invalid_json"] = {
+            "count": invalid_json_count,
+            "ok": invalid_json_count == 0
+        }
+        if invalid_json_count > 0:
+            results["healthy"] = False
+        
+        # Check 8: Sections per person
+        logger.debug("Checking sections distribution...")
+        cursor.execute(
+            """SELECT p.slug, COUNT(DISTINCT e.section) as sections
+               FROM person p
+               LEFT JOIN entry e ON p.id = e.person_id
+               GROUP BY p.id"""
+        )
+        results["checks"]["sections_per_person"] = [
+            {"slug": row[0], "sections": row[1]}
+            for row in cursor.fetchall()
+        ]
+        
+        logger.info(f"Health check complete. Healthy: {results['healthy']}")
+        
+    finally:
+        conn.close()
+    
+    return results

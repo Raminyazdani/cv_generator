@@ -81,6 +81,16 @@ def build_command(args: argparse.Namespace) -> int:
     templates_dir = Path(args.templates_dir) if args.templates_dir else None
     output_dir = Path(args.output_dir) if args.output_dir else None
     
+    # Validate input directory if specified
+    if cvs_dir and not cvs_dir.exists():
+        logger.error(f"Input directory not found: {cvs_dir}")
+        return EXIT_CONFIG_ERROR
+    
+    # Validate templates directory if specified
+    if templates_dir and not templates_dir.exists():
+        logger.error(f"Templates directory not found: {templates_dir}")
+        return EXIT_CONFIG_ERROR
+    
     # Log configuration
     if cvs_dir:
         logger.info(f"Input directory: {cvs_dir}")

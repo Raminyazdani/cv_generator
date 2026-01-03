@@ -13,7 +13,7 @@ from typing import Dict, Callable, Any, Optional
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from .paths import get_default_templates_path
+from .paths import get_default_templates_path, get_repo_root
 
 logger = logging.getLogger(__name__)
 
@@ -92,12 +92,14 @@ def cblock(s: Any) -> str:
 
 def find_pic(opt_name: str) -> bool:
     """Check if a profile picture exists for the given name."""
-    return os.path.exists(f"./data/pics/{opt_name}.jpg")
+    pic_path = get_repo_root() / "data" / "pics" / f"{opt_name}.jpg"
+    return pic_path.exists()
 
 
 def get_pic(opt_name: str) -> str:
     """Get the path to the profile picture for the given name."""
-    return f"./data/pics/{opt_name}.jpg"
+    pic_path = get_repo_root() / "data" / "pics" / f"{opt_name}.jpg"
+    return str(pic_path)
 
 
 def make_translate_func(lang_map: Dict[str, Dict[str, str]], lang: str) -> Callable:

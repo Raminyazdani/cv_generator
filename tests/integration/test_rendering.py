@@ -5,8 +5,8 @@ Tests the full rendering flow from CV JSON data to LaTeX output,
 including snapshot testing to detect unintended changes.
 """
 
-import json
 from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
@@ -20,6 +20,34 @@ from tests.conftest import (
     load_json_fixture,
 )
 from tests.snapshot_utils import assert_snapshot_tex
+
+
+def setup_template_vars(
+    cv_data: Dict[str, Any],
+    name: str,
+    lang: str,
+    lang_map: Dict[str, Dict[str, str]],
+    is_rtl: bool = False,
+) -> Dict[str, Any]:
+    """
+    Set up required template variables for CV data.
+
+    Args:
+        cv_data: The CV data dictionary to modify.
+        name: The OPT_NAME/BASE_NAME value.
+        lang: The language code.
+        lang_map: The language translation map.
+        is_rtl: Whether this is a right-to-left language.
+
+    Returns:
+        The modified cv_data dictionary.
+    """
+    cv_data["OPT_NAME"] = name
+    cv_data["BASE_NAME"] = name
+    cv_data["IS_RTL"] = is_rtl
+    cv_data["LANG"] = lang
+    cv_data["LANG_MAP"] = lang_map
+    return cv_data
 
 
 class TestJsonToLatexRendering:
@@ -48,12 +76,8 @@ class TestJsonToLatexRendering:
         # Create environment with lang_map so t() is available
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="en")
 
-        # Add required template variables
-        cv_data["OPT_NAME"] = "minimal"
-        cv_data["BASE_NAME"] = "minimal"
-        cv_data["IS_RTL"] = False
-        cv_data["LANG"] = "en"
-        cv_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(cv_data, "minimal", "en", default_lang_map)
 
         sections = render_sections(env, templates_dir, cv_data, output_dir)
 
@@ -71,12 +95,8 @@ class TestJsonToLatexRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="en")
 
-        # Add required template variables
-        cv_data["OPT_NAME"] = "complete"
-        cv_data["BASE_NAME"] = "complete"
-        cv_data["IS_RTL"] = False
-        cv_data["LANG"] = "en"
-        cv_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(cv_data, "complete", "en", default_lang_map)
 
         sections = render_sections(env, templates_dir, cv_data, output_dir)
 
@@ -98,12 +118,8 @@ class TestJsonToLatexRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="en")
 
-        # Add required template variables
-        cv_data["OPT_NAME"] = "minimal"
-        cv_data["BASE_NAME"] = "minimal"
-        cv_data["IS_RTL"] = False
-        cv_data["LANG"] = "en"
-        cv_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(cv_data, "minimal", "en", default_lang_map)
 
         # Render sections first
         sections = render_sections(env, templates_dir, cv_data, sections_dir)
@@ -129,12 +145,8 @@ class TestJsonToLatexRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="en")
 
-        # Add required template variables
-        cv_data["OPT_NAME"] = "test"
-        cv_data["BASE_NAME"] = "test"
-        cv_data["IS_RTL"] = False
-        cv_data["LANG"] = "en"
-        cv_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(cv_data, "test", "en", default_lang_map)
 
         sections = render_sections(env, templates_dir, cv_data, sections_dir)
 
@@ -148,12 +160,8 @@ class TestJsonToLatexRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="de")
 
-        # Add required template variables
-        cv_data["OPT_NAME"] = "test"
-        cv_data["BASE_NAME"] = "test"
-        cv_data["IS_RTL"] = False
-        cv_data["LANG"] = "de"
-        cv_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(cv_data, "test", "de", default_lang_map)
 
         sections = render_sections(env, templates_dir, cv_data, sections_dir)
 
@@ -219,11 +227,8 @@ class TestMultilangParity:
                 lang=lang
             )
 
-            cv_data["OPT_NAME"] = "test"
-            cv_data["BASE_NAME"] = "test"
-            cv_data["IS_RTL"] = is_rtl
-            cv_data["LANG"] = lang
-            cv_data["LANG_MAP"] = default_lang_map
+            # Set up required template variables
+            setup_template_vars(cv_data, "test", lang, default_lang_map, is_rtl)
 
             # This should not raise any exceptions
             sections = render_sections(env, templates_dir, cv_data, output_dir)
@@ -249,11 +254,8 @@ class TestEdgeCaseRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="fa")
 
-        unicode_heavy_data["OPT_NAME"] = "unicode"
-        unicode_heavy_data["BASE_NAME"] = "unicode"
-        unicode_heavy_data["IS_RTL"] = True
-        unicode_heavy_data["LANG"] = "fa"
-        unicode_heavy_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(unicode_heavy_data, "unicode", "fa", default_lang_map, is_rtl=True)
 
         sections = render_sections(env, templates_dir, unicode_heavy_data, output_dir)
 
@@ -268,11 +270,8 @@ class TestEdgeCaseRendering:
 
         env = create_jinja_env(template_dir=templates_dir, lang_map=default_lang_map, lang="en")
 
-        long_text_data["OPT_NAME"] = "long"
-        long_text_data["BASE_NAME"] = "long"
-        long_text_data["IS_RTL"] = False
-        long_text_data["LANG"] = "en"
-        long_text_data["LANG_MAP"] = default_lang_map
+        # Set up required template variables
+        setup_template_vars(long_text_data, "long", "en", default_lang_map)
 
         sections = render_sections(env, templates_dir, long_text_data, output_dir)
 

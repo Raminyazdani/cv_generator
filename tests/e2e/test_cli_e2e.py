@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import FIXTURES_MULTILANG_DIR, FIXTURES_VALID_DIR
+from tests.conftest import FIXTURES_LINT_DIR, FIXTURES_MULTILANG_DIR, FIXTURES_VALID_DIR
 
 
 class TestCLIE2E:
@@ -116,7 +116,6 @@ class TestCLIE2E:
 
     def test_lint_invalid_file(self):
         """Test linting an invalid CV file (missing basics)."""
-        from tests.conftest import FIXTURES_LINT_DIR
         invalid_file = str(FIXTURES_LINT_DIR / "missing_basics.json")
         result = self.run_cvgen(["lint", "--file", invalid_file])
         # Should return validation error code

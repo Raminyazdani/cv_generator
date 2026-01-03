@@ -40,7 +40,8 @@ def should_update_snapshots() -> bool:
     """
     Check if snapshots should be updated.
 
-    Returns True if the UPDATE_SNAPSHOTS environment variable is set to '1' or 'true'.
+    Returns True if the UPDATE_SNAPSHOTS environment variable is set to
+    '1', 'true', or 'yes' (case-insensitive).
     """
     value = os.environ.get("UPDATE_SNAPSHOTS", "").lower()
     return value in ("1", "true", "yes")

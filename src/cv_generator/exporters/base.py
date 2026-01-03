@@ -108,10 +108,18 @@ def register_exporter(exporter_class: Type[Exporter]) -> Type[Exporter]:
 
     Returns:
         The exporter class (for use as a decorator).
+
+    Note:
+        The exporter class must have format_name as a property.
+        We create a temporary instance to get the format_name for registration.
+        This happens once at import time, not on each use.
     """
+    # Create a single instance at registration time (module load)
+    # This is a one-time cost, not per-export
     instance = exporter_class()
-    _EXPORTERS[instance.format_name] = exporter_class
-    logger.debug(f"Registered exporter: {instance.format_name}")
+    format_key = instance.format_name
+    _EXPORTERS[format_key] = exporter_class
+    logger.debug(f"Registered exporter: {format_key}")
     return exporter_class
 
 

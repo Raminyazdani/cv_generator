@@ -31,6 +31,12 @@ from .generator import generate_all_cvs, generate_cv
 from .io import discover_cv_files, load_cv_json, load_lang_map
 from .jinja_env import create_jinja_env
 from .paths import get_repo_root
+from .validate_schema import (
+    ValidationIssue,
+    ValidationReport,
+    validate_cv_file,
+    validate_cv_json,
+)
 
 __all__ = [
     "generate_cv",
@@ -43,6 +49,10 @@ __all__ = [
     "run_ensure",
     "EnsureReport",
     "EnsureIssue",
+    "validate_cv_file",
+    "validate_cv_json",
+    "ValidationReport",
+    "ValidationIssue",
     "init_db",
     "import_cv",
     "import_all_cvs",

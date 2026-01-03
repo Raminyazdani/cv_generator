@@ -4,6 +4,7 @@ Command-line interface for CV Generator.
 Provides the `cvgen` command with the following subcommands:
 - build: Generate PDF CVs from JSON files
 - ensure: Validate multilingual CV JSON consistency
+- lint: Validate CV JSON files against the schema
 - db: SQLite database operations (init, import, export, diff)
 """
 
@@ -23,9 +24,12 @@ from .errors import (
     EXIT_CONFIG_ERROR,
     EXIT_ERROR,
     EXIT_SUCCESS,
+    EXIT_VALIDATION_ERROR,
     CVGeneratorError,
 )
 from .generator import generate_all_cvs
+from .io import discover_cv_files
+from .validate_schema import validate_cv_file
 
 # Set up module logger
 logger = logging.getLogger(__name__)
@@ -207,6 +211,97 @@ def ensure_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         return EXIT_ENSURE_ERROR
+
+
+def lint_command(args: argparse.Namespace) -> int:
+    """
+    Execute the lint command to validate CV JSON against schema.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code (0 if OK, 5 if validation errors found in strict mode).
+    """
+    # Determine CVs directory
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    # Collect files to validate
+    files_to_validate = []
+
+    if args.file:
+        # Validate a specific file
+        file_path = Path(args.file)
+        if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
+            return EXIT_CONFIG_ERROR
+        files_to_validate.append(file_path)
+    else:
+        # Discover CV files
+        try:
+            files_to_validate = discover_cv_files(
+                cvs_path=cvs_dir,
+                name_filter=args.name
+            )
+        except Exception as e:
+            logger.error(f"Error discovering CV files: {e}")
+            return EXIT_CONFIG_ERROR
+
+    if not files_to_validate:
+        if args.name:
+            logger.error(f"No CV files found matching '{args.name}'")
+        else:
+            logger.error("No CV files found")
+        return EXIT_CONFIG_ERROR
+
+    # Log configuration
+    logger.info(f"Validating {len(files_to_validate)} file(s)")
+    if args.strict:
+        logger.info("Running in strict mode")
+
+    # Validate each file
+    all_valid = True
+    reports = []
+
+    for file_path in files_to_validate:
+        logger.debug(f"Validating: {file_path}")
+        report = validate_cv_file(file_path, strict=args.strict)
+        reports.append(report)
+
+        if not report.is_valid:
+            all_valid = False
+
+    # Output results
+    if args.format == "json":
+        results = {
+            "files_validated": len(files_to_validate),
+            "all_valid": all_valid,
+            "reports": [r.to_dict() for r in reports],
+        }
+        print(json.dumps(results, indent=2, ensure_ascii=False))
+    else:
+        print("\n🔍 Schema Validation Results:")
+        print(f"   Files validated: {len(files_to_validate)}")
+        print(f"   Mode: {'strict' if args.strict else 'default (warnings allowed)'}")
+        print()
+
+        for report in reports:
+            if report.file_path:
+                print(f"📄 {report.file_path.name}")
+            if report.is_valid and not report.issues:
+                print("   ✅ Valid")
+            else:
+                status = "❌ Invalid" if not report.is_valid else "⚠️ Warnings"
+                print(f"   {status} ({report.error_count} errors, {report.warning_count} warnings)")
+                for issue in report.issues:
+                    print(f"      {issue}")
+            print()
+
+    # Return appropriate exit code
+    if all_valid:
+        return EXIT_SUCCESS
+    else:
+        return EXIT_VALIDATION_ERROR
 
 
 def db_init_command(args: argparse.Namespace) -> int:
@@ -591,6 +686,45 @@ EXIT CODES
     2  Mismatches found
 """,
 
+    "lint": """
+cvgen lint — Validate CV JSON files against schema
+
+SYNOPSIS
+    cvgen lint [OPTIONS]
+
+DESCRIPTION
+    The lint command validates CV JSON files against the schema to detect
+    structural issues before rendering. This helps catch errors like:
+
+    - Missing required fields (e.g., 'basics')
+    - Wrong types (e.g., string instead of array)
+    - Invalid field values
+
+OPTIONS
+    --name, -n NAME     Validate only CVs matching this base name
+    --file, -f FILE     Path to a specific CV JSON file to validate
+    --input-dir, -i     Directory containing CV JSON files (default: data/cvs)
+    --strict            Treat all issues as errors (fail on any issue)
+    --format            Output format: text or json (default: text)
+
+EXAMPLES
+    # Validate all CV files
+    cvgen lint
+
+    # Validate only ramin's CVs
+    cvgen lint --name ramin
+
+    # Validate a specific file
+    cvgen lint --file data/cvs/ramin.json
+
+    # Strict mode - fail on any schema issue
+    cvgen lint --strict
+
+EXIT CODES
+    0  All files are valid
+    5  Validation errors found (in strict mode or for critical errors)
+""",
+
     "languages": """
 cvgen languages — Language support and translation
 
@@ -817,6 +951,7 @@ def help_command(args: argparse.Namespace) -> int:
         print("Available help topics:\n")
         print("  build           Generate PDF CVs from JSON files")
         print("  ensure          Validate multilingual CV consistency")
+        print("  lint            Validate CV JSON files against schema")
         print("  languages       Language support and translation")
         print("  templates       Template customization")
         print("  json-schema     CV JSON data format")
@@ -840,7 +975,7 @@ def help_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         print(f"Unknown help topic: '{topic}'")
-        print("\nAvailable topics: build, ensure, languages, templates, json-schema, troubleshooting")
+        print("\nAvailable topics: build, ensure, lint, languages, templates, json-schema, troubleshooting")
         return EXIT_ERROR
 
 
@@ -997,6 +1132,43 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     ensure_parser.set_defaults(func=ensure_command)
+
+    # Lint command
+    lint_parser = subparsers.add_parser(
+        "lint",
+        help="Validate CV JSON files against schema",
+        description="Check CV JSON files for structural issues before rendering."
+    )
+
+    lint_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Validate only CVs matching this base name (e.g., 'ramin')"
+    )
+    lint_parser.add_argument(
+        "--file", "-f",
+        type=str,
+        help="Path to a specific CV JSON file to validate"
+    )
+    lint_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    lint_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Treat all schema issues as errors (fail on any issue)"
+    )
+    lint_parser.add_argument(
+        "--format",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+
+    lint_parser.set_defaults(func=lint_command)
 
     # DB command
     db_parser = subparsers.add_parser(

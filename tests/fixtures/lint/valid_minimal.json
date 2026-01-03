@@ -1,0 +1,18 @@
+{
+  "basics": [
+    {
+      "fname": "Valid",
+      "lname": "Person",
+      "email": "valid@example.com"
+    }
+  ],
+  "education": [
+    {
+      "institution": "University A",
+      "area": "Computer Science"
+    }
+  ],
+  "skills": {},
+  "experiences": [],
+  "projects": []
+}

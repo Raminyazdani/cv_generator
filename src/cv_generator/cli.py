@@ -37,17 +37,21 @@ from .ensure import (
 logger = logging.getLogger(__name__)
 
 
-def setup_logging(verbose: bool = False, debug: bool = False) -> None:
+def setup_logging(verbose: bool = False, debug: bool = False, quiet: bool = False) -> None:
     """
     Configure logging based on verbosity level.
     
     Args:
         verbose: Enable INFO level logging.
         debug: Enable DEBUG level logging (overrides verbose).
+        quiet: Enable ERROR level only (overrides verbose, overridden by debug).
     """
     if debug:
         level = logging.DEBUG
         format_str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    elif quiet:
+        level = logging.ERROR
+        format_str = "%(message)s"
     elif verbose:
         level = logging.INFO
         format_str = "%(message)s"
@@ -438,6 +442,343 @@ def web_tags_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+# Extended help topics for 'cvgen help <topic>'
+HELP_TOPICS = {
+    "build": """
+cvgen build — Generate PDF CVs from JSON files
+
+SYNOPSIS
+    cvgen build [OPTIONS]
+
+DESCRIPTION
+    The build command renders CV JSON files to LaTeX using Jinja2 templates,
+    then compiles them to PDF using XeLaTeX.
+
+    By default, all CV files in data/cvs/ are processed. Use --name to filter
+    to a specific person.
+
+OPTIONS
+    --name, -n NAME     Build only CVs matching this base name (e.g., 'ramin')
+    --input-dir, -i     Directory containing CV JSON files (default: data/cvs)
+    --output-dir, -o    Output directory root (default: output)
+    --templates-dir, -t Templates directory (default: templates)
+    --keep-latex, -k    Keep LaTeX sources in output/latex/ for debugging
+    --dry-run, -d       Render LaTeX but skip PDF compilation
+
+EXAMPLES
+    # Generate all CVs
+    cvgen build
+
+    # Generate only ramin's CV
+    cvgen build --name ramin
+
+    # Dry run with verbose output
+    cvgen -v build --dry-run
+
+    # Keep LaTeX files for debugging
+    cvgen build --keep-latex
+
+OUTPUT STRUCTURE
+    output/
+      pdf/<name>/<lang>/<name>_<lang>.pdf
+      latex/<name>/<lang>/main.tex        (with --keep-latex)
+      latex/<name>/<lang>/sections/*.tex  (with --keep-latex)
+""",
+    
+    "ensure": """
+cvgen ensure — Validate multilingual CV JSON consistency
+
+SYNOPSIS
+    cvgen ensure --name NAME [OPTIONS]
+
+DESCRIPTION
+    The ensure command checks that multilingual CV JSON files have consistent
+    structure across languages. It compares the English version (canonical)
+    with German and Persian versions.
+
+    Use this to verify that:
+    - All languages have the same sections and fields
+    - No keys are missing or extra in any language
+    - Skill headings are properly translated
+
+OPTIONS
+    --name, -n NAME     Name of the person (required)
+    --langs, -l LANGS   Comma-separated language codes (default: en,de,fa)
+    --format, -f FMT    Output format: text or json (default: text)
+    --input-dir, -i     Directory containing CV JSON files
+    --dir, -D           Directory containing CV files directly
+    --lang-map          Path to language mapping file (lang.json)
+    --fail-fast         Stop at first batch of errors
+    --max-errors N      Maximum errors before stopping
+
+EXAMPLES
+    # Check ramin's CV consistency across all languages
+    cvgen ensure --name ramin
+
+    # Check only English and German
+    cvgen ensure --name ramin --langs en,de
+
+    # Output as JSON for programmatic use
+    cvgen ensure --name ramin --format json
+
+EXIT CODES
+    0  All languages are consistent
+    2  Mismatches found
+""",
+    
+    "languages": """
+cvgen languages — Language support and translation
+
+DESCRIPTION
+    CV Generator supports multilingual CVs with the following languages:
+    
+    - en: English (canonical/reference)
+    - de: German  
+    - fa: Persian (with RTL support)
+
+FILE NAMING
+    Multilingual CV files follow these naming patterns:
+    
+    1. Preferred (i18n directory):
+       data/cvs/i18n/<name>/cv.en.json
+       data/cvs/i18n/<name>/cv.de.json
+       data/cvs/i18n/<name>/cv.fa.json
+    
+    2. Alternative (flat structure):
+       data/cvs/<name>.en.json
+       data/cvs/<name>.de.json
+       data/cvs/<name>_en.json
+       data/cvs/<name>_de.json
+
+TRANSLATION MAPPING
+    Skill headings and categories can be translated using a lang.json file:
+    
+    {
+      "Technical Skills": {
+        "de": "Technische Fähigkeiten",
+        "fa": "مهارت‌های فنی"
+      },
+      "Soft Skills": {
+        "de": "Soft Skills",
+        "fa": "مهارت‌های نرم"
+      }
+    }
+
+RTL SUPPORT
+    Persian (fa) CVs are automatically rendered with RTL (right-to-left)
+    text direction. The IS_RTL template variable is set to True for RTL
+    languages.
+
+VALIDATING TRANSLATIONS
+    Use 'cvgen ensure' to verify consistency across language versions.
+""",
+    
+    "templates": """
+cvgen templates — Template customization
+
+DESCRIPTION
+    CV Generator uses Jinja2 templates with LaTeX to render CVs.
+    Templates are stored in the templates/ directory.
+
+TEMPLATE FILES
+    layout.tex       Main document structure (document class, header, footer)
+    header.tex       Personal info and social links
+    education.tex    Education history
+    experience.tex   Work experience
+    skills.tex       Technical and soft skills
+    language.tex     Language proficiencies
+    projects.tex     Projects and contributions
+    certificates.tex Certifications and awards
+    publications.tex Academic publications
+    references.tex   Professional references
+
+JINJA2 SYNTAX
+    Templates use custom delimiters to avoid LaTeX conflicts:
+    
+    Blocks:    <BLOCK> ... </BLOCK>
+    Variables: <VAR> ... </VAR>
+    Comments:  /*/*/* ... */*/*/
+
+    Example:
+        <VAR> basics[0]["fname"] | latex_escape </VAR>
+        <BLOCK> if education|length > 0 </BLOCK>
+          ... education section ...
+        <BLOCK> endif </BLOCK>
+
+AVAILABLE FILTERS
+    latex_escape    Escape LaTeX special characters (#, %, _, etc.)
+    file_exists     Check if a file path exists
+    debug           Print value to console during rendering
+    find_pic        Check if profile picture exists
+    get_pic         Get profile picture path
+
+ADDING A NEW SECTION
+    1. Create templates/newsection.tex
+    2. Add to layout.tex: <VAR> newsection_section | default('') </VAR>
+    3. Add corresponding data to your CV JSON
+""",
+    
+    "json-schema": """
+cvgen json-schema — CV JSON data format
+
+DESCRIPTION
+    CV data is stored as JSON files loosely based on JSON Resume format.
+    See data/cvs/*.json for examples.
+
+TOP-LEVEL SECTIONS
+    basics      Personal info (name, email, phone, location)
+    profiles    Social links (GitHub, LinkedIn, Google Scholar)
+    education   Education history
+    experiences Work experience
+    skills      Technical and soft skills
+    languages   Language proficiencies
+    projects    Projects and contributions
+    publications Academic publications
+    workshop_and_certifications  Certifications and training
+    references  Professional references
+
+BASICS EXAMPLE
+    {
+      "basics": [{
+        "fname": "Jane",
+        "lname": "Doe",
+        "label": ["Software Engineer", "ML Researcher"],
+        "email": "jane@example.com",
+        "phone": {"formatted": "+1 555-0100"},
+        "location": [{
+          "city": "San Francisco",
+          "region": "CA",
+          "country": "USA"
+        }]
+      }]
+    }
+
+SKILLS STRUCTURE
+    {
+      "skills": {
+        "Technical Skills": {
+          "Programming": [
+            {"short_name": "Python", "long_name": "Python 3.x"},
+            {"short_name": "JavaScript"}
+          ],
+          "Frameworks": [
+            {"short_name": "React"},
+            {"short_name": "Django"}
+          ]
+        },
+        "Soft Skills": {
+          "Communication": [
+            {"short_name": "Technical Writing"}
+          ]
+        }
+      }
+    }
+
+VALIDATION
+    Use 'cvgen ensure' to validate consistency across language versions.
+""",
+    
+    "troubleshooting": """
+cvgen troubleshooting — Common issues and solutions
+
+XELATEX NOT FOUND
+    Symptom: 'xelatex' is not recognized as a command
+    
+    Solution:
+    1. Install TeX Live or MiKTeX
+    2. Add xelatex to your PATH
+    3. Verify: xelatex --version
+
+LATEX COMPILATION ERRORS
+    Symptom: PDF not produced, LaTeX log shows errors
+    
+    Common causes:
+    - Unescaped special characters in JSON (#, %, _, &, $)
+    - Missing fields referenced in templates
+    
+    Solutions:
+    - Use | latex_escape filter in templates
+    - Ensure all required keys exist in JSON
+    - Run with --keep-latex to inspect generated .tex files
+
+MISSING FONTS
+    Symptom: Font warnings or substitutions in PDF
+    
+    Solution:
+    - Install fonts used by Awesome-CV (Roboto, Source Sans Pro)
+    - Or modify templates to use available fonts
+
+WINDOWS FILE LOCKS
+    Symptom: "Access is denied" when cleaning up
+    
+    Solution:
+    - Close files in editors that lock them
+    - Pause OneDrive/antivirus sync temporarily
+    - The generator has retry logic for file locks
+
+TEMPLATE ERRORS
+    Symptom: Jinja TemplateError with file name
+    
+    Solution:
+    - Check the referenced template file
+    - Verify JSON data matches template expectations
+    - Use | debug filter to inspect values
+
+PROFILE PICTURE NOT SHOWING
+    Symptom: CV generates without photo
+    
+    Solution:
+    - Place photo at data/pics/<name>.jpg
+    - Name must match CV file base name
+    - Supported format: JPG
+""",
+}
+
+
+def help_command(args: argparse.Namespace) -> int:
+    """
+    Execute the help command to show extended help topics.
+    
+    Args:
+        args: Parsed command-line arguments.
+        
+    Returns:
+        Exit code.
+    """
+    topic = args.topic.lower() if args.topic else None
+    
+    if not topic:
+        # List available topics
+        print("Available help topics:\n")
+        print("  build           Generate PDF CVs from JSON files")
+        print("  ensure          Validate multilingual CV consistency")
+        print("  languages       Language support and translation")
+        print("  templates       Template customization")
+        print("  json-schema     CV JSON data format")
+        print("  troubleshooting Common issues and solutions")
+        print("\nUse 'cvgen help <topic>' for detailed information.")
+        return EXIT_SUCCESS
+    
+    # Normalize topic names
+    topic_aliases = {
+        "generate": "build",
+        "validate": "ensure",
+        "langs": "languages",
+        "template": "templates",
+        "schema": "json-schema",
+        "json": "json-schema",
+    }
+    topic = topic_aliases.get(topic, topic)
+    
+    if topic in HELP_TOPICS:
+        print(HELP_TOPICS[topic].strip())
+        return EXIT_SUCCESS
+    else:
+        print(f"Unknown help topic: '{topic}'")
+        print("\nAvailable topics: build, ensure, languages, templates, json-schema, troubleshooting")
+        return EXIT_ERROR
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     Create the argument parser for the CLI.
@@ -467,6 +808,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--debug",
         action="store_true",
         help="Enable debug output (DEBUG level logging)"
+    )
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress output except errors"
     )
     
     # Subcommands
@@ -780,6 +1126,20 @@ def create_parser() -> argparse.ArgumentParser:
     
     web_parser.set_defaults(func=lambda args: web_parser.print_help() or EXIT_SUCCESS)
     
+    # Help command for extended help topics
+    help_parser = subparsers.add_parser(
+        "help",
+        help="Show extended help for a topic",
+        description="Display detailed help for specific topics."
+    )
+    help_parser.add_argument(
+        "topic",
+        nargs="?",
+        type=str,
+        help="Topic to get help on (build, ensure, languages, templates, json-schema, troubleshooting)"
+    )
+    help_parser.set_defaults(func=help_command)
+    
     return parser
 
 
@@ -796,8 +1156,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
     
-    # Set up logging
-    setup_logging(verbose=args.verbose, debug=args.debug)
+    # Set up logging with quiet support
+    setup_logging(verbose=args.verbose, debug=args.debug, quiet=args.quiet)
     
     # If no command specified, default to 'build'
     if not args.command:

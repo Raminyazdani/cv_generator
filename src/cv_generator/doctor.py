@@ -467,11 +467,104 @@ def check_database() -> CheckResult:
         )
 
 
+def check_assets(cvs_dir: Optional[Path] = None) -> CheckResult:
+    """
+    Check if assets referenced in CV files are accessible.
+
+    This is a read-only check that validates asset references exist.
+
+    Args:
+        cvs_dir: Directory containing CV JSON files.
+
+    Returns:
+        CheckResult with asset validation status.
+    """
+    from .assets import check_assets as validate_cv_assets
+    from .assets import discover_asset_references
+    from .io import discover_cv_files, load_cv_json
+    from .paths import get_default_cvs_path
+
+    if cvs_dir is None:
+        cvs_dir = get_default_cvs_path()
+
+    if not cvs_dir.exists():
+        return CheckResult(
+            name="Assets",
+            status=CheckStatus.OK,
+            detail="CVs directory not found (not required)",
+        )
+
+    # Find CV files
+    try:
+        cv_files = discover_cv_files(cvs_path=cvs_dir)
+    except Exception as e:
+        return CheckResult(
+            name="Assets",
+            status=CheckStatus.WARNING,
+            detail=f"Error discovering CV files: {e}",
+        )
+
+    if not cv_files:
+        return CheckResult(
+            name="Assets",
+            status=CheckStatus.OK,
+            detail="No CV files found (not required)",
+        )
+
+    # Check assets in each CV
+    total_assets = 0
+    missing_assets = 0
+    asset_errors = []
+
+    for cv_file in cv_files:
+        try:
+            cv_data = load_cv_json(cv_file)
+        except Exception:
+            continue
+
+        assets = discover_asset_references(cv_data)
+        total_assets += len(assets)
+
+        report = validate_cv_assets(cv_data)
+        missing_count = report.missing_count
+        missing_assets += missing_count
+
+        if missing_count > 0:
+            for result in report.results:
+                if not result.is_valid and result.asset.is_local:
+                    asset_errors.append(f"{cv_file.name}: {result.asset.path}")
+
+    if missing_assets > 0:
+        error_preview = ", ".join(asset_errors[:3])
+        if len(asset_errors) > 3:
+            error_preview += f" (+{len(asset_errors) - 3} more)"
+        return CheckResult(
+            name="Assets",
+            status=CheckStatus.WARNING,
+            detail=f"{missing_assets} missing local asset(s) of {total_assets} total",
+            fix_hint=f"Missing: {error_preview}. Run 'cvgen assets check' for details.",
+        )
+
+    if total_assets == 0:
+        return CheckResult(
+            name="Assets",
+            status=CheckStatus.OK,
+            detail="No asset references found in CV files",
+        )
+
+    return CheckResult(
+        name="Assets",
+        status=CheckStatus.OK,
+        detail=f"All {total_assets} asset(s) validated",
+    )
+
+
 def run_checks(
     template_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
     latex_engine: str = "xelatex",
     check_db: bool = True,
+    check_assets_flag: bool = True,
 ) -> DoctorReport:
     """
     Run all health checks.
@@ -481,6 +574,7 @@ def run_checks(
         output_dir: Path to output directory.
         latex_engine: Name of the LaTeX engine to check.
         check_db: Whether to check database health.
+        check_assets_flag: Whether to check asset references.
 
     Returns:
         DoctorReport with all check results.
@@ -505,5 +599,9 @@ def run_checks(
     # Database (optional)
     if check_db:
         report.checks.append(check_database())
+
+    # Assets (optional)
+    if check_assets_flag:
+        report.checks.append(check_assets())
 
     return report

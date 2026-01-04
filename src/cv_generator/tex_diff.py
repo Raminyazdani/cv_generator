@@ -19,7 +19,20 @@ from typing import Any, Dict, List, Optional, Tuple
 
 @dataclass
 class DiffResult:
-    """Result of comparing two files."""
+    """
+    Result of comparing two files between builds.
+    
+    This dataclass captures the comparison result for a single file,
+    including line-level statistics and the unified diff output.
+    
+    Attributes:
+        file_name: Name of the file being compared (relative path).
+        has_changes: True if there are any differences between versions.
+        added_lines: Number of lines added in the new version.
+        removed_lines: Number of lines removed from the old version.
+        unified_diff: Unified diff output string (empty if no changes).
+        error: Error message if comparison failed (e.g., file not readable).
+    """
     
     file_name: str
     has_changes: bool
@@ -43,13 +56,29 @@ class DiffResult:
 
 @dataclass
 class BuildState:
-    """State information from a previous build."""
+    """
+    State information from a previous build.
+    
+    This dataclass captures the complete state of a build's TeX artifacts,
+    allowing comparison with subsequent builds. It stores both hashes
+    (for quick change detection) and full content (for diff generation).
+    
+    Attributes:
+        profile: Profile name (e.g., 'ramin').
+        lang: Language code (e.g., 'en', 'de', 'fa').
+        timestamp: ISO 8601 timestamp when the state was captured.
+        tex_files: Mapping of relative file paths to their content hashes.
+            Used for quick change detection before computing full diffs.
+        tex_contents: Mapping of relative file paths to their full content.
+            Used for generating unified diff output.
+        pdf_path: Optional absolute path to the generated PDF file.
+    """
     
     profile: str
     lang: str
     timestamp: str
-    tex_files: Dict[str, str] = field(default_factory=dict)  # filename -> content hash
-    tex_contents: Dict[str, str] = field(default_factory=dict)  # filename -> content
+    tex_files: Dict[str, str] = field(default_factory=dict)
+    tex_contents: Dict[str, str] = field(default_factory=dict)
     pdf_path: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
@@ -78,7 +107,31 @@ class BuildState:
 
 @dataclass
 class DiffReport:
-    """Report comparing current build against previous build."""
+    """
+    Report comparing current build against previous build.
+    
+    This dataclass aggregates comparison results for all TeX files
+    in a CV build, providing both summary statistics and detailed
+    per-file diff information.
+    
+    File Count Relationships:
+        - files_compared = files_changed + files_added + files_removed + files_unchanged
+        - files_changed: Files that exist in both builds but have different content.
+        - files_added: Files that exist only in the current build.
+        - files_removed: Files that existed in previous build but not in current.
+    
+    Attributes:
+        profile: Profile name (e.g., 'ramin').
+        lang: Language code (e.g., 'en', 'de', 'fa').
+        previous_timestamp: ISO 8601 timestamp of the previous build (None if no previous).
+        current_timestamp: ISO 8601 timestamp of the current comparison.
+        files_compared: Total number of files compared across both builds.
+        files_changed: Number of files with content changes.
+        files_added: Number of new files in current build.
+        files_removed: Number of files deleted since previous build.
+        diffs: List of DiffResult objects with per-file comparison details.
+        has_previous_build: True if a previous build state was found for comparison.
+    """
     
     profile: str
     lang: str

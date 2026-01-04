@@ -23,7 +23,26 @@ from . import __version__
 
 @dataclass
 class BuildArtifact:
-    """Represents a generated artifact from a build."""
+    """
+    Represents a generated artifact from a CV build.
+    
+    Each artifact corresponds to one CV (profile + language combination)
+    and tracks the outcome of its generation.
+    
+    Field Relationships:
+        - success=True, skipped=False: Build completed successfully.
+        - success=True, skipped=True: Build skipped (e.g., no changes in incremental mode).
+        - success=False: Build failed, error field contains the reason.
+    
+    Attributes:
+        profile: Profile name (e.g., 'ramin').
+        lang: Language code (e.g., 'en', 'de', 'fa').
+        pdf_path: Absolute path to the generated PDF (None if build failed or dry run).
+        tex_path: Absolute path to the generated LaTeX main.tex (None if not kept).
+        success: True if the artifact was generated successfully or intentionally skipped.
+        error: Error message if generation failed (None on success).
+        skipped: True if generation was skipped (e.g., incremental build with no changes).
+    """
     
     profile: str
     lang: str
@@ -51,7 +70,31 @@ class BuildReport:
     """
     Build report containing information about a CV generation run.
     
-    Includes timing, artifacts, warnings, and environment information.
+    This dataclass captures comprehensive information about a build,
+    including timing, generated artifacts, warnings, errors, and
+    environment details. Reports can be serialized to JSON and Markdown.
+    
+    Datetime Format:
+        All datetime fields use ISO 8601 format (e.g., '2024-01-15T10:30:00.123456').
+    
+    Build Options:
+        - dry_run: When True, LaTeX was rendered but not compiled to PDF.
+        - incremental: When True, unchanged CVs were skipped.
+        - variant: Optional variant filter applied (e.g., 'academic', 'industry').
+    
+    Attributes:
+        run_id: Unique 8-character hex identifier for this build run.
+        tool_version: Version of cv_generator that performed the build.
+        datetime_started: ISO 8601 timestamp when build started.
+        datetime_finished: ISO 8601 timestamp when build finished.
+        duration_seconds: Total build duration in seconds.
+        platform_info: System information (system, release, python_version, platform).
+        artifacts: List of BuildArtifact objects for each CV processed.
+        warnings: List of warning messages from the build (e.g., font substitutions).
+        errors: List of error messages from the build (e.g., compilation failures).
+        dry_run: Whether this was a dry run (LaTeX only, no PDF).
+        incremental: Whether incremental build mode was enabled.
+        variant: Variant filter applied to the build (None if not filtered).
     """
     
     run_id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])

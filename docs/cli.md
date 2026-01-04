@@ -34,6 +34,10 @@ cvgen build [OPTIONS]
 | `-t, --templates-dir DIR` | Templates directory (default: templates) |
 | `-k, --keep-latex` | Keep LaTeX sources after compilation |
 | `-d, --dry-run` | Render LaTeX without PDF compilation |
+| `-V, --variant VARIANT` | Filter entries by variant/type_key (e.g., 'academic', 'industry') |
+| `--incremental` | Enable incremental builds (skip unchanged CVs based on input hashing) |
+| `--no-incremental` | Force full rebuild, ignoring cache |
+| `-w, --watch` | Watch for file changes and rebuild automatically |
 
 **Examples:**
 
@@ -49,6 +53,12 @@ cvgen -v build --dry-run
 
 # Keep LaTeX files for debugging
 cvgen build --keep-latex
+
+# Build academic variant only
+cvgen build --name ramin --variant academic
+
+# Watch for changes
+cvgen build --watch
 ```
 
 ### ensure
@@ -220,6 +230,137 @@ cvgen help build
 cvgen help templates
 ```
 
+### lint
+
+Validate CV JSON files against schema.
+
+```bash
+cvgen lint [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-n, --name NAME` | Validate only CVs matching this base name |
+| `-f, --file FILE` | Path to a specific CV JSON file to validate |
+| `-i, --input-dir DIR` | Input directory (default: data/cvs) |
+| `--strict` | Treat all schema issues as errors (fail on any issue) |
+| `--format {text,json}` | Output format (default: text) |
+
+**Examples:**
+
+```bash
+# Lint all CV files
+cvgen lint
+
+# Lint a specific profile
+cvgen lint --name ramin
+
+# Lint a specific file
+cvgen lint --file path/to/cv.json
+
+# Strict mode (fail on any issue)
+cvgen lint --strict
+```
+
+### profile
+
+Manage CV profile selection.
+
+```bash
+cvgen profile {list,use,clear}
+```
+
+**Subcommands:**
+
+| Subcommand | Description |
+|------------|-------------|
+| `list` | List available profiles |
+| `use NAME` | Set the current profile |
+| `clear` | Clear the current profile |
+
+**Examples:**
+
+```bash
+# List available profiles
+cvgen profile list
+
+# Set ramin as the default profile
+cvgen profile use ramin
+
+# Now 'cvgen build' uses ramin automatically
+cvgen build
+
+# Clear the profile selection
+cvgen profile clear
+```
+
+### export
+
+Export CVs to alternative formats (HTML, Markdown).
+
+```bash
+cvgen export [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-n, --name NAME` | Export only CVs matching this base name |
+| `-l, --lang LANG` | Export only CVs with this language code |
+| `-f, --format {html,md}` | Export format (default: html) |
+| `-i, --input-dir DIR` | Input directory (default: data/cvs) |
+| `-o, --output-dir DIR` | Output directory (default: output) |
+
+**Examples:**
+
+```bash
+# Export all CVs to HTML
+cvgen export
+
+# Export a specific profile to Markdown
+cvgen export --name ramin --format md
+
+# Export only English CVs
+cvgen export --lang en
+```
+
+### doctor
+
+Run system health checks.
+
+```bash
+cvgen doctor [OPTIONS]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-t, --templates-dir DIR` | Templates directory to check (default: templates) |
+| `-o, --output-dir DIR` | Output directory to check (default: output) |
+| `-f, --format {text,json}` | Output format (default: text) |
+
+**Examples:**
+
+```bash
+# Run health checks
+cvgen doctor
+
+# JSON output for scripting
+cvgen doctor --format json
+```
+
+**Checks Performed:**
+
+- XeLaTeX installation and version
+- Required fonts availability
+- Templates directory structure
+- Output directory permissions
+- Python package dependencies
+
 ## Logging Levels
 
 The CLI supports three logging levels:
@@ -243,3 +384,37 @@ cvgen --debug build
 # Quiet mode for scripts
 cvgen -q build
 ```
+
+## Keeping Documentation in Sync
+
+To ensure CLI documentation stays in sync with the actual implementation:
+
+### Regenerating CLI Help
+
+```bash
+# View current help for any command
+cvgen --help
+cvgen build --help
+cvgen db --help
+
+# Capture help output for reference
+cvgen --help > /tmp/cli-help.txt
+```
+
+### Verifying Documentation
+
+When updating CLI options in the code:
+
+1. Run `cvgen <command> --help` to see current options
+2. Update `docs/cli.md` to match
+3. Verify with `mkdocs build` to catch broken links
+
+### CI Verification
+
+The CI pipeline verifies documentation builds correctly:
+
+```bash
+mkdocs build --strict
+```
+
+This ensures all internal links are valid and the site builds without errors.

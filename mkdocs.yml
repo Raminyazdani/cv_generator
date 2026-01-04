@@ -2,29 +2,40 @@ site_name: CV Generator Documentation
 site_description: Generate beautiful PDF CVs from JSON data using Jinja2 templates and Awesome-CV
 site_author: CV Generator Contributors
 repo_url: https://github.com/Raminyazdani/cv_generator
+repo_name: Raminyazdani/cv_generator
 
 theme:
   name: material
   features:
     - navigation.sections
     - navigation.expand
+    - navigation.top
     - content.code.copy
+    - content.code.annotate
   palette:
     primary: indigo
     accent: indigo
+  icon:
+    repo: fontawesome/brands/github
 
 nav:
   - Home: index.md
   - Getting Started:
     - Installation: installation.md
     - Quick Start: quickstart.md
-  - User Guide:
-    - CLI Reference: cli.md
-    - JSON Schema: json-schema.md
+    - Cookbook: example.md
+  - Guides:
     - Templates: templates.md
-  - Reference:
-    - Troubleshooting: troubleshooting.md
     - Languages: languages.md
+    - SQLite & Tagging: sqlite_tagging_cookbook.md
+    - Plugin Development: plugins.md
+  - Reference:
+    - CLI Reference: cli.md
+    - Configuration: config-reference.md
+    - JSON Schema: json-schema.md
+    - Troubleshooting: troubleshooting.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -33,6 +44,10 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - admonition
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - tables
   - toc:
       permalink: true
+  - attr_list
+  - md_in_html

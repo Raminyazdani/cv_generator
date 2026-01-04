@@ -5,6 +5,7 @@ Provides the `cvgen init` command to create a minimal working CV project
 outside the main repository.
 """
 
+import copy
 import json
 import logging
 from pathlib import Path
@@ -56,7 +57,7 @@ def get_cv_template(profile_name: str, lang: str) -> Dict[str, Any]:
     Returns:
         CV template dictionary.
     """
-    template = json.loads(json.dumps(MINIMAL_CV_TEMPLATE))
+    template = copy.deepcopy(MINIMAL_CV_TEMPLATE)
 
     # Customize with profile name (capitalize first letter)
     fname = profile_name.capitalize()
@@ -228,10 +229,9 @@ def scaffold_project(
         force: If True, overwrite existing files.
 
     Returns:
-        ScaffoldResult with created files and status.
-
-    Raises:
-        ValueError: If destination exists and is not empty (without --force).
+        ScaffoldResult with created files and status. Check result.success
+        to determine if scaffolding succeeded, and result.error for the
+        error message if it failed.
     """
     result = ScaffoldResult(dest_path)
 

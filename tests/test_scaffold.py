@@ -134,11 +134,19 @@ class TestScaffoldProject:
         result = scaffold_project(dest, profile_name="test", lang="en")
 
         assert result.success
-        assert len(result.files_created) == 4  # cv, config, readme, gitignore
+        # Should create: cv json, config, readme, gitignore
+        expected_files = [
+            dest / "cvs" / "test.en.json",
+            dest / "cv_generator.toml",
+            dest / "README.md",
+            dest / ".gitignore",
+        ]
+        assert len(result.files_created) == len(expected_files)
 
-        # Check all files are relative to dest
+        # Check all files exist and are tracked
         for file_path in result.files_created:
-            assert file_path.is_relative_to(dest) or str(file_path).startswith(str(dest))
+            assert file_path.is_relative_to(dest)
+            assert file_path.exists()
 
 
 class TestCVTemplate:

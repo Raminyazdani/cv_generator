@@ -494,6 +494,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # Generate unique filename to prevent overwrites
+            # Timestamp in filename ensures uniqueness, so force=False is safe
             filename = generate_unique_filename(person, ".json")
             output_path = output_dir / filename
 

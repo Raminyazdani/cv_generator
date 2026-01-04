@@ -525,17 +525,28 @@ class TestSafeExportBehavior:
         assert filename.startswith("test_")
         assert filename.endswith(".csv")
 
-    def test_generate_unique_filename_produces_different_names(self):
+    def test_generate_unique_filename_produces_different_names(self, monkeypatch):
         """Test generate_unique_filename produces different names over time."""
-        import time
+        from datetime import datetime as real_datetime
+        from unittest.mock import MagicMock
 
         from cv_generator.web import generate_unique_filename
 
+        # First call with mocked time
+        mock_dt1 = MagicMock()
+        mock_dt1.now.return_value.strftime.return_value = "20260104_100000"
+        monkeypatch.setattr("cv_generator.web.datetime", mock_dt1)
         name1 = generate_unique_filename("person")
-        time.sleep(1.1)  # Wait just over a second
+
+        # Second call with different mocked time
+        mock_dt2 = MagicMock()
+        mock_dt2.now.return_value.strftime.return_value = "20260104_100001"
+        monkeypatch.setattr("cv_generator.web.datetime", mock_dt2)
         name2 = generate_unique_filename("person")
 
         assert name1 != name2
+        assert name1 == "person_20260104_100000.json"
+        assert name2 == "person_20260104_100001.json"
 
 
 class TestAuthCredentialParsing:

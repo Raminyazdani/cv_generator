@@ -287,6 +287,114 @@ Check JSON consistency:
 cvgen ensure --name jane
 ```
 
+## Text Safety and Escaping
+
+CV Generator includes robust LaTeX escaping to prevent compilation failures and template injection from untrusted input.
+
+### Escaping Rules
+
+The `latex_escape` filter handles all LaTeX special characters that could cause issues:
+
+| Character | Escaped As | Notes |
+|-----------|------------|-------|
+| `\` | `\textbackslash{}` | Must be escaped first |
+| `{` | `\{` | LaTeX grouping |
+| `}` | `\}` | LaTeX grouping |
+| `&` | `\&` | Table column separator |
+| `%` | `\%` | Comment character |
+| `$` | `\$` | Math mode delimiter |
+| `#` | `\#` | Macro parameter |
+| `_` | `\_` | Subscript in math |
+| `~` | `\textasciitilde{}` | Non-breaking space |
+| `^` | `\textasciicircum{}` | Superscript in math |
+| `\n` (newline) | `\newline{}` | Line break |
+| `\t` (tab) | `\hspace{1em}` | Tab spacing |
+
+### Using Escaping in Templates
+
+**Always escape user-provided content:**
+
+```latex
+<VAR> exp["role"] | latex_escape </VAR>
+<VAR> basics["name"] | latex_escape </VAR>
+```
+
+**Default behavior is safe.** All templates in CV Generator apply `latex_escape` to JSON field values by default.
+
+### Raw LaTeX (Advanced Users)
+
+If you need to include raw LaTeX commands (e.g., for custom formatting), use the `latex_raw` filter:
+
+```latex
+<VAR> custom_latex | latex_raw </VAR>
+```
+
+⚠️ **Warning:** Only use `latex_raw` with content you control (e.g., template-defined values). Never use it with untrusted user input.
+
+**Safe use cases:**
+- Template-defined LaTeX commands
+- Configuration values you control
+- Hard-coded formatting
+
+**Unsafe use cases (DO NOT USE):**
+- User-provided text from JSON
+- External data sources
+- Arbitrary user input
+
+### Multilingual Content
+
+The escaping works correctly with Unicode text including:
+
+- Persian (فارسی)
+- German (Deutsch)
+- Arabic (العربية)
+- Chinese (中文)
+- And other scripts
+
+Unicode characters pass through unchanged; only LaTeX special characters are escaped.
+
+### Troubleshooting Escaping Issues
+
+**Symptom:** LaTeX compile error with special characters
+
+```
+! Missing $ inserted.
+```
+
+**Solution:** Ensure the field uses `latex_escape`:
+
+```latex
+{-- WRONG --}
+<VAR> text </VAR>
+
+{-- CORRECT --}
+<VAR> text | latex_escape </VAR>
+```
+
+**Symptom:** Double-escaped characters (e.g., `\\%` instead of `\%`)
+
+**Cause:** Escaping applied twice—once in JSON and once by the filter.
+
+**Solution:** Store plain text in JSON; let the template handle escaping:
+
+```json
+{-- WRONG --}
+"summary": "100\\% complete"
+
+{-- CORRECT --}
+"summary": "100% complete"
+```
+
+**Symptom:** Newlines not working
+
+**Cause:** Newlines are now converted to `\newline{}` by default.
+
+**Solution:** If you need different behavior, handle newlines in your template:
+
+```latex
+<VAR> text | replace('\n', ' ') | latex_escape </VAR>
+```
+
 ## Getting Help
 
 1. Check the [CLI Reference](cli.md) for command options

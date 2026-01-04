@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from cv_generator.ensure import (
+    EXIT_ENSURE_ERROR,
     EnsureIssue,
     EnsureReport,
     compare_cv_structure,
@@ -18,6 +19,7 @@ from cv_generator.ensure import (
     match_list_items,
     run_ensure,
 )
+from cv_generator.errors import EXIT_SUCCESS
 
 # Get fixtures directory
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -423,7 +425,7 @@ class TestEnsureStrictMode:
                 "--strict",
             ])
 
-            assert result == 2  # EXIT_ENSURE_ERROR
+            assert result == EXIT_ENSURE_ERROR
 
     def test_strict_mode_returns_zero_on_valid(self):
         """Test that --strict returns zero exit code when valid."""
@@ -441,7 +443,7 @@ class TestEnsureStrictMode:
                 "--strict",
             ])
 
-            assert result == 0
+            assert result == EXIT_SUCCESS
 
 
 class TestEnsureFixMode:

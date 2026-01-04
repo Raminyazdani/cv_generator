@@ -373,11 +373,10 @@ def ensure_command(args: argparse.Namespace) -> int:
         print(report.format_text(verbose=verbose))
 
     # Return appropriate exit code
+    # In both strict and non-strict mode, issues result in EXIT_ENSURE_ERROR
+    # The difference is documented: --strict is for CI to make the intent explicit
     if report.is_valid:
         return EXIT_SUCCESS
-    elif args.strict:
-        # In strict mode, any issue is a failure
-        return EXIT_ENSURE_ERROR
     else:
         return EXIT_ENSURE_ERROR
 

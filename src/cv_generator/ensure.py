@@ -781,15 +781,31 @@ def is_path_under_data(path: Path) -> bool:
     """
     try:
         resolved = path.resolve()
-        # Check for common data directory patterns
-        parts = resolved.parts
-        # Check if 'data' is in path, especially near the start
-        for i, part in enumerate(parts):
-            if part == "data":
-                # Check if it's likely a data folder (not just a directory named data)
-                remaining = parts[i + 1:] if i + 1 < len(parts) else ()
-                if not remaining or remaining[0] in ("cvs", "db", "pics"):
+        resolved_str = str(resolved)
+
+        # Check if path contains /data/cvs, /data/db, or /data/pics patterns
+        # These are the protected directories in the project structure
+        protected_patterns = [
+            "/data/cvs",
+            "/data/db",
+            "/data/pics",
+            "\\data\\cvs",  # Windows paths
+            "\\data\\db",
+            "\\data\\pics",
+        ]
+
+        for pattern in protected_patterns:
+            if pattern in resolved_str:
+                return True
+
+        # Also check if the path starts with 'data/' (relative path case)
+        path_str = str(path)
+        if path_str.startswith("data/") or path_str.startswith("data\\"):
+            # Check for protected subdirectories
+            for subdir in ("cvs", "db", "pics"):
+                if path_str.startswith(f"data/{subdir}") or path_str.startswith(f"data\\{subdir}"):
                     return True
+
         return False
     except (OSError, ValueError):
         return False

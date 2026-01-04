@@ -790,15 +790,20 @@ def web_tags_command(args: argparse.Namespace) -> int:
     from .web import run_server
 
     db_path = Path(args.db) if args.db else None
+    allow_unsafe_bind = getattr(args, "i_know_what_im_doing", False)
 
     try:
         run_server(
             host=args.host,
             port=args.port,
             debug=args.debug if hasattr(args, 'debug') else False,
-            db_path=db_path
+            db_path=db_path,
+            allow_unsafe_bind=allow_unsafe_bind
         )
         return EXIT_SUCCESS
+    except SystemExit as e:
+        # SystemExit is raised when user binds to non-localhost without --i-know-what-im-doing
+        return e.code if isinstance(e.code, int) else EXIT_ERROR
     except Exception as e:
         logger.error(f"Error starting web server: {e}")
         print(f"❌ Error: {e}")
@@ -2082,6 +2087,12 @@ def create_parser() -> argparse.ArgumentParser:
         type=int,
         default=5000,
         help="Port to listen on (default: 5000)"
+    )
+    web_tags_parser.add_argument(
+        "--i-know-what-im-doing",
+        action="store_true",
+        dest="i_know_what_im_doing",
+        help="Required flag when binding to non-localhost address to acknowledge security risks"
     )
     web_tags_parser.set_defaults(func=web_tags_command)
 

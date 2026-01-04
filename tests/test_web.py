@@ -326,3 +326,273 @@ class TestWebApp:
             follow_redirects=True
         )
         assert response.status_code == 200
+
+
+class TestWebAuth:
+    """Tests for HTTP Basic Auth functionality."""
+
+    @pytest.fixture
+    def app_with_auth(self, tmp_path, monkeypatch):
+        """Create a test Flask app with authentication enabled."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Import some test data
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [{"title": "Test Project"}]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        # Enable auth via environment variable
+        monkeypatch.setenv("CVGEN_WEB_AUTH", "testuser:testpass")
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client_with_auth(self, app_with_auth):
+        """Create a test client with auth enabled."""
+        return app_with_auth.test_client()
+
+    def test_requires_auth_returns_401_without_credentials(self, client_with_auth):
+        """Test that routes return 401 when auth is required but not provided."""
+        response = client_with_auth.get("/")
+        assert response.status_code == 401
+        assert b"Authentication required" in response.data
+
+    def test_requires_auth_returns_401_with_wrong_credentials(self, client_with_auth):
+        """Test that routes return 401 with invalid credentials."""
+        from base64 import b64encode
+        credentials = b64encode(b"wronguser:wrongpass").decode("utf-8")
+        response = client_with_auth.get(
+            "/",
+            headers={"Authorization": f"Basic {credentials}"}
+        )
+        assert response.status_code == 401
+
+    def test_requires_auth_returns_200_with_valid_credentials(self, client_with_auth):
+        """Test that routes return 200 with valid credentials."""
+        from base64 import b64encode
+        credentials = b64encode(b"testuser:testpass").decode("utf-8")
+        response = client_with_auth.get(
+            "/",
+            headers={"Authorization": f"Basic {credentials}"}
+        )
+        assert response.status_code == 200
+
+    def test_auth_with_separate_env_vars(self, tmp_path, monkeypatch):
+        """Test auth configured via separate CVGEN_WEB_USER and CVGEN_WEB_PASSWORD."""
+        from base64 import b64encode
+
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Enable auth via separate environment variables
+        monkeypatch.setenv("CVGEN_WEB_USER", "admin")
+        monkeypatch.setenv("CVGEN_WEB_PASSWORD", "secret123")
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        # Test without credentials
+        response = client.get("/")
+        assert response.status_code == 401
+
+        # Test with valid credentials
+        credentials = b64encode(b"admin:secret123").decode("utf-8")
+        response = client.get("/", headers={"Authorization": f"Basic {credentials}"})
+        assert response.status_code == 200
+
+
+class TestHostBindingSafety:
+    """Tests for non-localhost binding warnings."""
+
+    def test_is_localhost_returns_true_for_127_0_0_1(self):
+        """Test is_localhost returns True for 127.0.0.1."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("127.0.0.1") is True
+
+    def test_is_localhost_returns_true_for_localhost(self):
+        """Test is_localhost returns True for 'localhost'."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("localhost") is True
+
+    def test_is_localhost_returns_true_for_127_x_addresses(self):
+        """Test is_localhost returns True for 127.x.x.x addresses."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("127.0.0.2") is True
+        assert is_localhost("127.1.2.3") is True
+
+    def test_is_localhost_returns_true_for_ipv6_localhost(self):
+        """Test is_localhost returns True for IPv6 localhost."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("::1") is True
+
+    def test_is_localhost_returns_false_for_0_0_0_0(self):
+        """Test is_localhost returns False for 0.0.0.0."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("0.0.0.0") is False
+
+    def test_is_localhost_returns_false_for_external_ip(self):
+        """Test is_localhost returns False for external IPs."""
+        from cv_generator.web import is_localhost
+        assert is_localhost("192.168.1.1") is False
+        assert is_localhost("10.0.0.1") is False
+
+    def test_run_server_exits_on_non_localhost_without_flag(self, tmp_path):
+        """Test run_server raises SystemExit for non-localhost without flag."""
+        from cv_generator.web import run_server
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        with pytest.raises(SystemExit) as exc_info:
+            run_server(host="0.0.0.0", db_path=db_path, allow_unsafe_bind=False)
+
+        assert exc_info.value.code == 1
+
+
+class TestRateLimiting:
+    """Tests for rate limiting / throttle functionality."""
+
+    def test_check_throttle_allows_first_action(self):
+        """Test check_throttle allows the first action."""
+        from cv_generator.web import create_app
+
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.test_request_context():
+            from flask import session
+
+            from cv_generator.web import check_throttle
+
+            # First action should be allowed
+            result = check_throttle("test_action")
+            assert result is None
+
+    def test_check_throttle_blocks_rapid_successive_actions(self):
+        """Test check_throttle blocks rapid successive actions."""
+        from cv_generator.web import THROTTLE_SECONDS, create_app
+
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.test_request_context():
+            from cv_generator.web import check_throttle
+
+            # First action should be allowed
+            result1 = check_throttle("test_action2")
+            assert result1 is None
+
+            # Second immediate action should be blocked
+            result2 = check_throttle("test_action2")
+            assert result2 is not None
+            assert result2 > 0
+            assert result2 <= THROTTLE_SECONDS + 1
+
+
+class TestSafeExportBehavior:
+    """Tests for safe export filename generation."""
+
+    def test_generate_unique_filename_includes_timestamp(self):
+        """Test generate_unique_filename includes timestamp."""
+        from cv_generator.web import generate_unique_filename
+
+        filename = generate_unique_filename("ramin")
+
+        assert filename.startswith("ramin_")
+        assert filename.endswith(".json")
+        # Should be like ramin_20260104_082034.json
+        assert len(filename) > len("ramin_.json")
+
+    def test_generate_unique_filename_custom_extension(self):
+        """Test generate_unique_filename with custom extension."""
+        from cv_generator.web import generate_unique_filename
+
+        filename = generate_unique_filename("test", ".csv")
+
+        assert filename.startswith("test_")
+        assert filename.endswith(".csv")
+
+    def test_generate_unique_filename_produces_different_names(self):
+        """Test generate_unique_filename produces different names over time."""
+        import time
+
+        from cv_generator.web import generate_unique_filename
+
+        name1 = generate_unique_filename("person")
+        time.sleep(1.1)  # Wait just over a second
+        name2 = generate_unique_filename("person")
+
+        assert name1 != name2
+
+
+class TestAuthCredentialParsing:
+    """Tests for credential parsing from environment variables."""
+
+    def test_get_auth_credentials_returns_none_when_not_set(self, monkeypatch):
+        """Test get_auth_credentials returns None when not configured."""
+        from cv_generator.web import get_auth_credentials
+
+        # Clear any existing env vars
+        monkeypatch.delenv("CVGEN_WEB_AUTH", raising=False)
+        monkeypatch.delenv("CVGEN_WEB_USER", raising=False)
+        monkeypatch.delenv("CVGEN_WEB_PASSWORD", raising=False)
+
+        result = get_auth_credentials()
+        assert result is None
+
+    def test_get_auth_credentials_parses_combined_format(self, monkeypatch):
+        """Test get_auth_credentials parses CVGEN_WEB_AUTH=user:pass."""
+        from cv_generator.web import get_auth_credentials
+
+        monkeypatch.delenv("CVGEN_WEB_USER", raising=False)
+        monkeypatch.delenv("CVGEN_WEB_PASSWORD", raising=False)
+        monkeypatch.setenv("CVGEN_WEB_AUTH", "myuser:mypassword")
+
+        result = get_auth_credentials()
+        assert result == ("myuser", "mypassword")
+
+    def test_get_auth_credentials_handles_password_with_colon(self, monkeypatch):
+        """Test get_auth_credentials handles passwords containing colons."""
+        from cv_generator.web import get_auth_credentials
+
+        monkeypatch.delenv("CVGEN_WEB_USER", raising=False)
+        monkeypatch.delenv("CVGEN_WEB_PASSWORD", raising=False)
+        monkeypatch.setenv("CVGEN_WEB_AUTH", "user:pass:with:colons")
+
+        result = get_auth_credentials()
+        assert result == ("user", "pass:with:colons")
+
+    def test_get_auth_credentials_parses_separate_vars(self, monkeypatch):
+        """Test get_auth_credentials parses separate USER/PASSWORD vars."""
+        from cv_generator.web import get_auth_credentials
+
+        monkeypatch.delenv("CVGEN_WEB_AUTH", raising=False)
+        monkeypatch.setenv("CVGEN_WEB_USER", "admin")
+        monkeypatch.setenv("CVGEN_WEB_PASSWORD", "secret")
+
+        result = get_auth_credentials()
+        assert result == ("admin", "secret")
+
+    def test_get_auth_credentials_ignores_empty_values(self, monkeypatch):
+        """Test get_auth_credentials ignores empty/whitespace values."""
+        from cv_generator.web import get_auth_credentials
+
+        monkeypatch.setenv("CVGEN_WEB_AUTH", "")
+        monkeypatch.setenv("CVGEN_WEB_USER", "")
+        monkeypatch.setenv("CVGEN_WEB_PASSWORD", "")
+
+        result = get_auth_credentials()
+        assert result is None

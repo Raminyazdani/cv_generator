@@ -1,67 +1,69 @@
 # CV Generator
 
-Generate beautiful, professional PDF resumes from structured JSON using Jinja2 templates and the Awesome-CV LaTeX class.
+**Transform structured JSON data into polished, professional PDF resumes** using the elegant [Awesome-CV](https://github.com/posquit0/Awesome-CV) LaTeX class. Write your CV once in JSON, generate beautiful PDFs in multiple languages, and create targeted versions for academia or industry—all from a single source of truth.
 
-## Overview
+## Quick Start (5 lines to first PDF)
 
-CV Generator transforms JSON CV data into polished PDF resumes by:
+```bash
+git clone https://github.com/Raminyazdani/cv_generator.git && cd cv_generator
+pip install -e .
+cvgen build --name ramin
+# → output/pdf/ramin/en/ramin_en.pdf
+```
 
-1. Loading CV data from JSON files in `data/cvs/`
-2. Rendering LaTeX using Jinja2 templates in `templates/`
-3. Compiling to PDF using XeLaTeX
-
-The project supports multiple languages (English, German, Persian) with RTL support, making it ideal for international professionals.
+!!! note "Prerequisites"
+    Python 3.9+ and XeLaTeX must be installed. See [Installation](installation.md) for detailed setup.
 
 ## Features
 
-- **Multi-CV support** — Generate PDFs for multiple people in batch
-- **Beautiful layout** — Uses the popular Awesome-CV LaTeX class
-- **Modular sections** — Separate templates for education, experience, skills, etc.
-- **Multilingual** — Support for en/de/fa with RTL text direction
-- **Profile photos** — Optional per-person images
-- **Validation** — Check consistency across language versions
-- **Database storage** — SQLite backend for CV data management
+| Feature | Description |
+|---------|-------------|
+| **Multi-CV support** | Generate PDFs for multiple people in batch |
+| **Beautiful layout** | Uses the popular Awesome-CV LaTeX class |
+| **Multilingual** | English, German, Persian with RTL support |
+| **Variant filtering** | Create targeted versions (academic, industry) |
+| **Profile photos** | Optional per-person images |
+| **SQLite backend** | Database storage with tagging system |
+| **Web UI** | Browse and manage CV data via local web interface |
+| **Plugin system** | Extend functionality with custom hooks |
 
-## Quick Start
+## How It Works
 
-```bash
-# Install
-pip install -e .
-
-# Generate all CVs
-cvgen build
-
-# Generate a specific CV
-cvgen build --name ramin
-
-# Verbose output (INFO level)
-cvgen -v build
-
-# Quiet mode (errors only)
-cvgen -q build
-
-# Validate multilingual consistency
-cvgen ensure --name ramin
-
-# Extended help on topics
-cvgen help build
-cvgen help templates
+```
+JSON CV Data → Jinja2 Templates → XeLaTeX → PDF
 ```
 
-## Requirements
-
-- Python 3.9+
-- XeLaTeX (TeX Live or MiKTeX)
-- Jinja2 (installed automatically)
+1. **Load** CV data from JSON files in `data/cvs/`
+2. **Render** LaTeX using Jinja2 templates in `templates/`
+3. **Compile** to PDF using XeLaTeX
+4. **Output** organized PDFs to `output/pdf/<name>/<lang>/`
 
 ## Documentation
 
-- [Installation Guide](installation.md)
-- [Quick Start](quickstart.md)
-- [CLI Reference](cli.md)
-- [JSON Schema](json-schema.md)
-- [Template Customization](templates.md)
-- [Troubleshooting](troubleshooting.md)
+### Getting Started
+
+- [Installation Guide](installation.md) — Detailed setup instructions
+- [Quick Start](quickstart.md) — Get your first PDF in 5 minutes
+- [Cookbook](example.md) — Copy-paste recipes for common workflows
+
+### Guides
+
+- [Templates](templates.md) — Customize CV appearance
+- [Languages](languages.md) — Multilingual support (en/de/fa)
+- [SQLite & Tagging](sqlite_tagging_cookbook.md) — Database and tagging system
+- [Plugin Development](plugins.md) — Extend CV Generator
+
+### Reference
+
+- [CLI Reference](cli.md) — All commands and options
+- [Configuration](config-reference.md) — TOML config file reference
+- [JSON Schema](json-schema.md) — Complete data format reference
+- [Troubleshooting](troubleshooting.md) — Common issues and solutions
+
+### Contributing
+
+- [Contributing Guide](contributing.md) — How to contribute
+- [Changelog](changelog.md) — Version history
 
 ## Project Structure
 
@@ -73,17 +75,18 @@ cv_generator/
 │   ├── cvs/              # CV JSON files
 │   └── pics/             # Profile photos
 ├── output/               # Generated PDFs
-└── docs/                 # Documentation
+├── docs/                 # MkDocs documentation
+└── plugins/              # Plugin examples
 ```
 
 ## License
 
-- Python code: MIT License
-- Awesome-CV class: LPPL v1.3c
-- Awesome-CV design: CC BY-SA 4.0
+- **Python code**: MIT License
+- **Awesome-CV class**: LPPL v1.3c
+- **Awesome-CV design**: CC BY-SA 4.0
 
 ## Acknowledgements
 
 - [Awesome-CV](https://github.com/posquit0/Awesome-CV) by posquit0
-- Jinja2 templating engine
+- [Jinja2](https://jinja.palletsprojects.com/) templating engine
 - The LaTeX community

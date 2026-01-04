@@ -1,8 +1,17 @@
 # CV Generator – JSON → Awesome-CV PDF
 
-Generate beautiful, professional PDF resumes from structured JSON using [Jinja2](https://jinja.palletsprojects.com/) templates and the [Awesome-CV](https://github.com/posquit0/Awesome-CV) LaTeX class.
+**CV Generator** transforms structured JSON data into polished, professional PDF resumes using the elegant [Awesome-CV](https://github.com/posquit0/Awesome-CV) LaTeX class. Write your CV once in JSON, generate beautiful PDFs in multiple languages (English, German, Persian with RTL support), and use variant filtering to create targeted versions for academia or industry—all from a single source of truth.
 
-This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX using custom section templates in `templates/`, and compiles final PDFs (one per person) using `xelatex`.
+## Quick Start (5 lines to first PDF)
+
+```bash
+git clone https://github.com/Raminyazdani/cv_generator.git && cd cv_generator
+pip install -e .
+cvgen build --name ramin
+# → output/pdf/ramin/en/ramin_en.pdf
+```
+
+> **Prerequisites**: Python 3.9+ and XeLaTeX must be installed. See [Installation](#installation) for details.
 
 ---
 
@@ -19,8 +28,9 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
   - [Variant Filtering](#variant-filtering)
   - [Adding a new CV](#adding-a-new-cv)  
   - [Adding a profile picture](#adding-a-profile-picture)  
+- [Validating Multilingual CVs](#validating-multilingual-cvs)
 - [SQLite Database & Tagging](#sqlite-database--tagging)
-  - [Quick Start](#quick-start)
+  - [Quick Start](#quick-start-1)
   - [Web UI for Tag Management](#web-ui-for-tag-management)
   - [Detailed Documentation](#detailed-documentation)
 - [Data Format (JSON Schema Overview)](#data-format-json-schema-overview)  
@@ -35,8 +45,10 @@ This project takes one or more JSON CV files from `data/cvs/`, renders LaTeX usi
   - [Available filters and helpers](#available-filters-and-helpers)  
   - [Main LaTeX layout](#main-latex-layout)  
 - [Output and Intermediate Files](#output-and-intermediate-files)  
+- [Common Pitfalls](#common-pitfalls)
 - [Troubleshooting](#troubleshooting)  
 - [Development Notes](#development-notes)  
+- [Documentation](#documentation)
 - [License](#license)  
 - [Acknowledgements](#acknowledgements)
 
@@ -803,6 +815,23 @@ This preserves the `.tex` files in `output/latex/<profile>/<lang>/`.
 
 ---
 
+## Common Pitfalls
+
+Before diving into detailed troubleshooting, here are the most common issues new users encounter:
+
+| Problem | Quick Fix |
+|---------|-----------|
+| **XeLaTeX not installed** | Install [TeX Live](https://www.tug.org/texlive/) (Linux/macOS) or [MiKTeX](https://miktex.org/) (Windows), then verify with `xelatex --version` |
+| **Missing fonts** | Install Roboto and Source Sans Pro fonts (see [Installation](#installation)) |
+| **Special characters break PDF** | Ensure templates use `| latex_escape` filter for user text containing `#`, `%`, `_`, `&`, `$` |
+| **Windows path issues** | Use forward slashes in JSON paths, or escape backslashes (`\\`) |
+| **Missing JSON fields** | Templates use `StrictUndefined`—all referenced keys must exist in your JSON |
+| **PDF not generated** | Run `cvgen -v build` for verbose output, or `cvgen build --keep-latex` to inspect LaTeX logs |
+
+For detailed solutions, see the [Troubleshooting](#troubleshooting) section below.
+
+---
+
 ## Troubleshooting
 
 ### `xelatex` command not found
@@ -959,6 +988,40 @@ pytest tests/ --cov=src/cv_generator --cov-report=term-missing
 - **Commenting in templates**:
   - Use LaTeX comments (`%`) or the `cmt` / `cblock` filters.
   - Toggle `SHOW_COMMENTS` in `src/cv_generator/jinja_env.py` to control whether these get emitted.
+
+---
+
+## Documentation
+
+Full documentation is available at [docs/](docs/) or can be served locally:
+
+```bash
+# Install MkDocs (one-time)
+pip install mkdocs mkdocs-material
+
+# Serve documentation locally
+mkdocs serve
+# → Open http://127.0.0.1:8000
+
+# Build static site
+mkdocs build
+# → Output in site/
+```
+
+### Documentation Structure
+
+| Section | Description |
+|---------|-------------|
+| [Installation](docs/installation.md) | Detailed setup instructions |
+| [Quick Start](docs/quickstart.md) | Get your first PDF in 5 minutes |
+| [CLI Reference](docs/cli.md) | All commands and options |
+| [JSON Schema](docs/json-schema.md) | Complete data format reference |
+| [Templates](docs/templates.md) | Customization guide |
+| [Languages](docs/languages.md) | Multilingual support (en/de/fa) |
+| [SQLite Cookbook](docs/sqlite_tagging_cookbook.md) | Database and tagging system |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+| [Plugins](docs/plugins.md) | Extending CV Generator |
+| [Configuration](docs/config-reference.md) | TOML config file reference |
 
 ---
 

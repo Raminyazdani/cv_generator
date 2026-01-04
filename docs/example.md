@@ -6,16 +6,16 @@ A practical, copy-paste-ready guide with complete scenarios and recipes for comm
 
 ## Table of Contents
 
-1. [Install + Verify](#1-install--verify)
+1. [Install + Verify](#1-install-verify)
 2. [Generate a Single CV](#2-generate-a-single-cv)
 3. [Multi-Language Builds](#3-multi-language-builds)
 4. [Batch Build Multiple Profiles](#4-batch-build-multiple-profiles)
-5. [Validate / Ensure](#5-validate--ensure)
+5. [Validate / Ensure](#5-validate-ensure)
 6. [Template Customization](#6-template-customization)
 7. [Images](#7-images)
 8. [Keep LaTeX Artifacts](#8-keep-latex-artifacts)
 9. [Troubleshooting Recipes](#9-troubleshooting-recipes)
-10. [Advanced: JSON ↔ SQLite](#10-advanced-json--sqlite)
+10. [Advanced: JSON ↔ SQLite](#10-advanced-json-sqlite)
 
 ---
 

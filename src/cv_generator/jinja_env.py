@@ -43,7 +43,7 @@ def latex_escape(s: Any) -> str:
     7. Underscore (_) -> \\_
     8. Tilde (~) -> \\textasciitilde{}
     9. Caret (^) -> \\textasciicircum{}
-    10. Newlines (\\n) -> \\\\\\newline{} - LaTeX line break
+    10. Newlines (\\n) -> \\newline{} - LaTeX line break
     11. Tabs (\\t) -> \\hspace{1em} - Visual tab spacing
 
     Args:
@@ -58,7 +58,7 @@ def latex_escape(s: Any) -> str:
         >>> latex_escape("C# code")
         'C\\# code'
         >>> latex_escape("Line1\\nLine2")
-        'Line1\\\\\\newline{}Line2'
+        'Line1\\newline{}Line2'
         >>> latex_escape(None)
         ''
     """

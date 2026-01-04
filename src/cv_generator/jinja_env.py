@@ -29,31 +29,101 @@ def latex_escape(s: Any) -> str:
     """
     Escape LaTeX special characters in plain text.
 
+    This function handles all LaTeX special characters that could cause
+    compilation failures or unintended behavior when rendering user-provided
+    content in LaTeX documents.
+
+    Escaping rules (order matters - backslash must be first):
+    1. Backslash (\\) -> \\textbackslash{} - Must be first to avoid double-escaping
+    2. Braces ({}) -> \\{ \\} - After backslash to preserve \\textbackslash{}
+    3. Ampersand (&) -> \\&
+    4. Percent (%) -> \\%
+    5. Dollar ($) -> \\$
+    6. Hash (#) -> \\#
+    7. Underscore (_) -> \\_
+    8. Tilde (~) -> \\textasciitilde{}
+    9. Caret (^) -> \\textasciicircum{}
+    10. Newlines (\\n) -> \\newline{} - LaTeX line break
+    11. Tabs (\\t) -> \\hspace{1em} - Visual tab spacing
+
     Args:
-        s: The string to escape.
+        s: The string to escape. Can be any type; None returns empty string.
 
     Returns:
-        LaTeX-escaped string.
+        LaTeX-escaped string safe for use in LaTeX documents.
+
+    Examples:
+        >>> latex_escape("100%")
+        '100\\%'
+        >>> latex_escape("C# code")
+        'C\\# code'
+        >>> latex_escape("Line1\\nLine2")
+        'Line1\\newline{}Line2'
+        >>> latex_escape(None)
+        ''
     """
     if s is None:
         return ""
     s = str(s)
-    # Order matters: backslash first.
+
+    # Order matters: backslash first, then braces, then other characters.
+    # This prevents double-escaping issues.
     replacements = [
+        # Step 1: Backslash must be escaped first
         ("\\", r"\textbackslash{}"),
+        # Step 2: Braces - after backslash to preserve \textbackslash{}
+        ("{",  r"\{"),
+        ("}",  r"\}"),
+        # Step 3: Other special characters
         ("&",  r"\&"),
         ("%",  r"\%"),
         ("$",  r"\$"),
         ("#",  r"\#"),
         ("_",  r"\_"),
-        ("{",  r"\{"),
-        ("}",  r"\}"),
         ("~",  r"\textasciitilde{}"),
         ("^",  r"\textasciicircum{}"),
+        # Step 4: Whitespace characters
+        ("\n", r"\newline{}"),
+        ("\t", r"\hspace{1em}"),
     ]
     for k, v in replacements:
         s = s.replace(k, v)
     return s
+
+
+def latex_raw(s: Any) -> str:
+    """
+    Pass through a value as raw LaTeX without escaping.
+
+    USE WITH CAUTION: This filter allows raw LaTeX commands to be rendered
+    without escaping. Only use this for content that you control and trust,
+    such as template-defined LaTeX markup. Never use with untrusted user input.
+
+    Safe use cases:
+    - Template-defined formatting commands
+    - LaTeX commands from your own code
+    - Trusted configuration values
+
+    Unsafe use cases (DO NOT USE):
+    - User-provided text fields from JSON
+    - Content from external sources
+    - Arbitrary user input
+
+    Args:
+        s: The string to pass through. None returns empty string.
+
+    Returns:
+        The original string unchanged, or empty string if None.
+
+    Examples:
+        >>> latex_raw("\\textbf{bold}")
+        '\\textbf{bold}'
+        >>> latex_raw(None)
+        ''
+    """
+    if s is None:
+        return ""
+    return str(s)
 
 
 def file_exists(value: Any) -> bool:
@@ -209,6 +279,7 @@ def create_jinja_env(
 
     # Register common filters
     env.filters["latex_escape"] = latex_escape
+    env.filters["latex_raw"] = latex_raw
     env.filters["debug"] = debug_filter
     env.filters["types"] = types_filter
     env.filters["cmt"] = cmt

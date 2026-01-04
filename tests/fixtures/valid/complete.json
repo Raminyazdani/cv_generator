@@ -1,0 +1,180 @@
+{
+  "basics": [
+    {
+      "fname": "Complete",
+      "lname": "Person",
+      "label": [
+        "Software Engineer",
+        "Data Scientist"
+      ],
+      "email": "complete@example.com",
+      "phone": {
+        "countryCode": "+49",
+        "number": "1234567890",
+        "formatted": "+49 (0) 123 456 7890"
+      },
+      "birthDate": "1990-01-15",
+      "summary": "A software engineer with extensive experience in multiple programming languages and frameworks. Passionate about building scalable systems and data-driven applications.",
+      "location": [
+        {
+          "address": "123 Main St",
+          "postalCode": "12345",
+          "city": "Berlin",
+          "region": "Berlin",
+          "country": "Germany"
+        }
+      ],
+      "Pictures": [
+        {
+          "type_of": "profile",
+          "URL": "https://example.com/profile.jpg"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "network": "GitHub",
+      "username": "completeperson",
+      "url": "https://github.com/completeperson"
+    },
+    {
+      "network": "LinkedIn",
+      "username": "complete-person",
+      "url": "https://linkedin.com/in/complete-person/"
+    }
+  ],
+  "education": [
+    {
+      "institution": "Technical University",
+      "location": "Berlin, Germany",
+      "area": "Computer Science",
+      "studyType": "Master's",
+      "startDate": "2015-10-01",
+      "endDate": "2017-09-30",
+      "gpa": "1.3 / 4.0",
+      "type_key": ["Full CV", "Academic"]
+    },
+    {
+      "institution": "State University",
+      "location": "Munich, Germany",
+      "area": "Mathematics",
+      "studyType": "Bachelor's",
+      "startDate": "2011-10-01",
+      "endDate": "2015-07-30",
+      "gpa": "1.7 / 4.0",
+      "type_key": ["Full CV", "Academic"]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "proficiency": {
+        "level": "Native",
+        "CEFR": null,
+        "status": "Native speaker"
+      },
+      "certifications": []
+    },
+    {
+      "language": "German",
+      "proficiency": {
+        "level": "Professional",
+        "CEFR": "C1",
+        "status": "Fluent"
+      },
+      "certifications": []
+    }
+  ],
+  "workshop_and_certifications": [
+    {
+      "issuer": "Example Academy",
+      "certifications": [
+        {
+          "name": "Cloud Architecture",
+          "date": "2023-05-15",
+          "duration": "40 hours",
+          "certificate": true,
+          "URL": "https://example.com/cert.pdf",
+          "type_key": ["Full CV"]
+        }
+      ]
+    }
+  ],
+  "skills": {
+    "Programming & Scripting": {
+      "Programming Languages": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Full CV", "Programming"]
+        },
+        {
+          "long_name": "JavaScript",
+          "short_name": "JS",
+          "type_key": ["Full CV", "Programming"]
+        }
+      ]
+    },
+    "Soft Skills": {
+      "Core Soft Skills": [
+        {
+          "long_name": "Team Collaboration",
+          "short_name": "Teamwork",
+          "type_key": ["Full CV"]
+        }
+      ]
+    }
+  },
+  "experiences": [
+    {
+      "role": "Senior Software Engineer",
+      "institution": "Tech Company GmbH",
+      "duration": "2020-01-01 - present",
+      "description": "Lead development of cloud-native applications and microservices architecture."
+    },
+    {
+      "role": "Software Developer",
+      "institution": "Startup Inc",
+      "duration": "2017-10-01 - 2019-12-31",
+      "description": "Full-stack development using Python and React."
+    }
+  ],
+  "projects": [
+    {
+      "title": "Open Source Library",
+      "description": "Developed a popular open-source library for data processing with over 1000 GitHub stars.",
+      "url": "https://github.com/example/library",
+      "type_key": ["Full CV", "Programming"]
+    },
+    {
+      "title": "Research Project",
+      "description": "Contributed to machine learning research on natural language processing.",
+      "url": null,
+      "type_key": ["Full CV", "Academic"]
+    }
+  ],
+  "publications": [
+    {
+      "title": "Machine Learning in Practice",
+      "authors": ["Complete Person", "Co-Author"],
+      "type": "Research Paper",
+      "status": "Published",
+      "year": 2023,
+      "journal": "Journal of Computing",
+      "doi": "10.1234/example.2023",
+      "type_key": ["Full CV", "Academic"]
+    }
+  ],
+  "references": [
+    {
+      "name": "Prof. Reference Person",
+      "position": "Professor of Computer Science",
+      "department": "Department of Informatics",
+      "institution": "Technical University",
+      "location": "Berlin, Germany",
+      "email": ["reference@example.com"],
+      "type_key": ["Full CV", "Academic"]
+    }
+  ]
+}

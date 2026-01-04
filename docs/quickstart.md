@@ -2,7 +2,51 @@
 
 Get your first PDF CV generated in under 5 minutes.
 
-## Step 1: Prepare Your CV Data
+## Option 1: Quick Start with `cvgen init` (Recommended)
+
+The fastest way to get started is with the `cvgen init` command:
+
+```bash
+# Create a new CV project
+cvgen init ./my-cv --profile jane
+
+# Navigate to the project
+cd my-cv
+
+# Edit your CV data
+# Open cvs/jane.en.json in your favorite editor
+
+# Build the PDF
+cvgen build --input-dir cvs
+```
+
+Your PDF will be generated at `output/pdf/jane/en/jane_en.pdf`.
+
+### What `cvgen init` Creates
+
+```
+my-cv/
+├── cvs/
+│   └── jane.en.json    # Your CV data (edit this!)
+├── output/              # Build output directory
+├── cv_generator.toml    # Configuration file
+├── README.md            # Next steps documentation
+└── .gitignore           # Git ignore rules
+```
+
+### Different Languages
+
+Create a German CV project:
+
+```bash
+cvgen init ./german-cv --profile hans --lang de
+```
+
+---
+
+## Option 2: Manual Setup
+
+### Step 1: Prepare Your CV Data
 
 Create a JSON file in `data/cvs/` with your CV information. Here's a minimal example:
 
@@ -40,7 +84,7 @@ Create a JSON file in `data/cvs/` with your CV information. Here's a minimal exa
 
 Save as `data/cvs/jane.json`.
 
-## Step 2: Generate the PDF
+### Step 2: Generate the PDF
 
 ```bash
 cvgen build --name jane
@@ -52,7 +96,7 @@ Or with verbose output:
 cvgen -v build --name jane
 ```
 
-## Step 3: Find Your PDF
+### Step 3: Find Your PDF
 
 The generated PDF is at:
 

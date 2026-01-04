@@ -8,6 +8,7 @@ Provides the `cvgen` command with the following subcommands:
 - db: SQLite database operations (init, import, export, diff)
 - doctor: System health checks
 - profile: Manage CV profile selection
+- init: Create a new CV project scaffold
 """
 
 import argparse
@@ -1015,6 +1016,54 @@ def export_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def init_command(args: argparse.Namespace) -> int:
+    """
+    Execute the init command to create a new CV project.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .scaffold import get_next_steps, scaffold_project
+
+    dest_path = Path(args.path).resolve()
+    profile_name = args.profile or "mycv"
+    lang = args.lang or "en"
+    force = getattr(args, "force", False)
+
+    logger.info(f"Creating new CV project at: {dest_path}")
+    logger.info(f"Profile: {profile_name}, Language: {lang}")
+
+    result = scaffold_project(
+        dest_path=dest_path,
+        profile_name=profile_name,
+        lang=lang,
+        force=force,
+    )
+
+    if not result.success:
+        print(f"❌ Error: {result.error}")
+        return EXIT_CONFIG_ERROR
+
+    # Report created files
+    print(f"\n✅ Created new CV project at: {dest_path}")
+    print("\n📁 Files created:")
+    for file_path in result.files_created:
+        rel_path = file_path.relative_to(dest_path)
+        print(f"   • {rel_path}")
+
+    # Print next steps
+    print("\n🚀 Next steps:")
+    steps = get_next_steps(dest_path, profile_name, lang)
+    for i, step in enumerate(steps, 1):
+        print(f"   {i}. {step}")
+
+    print()
+    return EXIT_SUCCESS
+
+
 # Extended help topics for 'cvgen help <topic>'
 HELP_TOPICS = {
     "build": """
@@ -1563,7 +1612,77 @@ EXAMPLE CONFIG
     [build]
     keep_latex = true
 """,
+
+    "init": """
+cvgen init — Create a new CV project
+
+SYNOPSIS
+    cvgen init <path> [OPTIONS]
+
+DESCRIPTION
+    The init command creates a new CV project with a minimal working
+    structure. This is the fastest way to get started with CV Generator.
+
+    The generated project includes:
+    - A minimal valid CV JSON file ready to edit
+    - A config file (cv_generator.toml) with project settings
+    - A README with next steps and documentation links
+    - A .gitignore file for version control
+
+ARGUMENTS
+    <path>              Directory where the project will be created.
+                        Can be an absolute or relative path.
+
+OPTIONS
+    --profile, -p NAME  Name for your CV profile (default: mycv).
+                        This determines the JSON filename.
+    --lang, -l LANG     Language code: en, de, or fa (default: en).
+    --force, -f         Overwrite existing files if directory is not empty.
+
+EXAMPLES
+    # Create a new project in the current directory
+    cvgen init .
+
+    # Create a project with a specific profile name
+    cvgen init ~/Documents/my-cv --profile jane
+
+    # Create a German CV project
+    cvgen init ./german-cv --profile hans --lang de
+
+    # Overwrite an existing project
+    cvgen init ./my-cv --force
+
+GENERATED STRUCTURE
+    <path>/
+      cvs/
+        <profile>.<lang>.json   # Your CV data (edit this!)
+      output/                    # Build output directory
+      cv_generator.toml          # Configuration file
+      README.md                  # Next steps documentation
+      .gitignore                 # Git ignore rules
+
+NEXT STEPS AFTER INIT
+    After running cvgen init, follow these steps:
+
+    1. cd <path>
+    2. Edit cvs/<profile>.<lang>.json with your information
+    3. cvgen build --input-dir cvs
+
+    The generated PDF will be at:
+    output/pdf/<profile>/<lang>/<profile>_<lang>.pdf
+
+REQUIREMENTS
+    To generate PDFs, you need XeLaTeX installed:
+    - Ubuntu/Debian: sudo apt-get install texlive-xetex texlive-fonts-extra
+    - macOS: brew install --cask mactex
+    - Windows: Install MiKTeX or TeX Live
+
+    Without LaTeX, you can still:
+    - Edit and validate your CV JSON
+    - Use --dry-run --keep-latex to generate LaTeX source files
+""",
 }
+
 
 
 def help_command(args: argparse.Namespace) -> int:
@@ -1581,6 +1700,7 @@ def help_command(args: argparse.Namespace) -> int:
     if not topic:
         # List available topics
         print("Available help topics:\n")
+        print("  init            Create a new CV project")
         print("  build           Generate PDF CVs from JSON files")
         print("  export          Export CVs to HTML/Markdown")
         print("  ensure          Validate multilingual CV consistency")
@@ -1605,6 +1725,8 @@ def help_command(args: argparse.Namespace) -> int:
         "profiles": "profile",
         "configuration": "config",
         "json": "json-schema",
+        "scaffold": "init",
+        "new": "init",
     }
     topic = topic_aliases.get(topic, topic)
 
@@ -1665,6 +1787,39 @@ def create_parser() -> argparse.ArgumentParser:
         title="commands",
         description="Available commands"
     )
+
+    # Init command (project scaffolding)
+    init_parser = subparsers.add_parser(
+        "init",
+        help="Create a new CV project scaffold",
+        description="Create a new CV project with a minimal working structure."
+    )
+
+    init_parser.add_argument(
+        "path",
+        type=str,
+        help="Directory where the project will be created"
+    )
+    init_parser.add_argument(
+        "--profile", "-p",
+        type=str,
+        default="mycv",
+        help="Name for your CV profile (default: mycv)"
+    )
+    init_parser.add_argument(
+        "--lang", "-l",
+        type=str,
+        choices=["en", "de", "fa"],
+        default="en",
+        help="Language code: en, de, or fa (default: en)"
+    )
+    init_parser.add_argument(
+        "--force", "-f",
+        action="store_true",
+        help="Overwrite existing files if directory is not empty"
+    )
+
+    init_parser.set_defaults(func=init_command)
 
     # Build command
     build_parser = subparsers.add_parser(

@@ -1,0 +1,1596 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generate beautiful PDF CVs from JSON data using Jinja2 templates and Awesome-CV">
+      
+      
+        <meta name="author" content="CV Generator Contributors">
+      
+      
+      
+        <link rel="prev" href="../templates/">
+      
+      
+        <link rel="next" href="../languages/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Troubleshooting - CV Generator Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#troubleshooting" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CV Generator Documentation" class="md-header__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CV Generator Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CV Generator Documentation" class="md-nav__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CV Generator Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xelatex-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        XeLaTeX Not Found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-package-installation-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python Package Installation Fails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#latex-compilation-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LaTeX Compilation Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LaTeX Compilation Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-character-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Special Character Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-field-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing Field Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#font-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Font Warnings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pdf-not-generated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF Not Generated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-system-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File System Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File System Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-denied-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access Denied (Windows)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-picture-not-showing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Picture Not Showing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilingual-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multilingual Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multilingual Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language-file-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language File Not Found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rtl-text-not-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTL Text Not Working
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translation-mapping-not-applied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Translation Mapping Not Applied
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging Tips
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Debugging Tips">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enable-verbose-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable Verbose Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-debug-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable Debug Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dry Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keep-latex-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep LaTeX Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#xelatex-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        XeLaTeX Not Found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-package-installation-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python Package Installation Fails
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#latex-compilation-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LaTeX Compilation Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LaTeX Compilation Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-character-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Special Character Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-field-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing Field Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#font-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Font Warnings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pdf-not-generated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PDF Not Generated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-system-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File System Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File System Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-denied-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access Denied (Windows)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-picture-not-showing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Picture Not Showing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multilingual-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multilingual Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multilingual Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language-file-not-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language File Not Found
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rtl-text-not-working" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RTL Text Not Working
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translation-mapping-not-applied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Translation Mapping Not Applied
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging-tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging Tips
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Debugging Tips">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enable-verbose-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable Verbose Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable-debug-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enable Debug Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dry Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keep-latex-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep LaTeX Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
+<p>Common issues and their solutions when using CV Generator.</p>
+<h2 id="installation-issues">Installation Issues<a class="headerlink" href="#installation-issues" title="Permanent link">&para;</a></h2>
+<h3 id="xelatex-not-found">XeLaTeX Not Found<a class="headerlink" href="#xelatex-not-found" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&#39;xelatex&#39; is not recognized as an internal or external command
+</code></pre></div></p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Install a LaTeX distribution:</li>
+<li><strong>Windows:</strong> <a href="https://miktex.org/">MiKTeX</a> or <a href="https://www.tug.org/texlive/">TeX Live</a></li>
+<li><strong>macOS:</strong> <a href="https://www.tug.org/mactex/">MacTeX</a></li>
+<li>
+<p><strong>Linux:</strong> <code>sudo apt install texlive-xetex</code></p>
+</li>
+<li>
+<p>Add XeLaTeX to your PATH:</p>
+</li>
+<li><strong>Windows:</strong> Add <code>C:\texlive\&lt;version&gt;\bin\windows</code> (e.g., <code>C:\texlive\2023\bin\windows</code>) to PATH</li>
+<li>
+<p><strong>macOS/Linux:</strong> Usually automatic with package managers</p>
+</li>
+<li>
+<p>Verify installation:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>xelatex<span class="w"> </span>--version
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="python-package-installation-fails">Python Package Installation Fails<a class="headerlink" href="#python-package-installation-fails" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ERROR: Could not install packages due to an EnvironmentError
+</code></pre></div></p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>
+<p>Upgrade pip:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
+</code></pre></div></p>
+</li>
+<li>
+<p>Use a virtual environment:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># or .venv\Scripts\activate on Windows</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div></p>
+</li>
+<li>
+<p>Or install with user flag:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="latex-compilation-issues">LaTeX Compilation Issues<a class="headerlink" href="#latex-compilation-issues" title="Permanent link">&para;</a></h2>
+<h3 id="special-character-errors">Special Character Errors<a class="headerlink" href="#special-character-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>! Missing $ inserted.
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>! Undefined control sequence.
+</code></pre></div></p>
+<p><strong>Cause:</strong> Unescaped special characters in your JSON data (<code>#</code>, <code>%</code>, <code>_</code>, <code>&amp;</code>, <code>$</code>, <code>^</code>, <code>~</code>, <code>{</code>, <code>}</code>, <code>\</code>).</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>
+<p>Use the <code>latex_escape</code> filter in templates:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&lt;VAR&gt; text | latex<span class="nb">_</span>escape &lt;/VAR&gt;
+</code></pre></div></p>
+</li>
+<li>
+<p>Or escape characters in your JSON:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;C\\# programming&quot;</span>
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="missing-field-errors">Missing Field Errors<a class="headerlink" href="#missing-field-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>jinja2.exceptions.UndefinedError: &#39;basics&#39; is undefined
+</code></pre></div></p>
+<p><strong>Cause:</strong> Template references a field that doesn't exist in your JSON.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Check that all required fields exist in your CV JSON</li>
+<li>Use the <code>default</code> filter for optional fields:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>&lt;VAR&gt; optional<span class="nb">_</span>field | default(&#39;&#39;) &lt;/VAR&gt;
+</code></pre></div></li>
+<li>Use conditional blocks:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>&lt;BLOCK&gt; if field is defined &lt;/BLOCK&gt;
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  ...
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>&lt;BLOCK&gt; endif &lt;/BLOCK&gt;
+</code></pre></div></li>
+</ol>
+<h3 id="font-warnings">Font Warnings<a class="headerlink" href="#font-warnings" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>LaTeX Font Warning: Font shape &#39;TU/Roboto&#39; undefined
+</code></pre></div></p>
+<p><strong>Cause:</strong> Fonts used by Awesome-CV are not installed.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Install required fonts:</li>
+<li><strong>Roboto</strong> — Download from <a href="https://fonts.google.com/specimen/Roboto">Google Fonts</a></li>
+<li>
+<p><strong>Source Sans Pro</strong> — Download from <a href="https://fonts.google.com/specimen/Source+Sans+Pro">Google Fonts</a></p>
+</li>
+<li>
+<p>Or modify <code>layout.tex</code> to use available fonts:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">\setmainfont</span><span class="nb">{</span>DejaVu Sans<span class="nb">}</span>
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="pdf-not-generated">PDF Not Generated<a class="headerlink" href="#pdf-not-generated" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Command completes but no PDF is created.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>
+<p>Run with verbose mode to see errors:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build
+</code></pre></div></p>
+</li>
+<li>
+<p>Check the LaTeX log by keeping sources:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--keep-latex
+</code></pre></div>
+   Then examine <code>output/latex/&lt;name&gt;/&lt;lang&gt;/main.log</code>.</p>
+</li>
+<li>
+<p>Run dry-run to check template rendering:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--dry-run
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="file-system-issues">File System Issues<a class="headerlink" href="#file-system-issues" title="Permanent link">&para;</a></h2>
+<h3 id="access-denied-windows">Access Denied (Windows)<a class="headerlink" href="#access-denied-windows" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>PermissionError: [WinError 5] Access is denied
+</code></pre></div></p>
+<p><strong>Cause:</strong> File locks from editors, OneDrive, or antivirus.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Close any editors that have output files open</li>
+<li>Temporarily pause OneDrive sync</li>
+<li>Exclude the output directory from antivirus real-time scanning</li>
+<li>The generator has retry logic; try running again</li>
+</ol>
+<h3 id="profile-picture-not-showing">Profile Picture Not Showing<a class="headerlink" href="#profile-picture-not-showing" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> CV generates without the photo.</p>
+<p><strong>Cause:</strong> Photo file not found or wrong format.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Place photo at the correct path:</li>
+<li>CV: <code>data/cvs/jane.json</code></li>
+<li>
+<p>Photo: <code>data/pics/jane.jpg</code></p>
+</li>
+<li>
+<p>Ensure file names match exactly (case-sensitive on Linux/macOS)</p>
+</li>
+<li>
+<p>Use JPG format (other formats may not work)</p>
+</li>
+<li>
+<p>Check the <code>find_pic</code> filter in verbose mode:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="multilingual-issues">Multilingual Issues<a class="headerlink" href="#multilingual-issues" title="Permanent link">&para;</a></h2>
+<h3 id="language-file-not-found">Language File Not Found<a class="headerlink" href="#language-file-not-found" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>CV file not found for language &#39;de&#39;
+</code></pre></div></p>
+<p><strong>Cause:</strong> Missing language-specific CV file.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Create the language file with proper naming:</li>
+<li><code>data/cvs/jane.json</code> (English default)</li>
+<li><code>data/cvs/jane_de.json</code> (German)</li>
+<li>
+<p><code>data/cvs/jane_fa.json</code> (Persian)</p>
+</li>
+<li>
+<p>Or use the i18n directory structure:</p>
+</li>
+<li><code>data/cvs/i18n/jane/cv.en.json</code></li>
+<li><code>data/cvs/i18n/jane/cv.de.json</code></li>
+</ol>
+<h3 id="rtl-text-not-working">RTL Text Not Working<a class="headerlink" href="#rtl-text-not-working" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Persian text displays incorrectly.</p>
+<p><strong>Cause:</strong> RTL packages not properly configured.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>Ensure <code>polyglossia</code> package is installed with your LaTeX distribution</li>
+<li>Check that <code>IS_RTL</code> is handled in <code>layout.tex</code></li>
+<li>Use XeLaTeX (not pdfLaTeX) for proper Unicode support</li>
+</ol>
+<h3 id="translation-mapping-not-applied">Translation Mapping Not Applied<a class="headerlink" href="#translation-mapping-not-applied" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Skill headings not translated.</p>
+<p><strong>Cause:</strong> Missing or incorrect language mapping.</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li>
+<p>Check <code>src/cv_generator/lang_engine/lang.json</code>:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="p">{</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">&quot;Technical Skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">&quot;de&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Technische Fähigkeiten&quot;</span><span class="p">,</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">&quot;fa&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;مهارت‌های فنی&quot;</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Or provide a custom mapping:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>jane<span class="w"> </span>--lang-map<span class="w"> </span>path/to/lang.json
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="debugging-tips">Debugging Tips<a class="headerlink" href="#debugging-tips" title="Permanent link">&para;</a></h2>
+<h3 id="enable-verbose-logging">Enable Verbose Logging<a class="headerlink" href="#enable-verbose-logging" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build
+</code></pre></div>
+<h3 id="enable-debug-logging">Enable Debug Logging<a class="headerlink" href="#enable-debug-logging" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>cvgen<span class="w"> </span>--debug<span class="w"> </span>build
+</code></pre></div>
+<h3 id="dry-run">Dry Run<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
+<p>Render templates without compiling:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--dry-run
+</code></pre></div>
+<h3 id="keep-latex-files">Keep LaTeX Files<a class="headerlink" href="#keep-latex-files" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--keep-latex
+</code></pre></div>
+<p>Then inspect <code>output/latex/&lt;name&gt;/&lt;lang&gt;/</code>:
+- <code>main.tex</code> — Combined document
+- <code>sections/*.tex</code> — Individual sections
+- <code>main.log</code> — LaTeX compilation log</p>
+<h3 id="debug-filter">Debug Filter<a class="headerlink" href="#debug-filter" title="Permanent link">&para;</a></h3>
+<p>Add to templates to inspect values:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>&lt;VAR&gt; skills | debug &lt;/VAR&gt;
+</code></pre></div>
+<h3 id="run-validation">Run Validation<a class="headerlink" href="#run-validation" title="Permanent link">&para;</a></h3>
+<p>Check JSON consistency:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>jane
+</code></pre></div>
+<h2 id="getting-help">Getting Help<a class="headerlink" href="#getting-help" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Check the <a href="../cli/">CLI Reference</a> for command options</li>
+<li>Review the <a href="../json-schema/">JSON Schema</a> for data format</li>
+<li>See <a href="../templates/">Templates</a> for customization</li>
+<li>Use <code>cvgen help &lt;topic&gt;</code> for extended help</li>
+<li>Open an issue on GitHub for bugs or feature requests</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

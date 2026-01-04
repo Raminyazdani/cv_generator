@@ -1,0 +1,1952 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generate beautiful PDF CVs from JSON data using Jinja2 templates and Awesome-CV">
+      
+      
+        <meta name="author" content="CV Generator Contributors">
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>SQLite Tagging Cookbook - CV Generator Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sqlite-tagging-cookbook" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CV Generator Documentation" class="md-header__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CV Generator Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SQLite Tagging Cookbook
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CV Generator Documentation" class="md-nav__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CV Generator Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entity-table-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity Table Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Entity Table Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Tables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-this-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why This Design?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deterministic-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deterministic IDs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deterministic IDs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#identity-key-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity Key Computation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generic-tagging-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generic Tagging Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type_key-sync-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        type_key Sync Rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="type_key Sync Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#on-import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Import
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-export-default-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Export (default behavior)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-export-with-apply-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Export with --apply-tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-export-with-apply-tags-to-all" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Export with --apply-tags-to-all
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initialize-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initialize Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#import-cvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Import CVs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Import CVs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-happens-during-import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Happens During Import
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-cvs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Export CVs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tag-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tag Lifecycle
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tag Lifecycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create Tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rename-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rename Tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delete Tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assign-tags-to-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assign Tags to Entries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tagging-from-cli-vs-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tagging from CLI vs UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Health Check
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Database Health Check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#checks-performed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checks Performed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending-the-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending the System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extending the System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-cv-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a New CV Section
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adding a New CV Section">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-add-to-your-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Add to Your JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-import-normally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Import Normally
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-optional-add-identity-key-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. (Optional) Add Identity Key Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-optional-add-web-ui-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. (Optional) Add Web UI Summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-field-to-an-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a New Field to an Entry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enabling-type_key-for-new-entity-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enabling type_key for New Entity Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writing-migrations-safely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writing Migrations Safely
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Writing Migrations Safely">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-update-schema_version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Update SCHEMA_VERSION
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-add-migration-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Add Migration Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-update-init_db" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Update init_db()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-importerexporter-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updating Importer/Exporter Mapping
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Importer/Exporter Mapping">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#importer-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Importer Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exporter-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exporter Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-tests-and-fixtures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updating Tests and Fixtures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Updating Tests and Fixtures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-test-fixtures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add Test Fixtures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Add Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ids-changed-unexpectedly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IDs Changed Unexpectedly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duplicate-tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duplicate Tags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#export-structure-mismatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Export Structure Mismatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encoding-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encoding Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="sqlite-tagging-cookbook">SQLite Tagging Cookbook<a class="headerlink" href="#sqlite-tagging-cookbook" title="Permanent link">&para;</a></h1>
+<p>This comprehensive guide covers the SQLite data layer and tagging system in CV Generator. It explains concepts, operations, extending the system, and troubleshooting.</p>
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#concepts">Concepts</a></li>
+<li><a href="#entity-table-design">Entity Table Design</a></li>
+<li><a href="#deterministic-ids">Deterministic IDs</a></li>
+<li><a href="#generic-tagging-model">Generic Tagging Model</a></li>
+<li><a href="#type_key-sync-rules">type_key Sync Rules</a></li>
+<li><a href="#operations">Operations</a></li>
+<li><a href="#initialize-database">Initialize Database</a></li>
+<li><a href="#import-cvs">Import CVs</a></li>
+<li><a href="#export-cvs">Export CVs</a></li>
+<li><a href="#tag-lifecycle">Tag Lifecycle</a></li>
+<li><a href="#tagging-from-cli-vs-ui">Tagging from CLI vs UI</a></li>
+<li><a href="#database-health-check">Database Health Check</a></li>
+<li><a href="#extending-the-system">Extending the System</a></li>
+<li><a href="#adding-a-new-cv-section">Adding a New CV Section</a></li>
+<li><a href="#adding-a-new-field-to-an-entry">Adding a New Field to an Entry</a></li>
+<li><a href="#enabling-type_key-for-new-entity-types">Enabling type_key for New Entity Types</a></li>
+<li><a href="#writing-migrations-safely">Writing Migrations Safely</a></li>
+<li><a href="#updating-importerexporter-mapping">Updating Importer/Exporter Mapping</a></li>
+<li><a href="#updating-tests-and-fixtures">Updating Tests and Fixtures</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#ids-changed-unexpectedly">IDs Changed Unexpectedly</a></li>
+<li><a href="#duplicate-tags">Duplicate Tags</a></li>
+<li><a href="#export-structure-mismatch">Export Structure Mismatch</a></li>
+<li><a href="#encoding-issues">Encoding Issues</a></li>
+</ol>
+<hr />
+<h2 id="concepts">Concepts<a class="headerlink" href="#concepts" title="Permanent link">&para;</a></h2>
+<h3 id="entity-table-design">Entity Table Design<a class="headerlink" href="#entity-table-design" title="Permanent link">&para;</a></h3>
+<p>The database uses a <strong>flexible, JSON-blob approach</strong> that preserves unknown fields and avoids schema churn.</p>
+<h4 id="core-tables">Core Tables<a class="headerlink" href="#core-tables" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1">-- Person table (who the CV belongs to)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">person</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">slug</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">UNIQUE</span><span class="p">,</span><span class="w">        </span><span class="c1">-- e.g., &quot;ramin&quot;, &quot;ramin_de&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="n">display_name</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">       </span><span class="c1">-- e.g., &quot;Ramin Yazdani&quot;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">TEXT</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1">-- Entry table (all CV sections stored as JSON blobs)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">entry</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="n">person_id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">       </span><span class="c1">-- FK to person</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="n">section</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">            </span><span class="c1">-- e.g., &quot;projects&quot;, &quot;education&quot;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="n">order_idx</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span><span class="w">       </span><span class="c1">-- preserves list order</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span><span class="n">data_json</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">          </span><span class="c1">-- full JSON object for entry</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="n">identity_key</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">       </span><span class="c1">-- stable ID for re-import matching</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">TEXT</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">)</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1">-- Tag table (type_key values)</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">tag</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">UNIQUE</span><span class="p">,</span><span class="w">        </span><span class="c1">-- e.g., &quot;Full CV&quot;, &quot;Academic&quot;</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">TEXT</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="p">)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="c1">-- Entry-Tag relationship (many-to-many)</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="n">entry_tag</span><span class="w"> </span><span class="p">(</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">    </span><span class="n">entry_id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">    </span><span class="n">tag_id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="p">,</span>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">entry_id</span><span class="p">,</span><span class="w"> </span><span class="n">tag_id</span><span class="p">)</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="p">)</span>
+</code></pre></div>
+<h4 id="why-this-design">Why This Design?<a class="headerlink" href="#why-this-design" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Preserves unknown keys</strong> - Any field in the JSON is stored and restored exactly</li>
+<li><strong>No schema churn</strong> - New sections or fields require no database migration</li>
+<li><strong>Generic tagging</strong> - Tags can be applied to any entry type</li>
+<li><strong>Future-proof</strong> - New entity types get tagging automatically</li>
+</ol>
+<h3 id="deterministic-ids">Deterministic IDs<a class="headerlink" href="#deterministic-ids" title="Permanent link">&para;</a></h3>
+<p>Each entry gets an <code>identity_key</code> computed from its content. This allows:
+- Re-importing a modified JSON file and matching existing entries
+- Detecting when entries change
+- Stable references for tagging</p>
+<h4 id="identity-key-computation">Identity Key Computation<a class="headerlink" href="#identity-key-computation" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Key Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>projects</td>
+<td><code>title</code> + <code>url</code></td>
+</tr>
+<tr>
+<td>experiences</td>
+<td><code>role</code> + <code>institution</code> + <code>duration</code></td>
+</tr>
+<tr>
+<td>publications</td>
+<td><code>doi</code> or <code>title</code></td>
+</tr>
+<tr>
+<td>education</td>
+<td><code>institution</code> + <code>area</code> + <code>startDate</code></td>
+</tr>
+<tr>
+<td>references</td>
+<td><code>name</code> or <code>email</code></td>
+</tr>
+<tr>
+<td>profiles</td>
+<td><code>url</code> or <code>network</code></td>
+</tr>
+<tr>
+<td>languages</td>
+<td><code>language</code></td>
+</tr>
+<tr>
+<td>basics</td>
+<td><code>fname</code> + <code>lname</code></td>
+</tr>
+<tr>
+<td>workshop_and_certifications</td>
+<td><code>issuer</code></td>
+</tr>
+</tbody>
+</table>
+<p>Example identity key: <code>projects:url=https://github.com/user/repo</code></p>
+<h3 id="generic-tagging-model">Generic Tagging Model<a class="headerlink" href="#generic-tagging-model" title="Permanent link">&para;</a></h3>
+<p>Tags are stored separately from entry data, enabling:
+- Creating tags before assigning them
+- Renaming tags without touching entries
+- Querying entries by tag across sections
+- Applying tags to any entity type</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>[Entry 1: &quot;Project A&quot;] ──┬──&gt; [Tag: &quot;Full CV&quot;]
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>                         └──&gt; [Tag: &quot;Academic&quot;]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>[Entry 2: &quot;Education B&quot;] ──┬──&gt; [Tag: &quot;Full CV&quot;]
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>                           └──&gt; [Tag: &quot;Bioinformatics&quot;]
+</code></pre></div>
+<h3 id="type_key-sync-rules">type_key Sync Rules<a class="headerlink" href="#type_key-sync-rules" title="Permanent link">&para;</a></h3>
+<p>The <code>type_key</code> field in JSON is synchronized with the database tags:</p>
+<h4 id="on-import">On Import<a class="headerlink" href="#on-import" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Extract <code>type_key</code> array from entry JSON</li>
+<li>Create tags for each value (if not exists)</li>
+<li>Link entry to tags via <code>entry_tag</code> table</li>
+<li>Store original <code>type_key</code> in <code>data_json</code></li>
+</ol>
+<h4 id="on-export-default-behavior">On Export (default behavior)<a class="headerlink" href="#on-export-default-behavior" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Write <code>type_key</code> back <strong>only</strong> for entries that originally had it</li>
+<li>Preserve the exact values stored in <code>data_json</code></li>
+</ul>
+<h4 id="on-export-with-apply-tags">On Export with <code>--apply-tags</code><a class="headerlink" href="#on-export-with-apply-tags" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Rebuild <code>type_key</code> from <code>entry_tag</code> relationships</li>
+<li>Only for entries that originally had <code>type_key</code></li>
+</ul>
+<h4 id="on-export-with-apply-tags-to-all">On Export with <code>--apply-tags-to-all</code><a class="headerlink" href="#on-export-with-apply-tags-to-all" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Add <code>type_key</code> to ALL entries from database tags</li>
+<li>Even entries that didn't originally have <code>type_key</code></li>
+</ul>
+<hr />
+<h2 id="operations">Operations<a class="headerlink" href="#operations" title="Permanent link">&para;</a></h2>
+<h3 id="initialize-database">Initialize Database<a class="headerlink" href="#initialize-database" title="Permanent link">&para;</a></h3>
+<p>Create a new database with the schema:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Using default location (data/db/cv.db)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Custom location</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init<span class="w"> </span>--db<span class="w"> </span>/path/to/cv.db
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Force recreate (destroys existing data!)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init<span class="w"> </span>--force
+</code></pre></div>
+<p>The schema version is tracked in the <code>meta</code> table for future migrations.</p>
+<h3 id="import-cvs">Import CVs<a class="headerlink" href="#import-cvs" title="Permanent link">&para;</a></h3>
+<p>Import CV JSON files into the database:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Import all CVs from default location (data/cvs/)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Import from custom directory</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>-i<span class="w"> </span>/path/to/cvs
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># Import specific person</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--name<span class="w"> </span>ramin
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1"># Overwrite existing entries (with backup)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--overwrite
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># Overwrite without backup</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--overwrite<span class="w"> </span>--no-backup
+</code></pre></div>
+<h4 id="what-happens-during-import">What Happens During Import<a class="headerlink" href="#what-happens-during-import" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Parse filename to get person slug and language</li>
+<li>Load JSON data</li>
+<li>Create/update person record</li>
+<li>For each section in JSON:</li>
+<li>Create entry with <code>data_json</code> blob</li>
+<li>Compute <code>identity_key</code></li>
+<li>Extract <code>type_key</code> and create tag relationships</li>
+</ol>
+<h3 id="export-cvs">Export CVs<a class="headerlink" href="#export-cvs" title="Permanent link">&para;</a></h3>
+<p>Export database content to JSON files:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Export all persons to default directory</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--force
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Export to custom directory</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>-o<span class="w"> </span>/path/to/output<span class="w"> </span>--force
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Export specific person</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--force
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1"># Apply tags from database</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--apply-tags<span class="w"> </span>--force
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="c1"># Add type_key to all entries</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--apply-tags-to-all<span class="w"> </span>--force
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="c1"># Minified output</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--format<span class="w"> </span>min<span class="w"> </span>--force
+</code></pre></div>
+<p>The <code>--force</code> flag is required to overwrite existing files.</p>
+<h3 id="tag-lifecycle">Tag Lifecycle<a class="headerlink" href="#tag-lifecycle" title="Permanent link">&para;</a></h3>
+<h4 id="create-tags">Create Tags<a class="headerlink" href="#create-tags" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Via Web UI</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># Navigate to /tags/create</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># Tags are also created automatically during import</span>
+</code></pre></div>
+<h4 id="rename-tags">Rename Tags<a class="headerlink" href="#rename-tags" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Via Web UI</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Navigate to /tags/&lt;name&gt;/edit</span>
+</code></pre></div>
+<h4 id="delete-tags">Delete Tags<a class="headerlink" href="#delete-tags" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Via Web UI</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Click delete on /tags page</span>
+</code></pre></div>
+<h4 id="assign-tags-to-entries">Assign Tags to Entries<a class="headerlink" href="#assign-tags-to-entries" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Start the web UI: <code>cvgen web tags</code></li>
+<li>Navigate to a person's section</li>
+<li>Click on an entry</li>
+<li>Select/deselect tags</li>
+<li>Save changes</li>
+</ol>
+<h3 id="tagging-from-cli-vs-ui">Tagging from CLI vs UI<a class="headerlink" href="#tagging-from-cli-vs-ui" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Use Case</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web UI</td>
+<td>Interactive browsing and editing</td>
+<td><code>cvgen web tags</code></td>
+</tr>
+<tr>
+<td>Import</td>
+<td>Bulk tagging from JSON</td>
+<td>Edit JSON <code>type_key</code> arrays, then import</td>
+</tr>
+<tr>
+<td>Export</td>
+<td>Apply DB tags to JSON</td>
+<td><code>cvgen db export --apply-tags</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="database-health-check">Database Health Check<a class="headerlink" href="#database-health-check" title="Permanent link">&para;</a></h3>
+<p>Run diagnostics on your database:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Basic health check</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>doctor
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># JSON output for scripting</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>doctor<span class="w"> </span>--format<span class="w"> </span>json
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Custom database</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span>doctor<span class="w"> </span>--db<span class="w"> </span>/path/to/cv.db
+</code></pre></div>
+<h4 id="checks-performed">Checks Performed<a class="headerlink" href="#checks-performed" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Schema version</strong> - Matches expected version</li>
+<li><strong>Orphaned entries</strong> - Entries without valid person</li>
+<li><strong>Orphaned tags</strong> - Tags not used by any entry</li>
+<li><strong>Duplicate tags</strong> - Case-insensitive duplicates</li>
+<li><strong>Missing identity keys</strong> - Entries without stable IDs</li>
+<li><strong>Invalid JSON</strong> - Corrupted <code>data_json</code> fields</li>
+</ul>
+<hr />
+<h2 id="extending-the-system">Extending the System<a class="headerlink" href="#extending-the-system" title="Permanent link">&para;</a></h2>
+<h3 id="adding-a-new-cv-section">Adding a New CV Section<a class="headerlink" href="#adding-a-new-cv-section" title="Permanent link">&para;</a></h3>
+<p>Suppose you want to add an <code>awards</code> section.</p>
+<h4 id="1-add-to-your-json">1. Add to Your JSON<a class="headerlink" href="#1-add-to-your-json" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;awards&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Best Paper Award&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IEEE&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">      </span><span class="nt">&quot;date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-01-15&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">      </span><span class="nt">&quot;type_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Full CV&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Academic&quot;</span><span class="p">]</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">}</span>
+</code></pre></div>
+<h4 id="2-import-normally">2. Import Normally<a class="headerlink" href="#2-import-normally" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--overwrite
+</code></pre></div>
+<p>The system automatically:
+- Detects <code>awards</code> as a list section
+- Stores each award as an entry
+- Extracts <code>type_key</code> values as tags</p>
+<h4 id="3-optional-add-identity-key-logic">3. (Optional) Add Identity Key Logic<a class="headerlink" href="#3-optional-add-identity-key-logic" title="Permanent link">&para;</a></h4>
+<p>Edit <code>src/cv_generator/db.py</code>, add to <code>_compute_identity_key()</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">elif</span> <span class="n">section</span> <span class="o">==</span> <span class="s2">&quot;awards&quot;</span><span class="p">:</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;issuer&quot;</span><span class="p">):</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;awards:</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;issuer&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<h4 id="4-optional-add-web-ui-summary">4. (Optional) Add Web UI Summary<a class="headerlink" href="#4-optional-add-web-ui-summary" title="Permanent link">&para;</a></h4>
+<p>Edit <code>src/cv_generator/web.py</code>, add to <code>get_entry_summary()</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">elif</span> <span class="n">section</span> <span class="o">==</span> <span class="s2">&quot;awards&quot;</span><span class="p">:</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="n">title</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;Untitled Award&quot;</span><span class="p">)</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">issuer</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;issuer&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">issuer</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">issuer</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="adding-a-new-field-to-an-entry">Adding a New Field to an Entry<a class="headerlink" href="#adding-a-new-field-to-an-entry" title="Permanent link">&para;</a></h3>
+<p>Since we use JSON blobs, new fields are automatically preserved:</p>
+<ol>
+<li>
+<p>Add the field to your JSON:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;projects&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;My Project&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1">// New field!</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">      </span><span class="nt">&quot;priority&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">        </span><span class="c1">// Another new field!</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Import normally - fields are preserved in <code>data_json</code></p>
+</li>
+<li>
+<p>Export - new fields appear in output</p>
+</li>
+</ol>
+<p>No database migration needed!</p>
+<h3 id="enabling-type_key-for-new-entity-types">Enabling type_key for New Entity Types<a class="headerlink" href="#enabling-type_key-for-new-entity-types" title="Permanent link">&para;</a></h3>
+<p>The system already supports <code>type_key</code> for any entity. To enable it:</p>
+<ol>
+<li>
+<p><strong>Add <code>type_key</code> to your JSON entries:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">&quot;experiences&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">      </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Developer&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">      </span><span class="nt">&quot;type_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Full CV&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Technical&quot;</span><span class="p">]</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Import the CV:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--overwrite
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Use the Web UI to manage tags:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Export with tags:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--apply-tags<span class="w"> </span>--force
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="writing-migrations-safely">Writing Migrations Safely<a class="headerlink" href="#writing-migrations-safely" title="Permanent link">&para;</a></h3>
+<p>For schema changes, use the migrations pattern:</p>
+<h4 id="1-update-schema_version">1. Update SCHEMA_VERSION<a class="headerlink" href="#1-update-schema_version" title="Permanent link">&para;</a></h4>
+<p>In <code>src/cv_generator/db.py</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">SCHEMA_VERSION</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># Was 1</span>
+</code></pre></div></p>
+<h4 id="2-add-migration-logic">2. Add Migration Logic<a class="headerlink" href="#2-add-migration-logic" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">def</span> <span class="nf">_migrate_v1_to_v2</span><span class="p">(</span><span class="n">conn</span><span class="p">):</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Migrate from v1 to v2 schema.&quot;&quot;&quot;</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    <span class="c1"># Add new column, create new table, etc.</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;ALTER TABLE entry ADD COLUMN new_field TEXT&quot;</span><span class="p">)</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+</code></pre></div>
+<h4 id="3-update-init_db">3. Update init_db()<a class="headerlink" href="#3-update-init_db" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">def</span> <span class="nf">init_db</span><span class="p">(</span><span class="n">db_path</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="c1"># ... existing code ...</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="c1"># Check for migration</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT value FROM meta WHERE key = &#39;schema_version&#39;&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>    <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>    <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>        <span class="n">current_version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>        <span class="k">if</span> <span class="n">current_version</span> <span class="o">&lt;</span> <span class="n">SCHEMA_VERSION</span><span class="p">:</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migrating from v</span><span class="si">{</span><span class="n">current_version</span><span class="si">}</span><span class="s2"> to v</span><span class="si">{</span><span class="n">SCHEMA_VERSION</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>            <span class="k">if</span> <span class="n">current_version</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>                <span class="n">_migrate_v1_to_v2</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a>            <span class="c1"># Update version</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a>            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a>                <span class="s2">&quot;UPDATE meta SET value = ?, updated_at = ? WHERE key = &#39;schema_version&#39;&quot;</span><span class="p">,</span>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>                <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">SCHEMA_VERSION</span><span class="p">),</span> <span class="n">_utcnow</span><span class="p">())</span>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>            <span class="p">)</span>
+</code></pre></div>
+<h3 id="updating-importerexporter-mapping">Updating Importer/Exporter Mapping<a class="headerlink" href="#updating-importerexporter-mapping" title="Permanent link">&para;</a></h3>
+<h4 id="importer-changes">Importer Changes<a class="headerlink" href="#importer-changes" title="Permanent link">&para;</a></h4>
+<p>Key functions in <code>src/cv_generator/db.py</code>:</p>
+<ul>
+<li><code>import_cv()</code> - Main import logic</li>
+<li><code>_compute_identity_key()</code> - Generate stable IDs</li>
+<li><code>_extract_type_keys()</code> - Extract tags from entries</li>
+</ul>
+<h4 id="exporter-changes">Exporter Changes<a class="headerlink" href="#exporter-changes" title="Permanent link">&para;</a></h4>
+<p>Key functions:</p>
+<ul>
+<li><code>export_cv()</code> - Main export logic</li>
+<li><code>export_cv_to_file()</code> - Write to disk</li>
+<li><code>_rebuild_type_keys()</code> - Reconstruct from <code>entry_tag</code></li>
+</ul>
+<h3 id="updating-tests-and-fixtures">Updating Tests and Fixtures<a class="headerlink" href="#updating-tests-and-fixtures" title="Permanent link">&para;</a></h3>
+<h4 id="add-test-fixtures">Add Test Fixtures<a class="headerlink" href="#add-test-fixtures" title="Permanent link">&para;</a></h4>
+<p>Create <code>tests/fixtures/new_test_cv.json</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="p">{</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">&quot;basics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">&quot;fname&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Test&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;lname&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;User&quot;</span><span class="p">}],</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="nt">&quot;new_section&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">&quot;field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;value&quot;</span><span class="p">}]</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="p">}</span>
+</code></pre></div></p>
+<h4 id="add-tests">Add Tests<a class="headerlink" href="#add-tests" title="Permanent link">&para;</a></h4>
+<p>In <code>tests/test_db.py</code>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">def</span> <span class="nf">test_new_section_round_trip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that new sections are preserved.&quot;&quot;&quot;</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    <span class="c1"># Create and import test data</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="c1"># Export and verify</span>
+</code></pre></div></p>
+<hr />
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="ids-changed-unexpectedly">IDs Changed Unexpectedly<a class="headerlink" href="#ids-changed-unexpectedly" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> After reimporting, entries have different IDs</p>
+<p><strong>Causes:</strong>
+1. Identity key fields changed (title, URL, etc.)
+2. Using <code>--overwrite</code> which deletes old entries</p>
+<p><strong>Solutions:</strong>
+1. Check which fields changed
+2. Use a stable identifier like URL or DOI
+3. For debugging, enable debug logging:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>cvgen<span class="w"> </span>--debug<span class="w"> </span>db<span class="w"> </span>import
+</code></pre></div></p>
+<h3 id="duplicate-tags">Duplicate Tags<a class="headerlink" href="#duplicate-tags" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Multiple tags with similar names (case differences)</p>
+<p><strong>Detection:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>doctor
+</code></pre></div>
+Look for "Duplicate tags" in output.</p>
+<p><strong>Fix:</strong>
+1. Identify duplicates via Web UI or doctor output
+2. Manually rename/merge via Web UI
+3. Delete the unwanted tags</p>
+<h3 id="export-structure-mismatch">Export Structure Mismatch<a class="headerlink" href="#export-structure-mismatch" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Exported JSON doesn't match original structure</p>
+<p><strong>Common Issues:</strong>
+1. <strong>Empty lists missing:</strong> Fixed in current version
+2. <strong>Dict sections as lists:</strong> Check your JSON structure
+3. <strong>Field order changed:</strong> JSON doesn't guarantee order</p>
+<p><strong>Debugging:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Compare original and exported</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>diff<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<h3 id="encoding-issues">Encoding Issues<a class="headerlink" href="#encoding-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom:</strong> Unicode characters corrupted or displayed wrong</p>
+<p><strong>Causes:</strong>
+1. File saved with wrong encoding
+2. Terminal doesn't support UTF-8</p>
+<p><strong>Solutions:</strong>
+1. Ensure JSON files are UTF-8:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;cv.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div></p>
+<ol>
+<li>
+<p>Use a UTF-8 terminal</p>
+</li>
+<li>
+<p>Check database encoding:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>sqlite3<span class="w"> </span>cv.db<span class="w"> </span><span class="s2">&quot;PRAGMA encoding;&quot;</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># Should show: UTF-8</span>
+</code></pre></div></p>
+</li>
+</ol>
+<hr />
+<h2 id="quick-reference">Quick Reference<a class="headerlink" href="#quick-reference" title="Permanent link">&para;</a></h2>
+<h3 id="cli-commands">CLI Commands<a class="headerlink" href="#cli-commands" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># Database initialization</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--force<span class="o">]</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="c1"># Import from JSON</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>-i<span class="w"> </span>DIR<span class="o">]</span><span class="w"> </span><span class="o">[</span>--name<span class="w"> </span>NAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>--overwrite<span class="o">]</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="c1"># Export to JSON</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>-o<span class="w"> </span>DIR<span class="o">]</span><span class="w"> </span><span class="o">[</span>--name<span class="w"> </span>NAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>--apply-tags<span class="o">]</span><span class="w"> </span><span class="o">[</span>--force<span class="o">]</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="c1"># Compare JSON with database</span>
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>cvgen<span class="w"> </span>db<span class="w"> </span>diff<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>-i<span class="w"> </span>DIR<span class="o">]</span><span class="w"> </span><span class="o">[</span>--name<span class="w"> </span>NAME<span class="o">]</span>
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a><span class="c1"># List database contents</span>
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>cvgen<span class="w"> </span>db<span class="w"> </span>list<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--what<span class="w"> </span>persons<span class="p">|</span>tags<span class="o">]</span>
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a><span class="c1"># Health check</span>
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>cvgen<span class="w"> </span>db<span class="w"> </span>doctor<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>-f<span class="w"> </span>text<span class="p">|</span>json<span class="o">]</span>
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a>
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a><span class="c1"># Web UI</span>
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags<span class="w"> </span><span class="o">[</span>--db<span class="w"> </span>PATH<span class="o">]</span><span class="w"> </span><span class="o">[</span>--host<span class="w"> </span>HOST<span class="o">]</span><span class="w"> </span><span class="o">[</span>--port<span class="w"> </span>PORT<span class="o">]</span>
+</code></pre></div>
+<h3 id="default-paths">Default Paths<a class="headerlink" href="#default-paths" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Default Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Database</td>
+<td><code>data/db/cv.db</code></td>
+</tr>
+<tr>
+<td>CV JSONs</td>
+<td><code>data/cvs/</code></td>
+</tr>
+<tr>
+<td>Templates</td>
+<td><code>templates/</code></td>
+</tr>
+<tr>
+<td>Output</td>
+<td><code>output/</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

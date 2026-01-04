@@ -1,0 +1,2206 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Generate beautiful PDF CVs from JSON data using Jinja2 templates and Awesome-CV">
+      
+      
+        <meta name="author" content="CV Generator Contributors">
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>CV Generator Cookbook - CV Generator Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cv-generator-cookbook" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="CV Generator Documentation" class="md-header__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CV Generator Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CV Generator Cookbook
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="CV Generator Documentation" class="md-nav__button md-logo" aria-label="CV Generator Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CV Generator Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Raminyazdani/cv_generator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSON Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../languages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Languages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-install-verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Install + Verify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Install + Verify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-editable-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Editable Install
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-confirm-cli-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Confirm CLI Exists
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-confirm-xelatex-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Confirm XeLaTeX Available
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-generate-a-single-cv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Generate a Single CV
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Generate a Single CV">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-default-language-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Default Language Build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-explicit-output-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Explicit Output Directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-verbose-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Verbose Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-multi-language-builds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Multi-Language Builds
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Multi-Language Builds">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-generate-endefa-in-one-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Generate EN/DE/FA in One Command
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-file-naming-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 File Naming Conventions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-language-specific-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Language-Specific Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-batch-build-multiple-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Batch Build Multiple Profiles
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Batch Build Multiple Profiles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-build-all-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Build All Profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-custom-input-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Custom Input Directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-dry-run-no-pdf-compilation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Dry Run (No PDF Compilation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-parallel-processing-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Parallel Processing Note
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-validate-ensure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Validate / Ensure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Validate / Ensure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-run-ensure-across-endefa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Run Ensure Across EN/DE/FA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-validate-specific-languages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Validate Specific Languages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-json-output-for-scripting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 JSON Output for Scripting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-using-custom-language-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Using Custom Language Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-template-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Template Customization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Template Customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-custom-templates-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Custom Templates Directory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-template-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Template Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-jinja2-filters-available" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Jinja2 Filters Available
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Images
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Images">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-with-profile-photo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 With Profile Photo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-missing-photo-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Missing Photo Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-fallback-profile-photo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Fallback Profile Photo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-keep-latex-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Keep LaTeX Artifacts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Keep LaTeX Artifacts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-keep-latex-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Keep LaTeX Source Files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-inspect-latex-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Inspect LaTeX Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-latex-log-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 LaTeX Log Location
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-troubleshooting-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Troubleshooting Recipes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Troubleshooting Recipes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-latex-compile-error-finding-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 LaTeX Compile Error: Finding Logs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-missing-fonts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 Missing Fonts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93-special-characters-in-json-needing-escaping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 Special Characters in JSON Needing Escaping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#94-template-rendering-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.4 Template Rendering Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#95-windows-file-lock-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.5 Windows File Lock Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-advanced-json-sqlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Advanced: JSON ↔ SQLite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Advanced: JSON ↔ SQLite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101-initialize-the-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 Initialize the Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102-import-json-to-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 Import JSON to Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#103-list-database-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.3 List Database Contents
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#104-edit-tags-web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.4 Edit Tags (Web UI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#105-export-database-to-json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.5 Export Database to JSON
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#106-compare-json-with-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.6 Compare JSON with Database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#107-complete-db-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.7 Complete DB Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sample-json-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sample JSON Snippet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-audit-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Audit Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cv-generator-cookbook">CV Generator Cookbook<a class="headerlink" href="#cv-generator-cookbook" title="Permanent link">&para;</a></h1>
+<p>A practical, copy-paste-ready guide with complete scenarios and recipes for common (and edge) workflows.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#1-install--verify">Install + Verify</a></li>
+<li><a href="#2-generate-a-single-cv">Generate a Single CV</a></li>
+<li><a href="#3-multi-language-builds">Multi-Language Builds</a></li>
+<li><a href="#4-batch-build-multiple-profiles">Batch Build Multiple Profiles</a></li>
+<li><a href="#5-validate--ensure">Validate / Ensure</a></li>
+<li><a href="#6-template-customization">Template Customization</a></li>
+<li><a href="#7-images">Images</a></li>
+<li><a href="#8-keep-latex-artifacts">Keep LaTeX Artifacts</a></li>
+<li><a href="#9-troubleshooting-recipes">Troubleshooting Recipes</a></li>
+<li><a href="#10-advanced-json--sqlite">Advanced: JSON ↔ SQLite</a></li>
+</ol>
+<hr />
+<h2 id="1-install-verify">1. Install + Verify<a class="headerlink" href="#1-install-verify" title="Permanent link">&para;</a></h2>
+<h3 id="11-editable-install">1.1 Editable Install<a class="headerlink" href="#11-editable-install" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Install the cv-generator package in development mode for local modifications.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Clone the repository</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Raminyazdani/cv_generator.git
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">cd</span><span class="w"> </span>cv_generator
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Create virtual environment (recommended)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># Linux/macOS</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># .venv\Scripts\activate   # Windows</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># Install in editable mode</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- Package installed in editable mode
+- <code>cvgen</code> CLI available in your PATH</p>
+<p><strong>Notes</strong>:
+- Use <code>-e .</code> to enable live code changes without reinstalling
+- Add <code>[dev]</code> for development dependencies: <code>pip install -e ".[dev]"</code></p>
+<hr />
+<h3 id="12-confirm-cli-exists">1.2 Confirm CLI Exists<a class="headerlink" href="#12-confirm-cli-exists" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Verify that the <code>cvgen</code> command is available.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cvgen<span class="w"> </span>--version
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cvgen 1.0.0
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- If not found, ensure the virtual environment is activated
+- Alternatively: <code>python -m cv_generator.cli --version</code>
+- Check help with: <code>cvgen --help</code></p>
+<hr />
+<h3 id="13-confirm-xelatex-available">1.3 Confirm XeLaTeX Available<a class="headerlink" href="#13-confirm-xelatex-available" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Verify LaTeX compilation is possible.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>xelatex<span class="w"> </span>--version
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>XeTeX 3.141592653-2.6-0.999995 (TeX Live 2023)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>...
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Install TeX Live (Linux/macOS) or MiKTeX (Windows) if not found
+- On Linux: <code>sudo apt install texlive-xetex texlive-fonts-extra</code>
+- On macOS: <code>brew install --cask mactex</code>
+- Required fonts: Roboto, Source Sans Pro</p>
+<hr />
+<h2 id="2-generate-a-single-cv">2. Generate a Single CV<a class="headerlink" href="#2-generate-a-single-cv" title="Permanent link">&para;</a></h2>
+<h3 id="21-default-language-build">2.1 Default Language Build<a class="headerlink" href="#21-default-language-build" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Generate a PDF for a single profile with default settings.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- <code>output/pdf/ramin/en/ramin_en.pdf</code></p>
+<p><strong>Notes</strong>:
+- Processes all language variants (en, de, fa) if they exist
+- JSON file expected at <code>data/cvs/&lt;PROFILE&gt;.json</code>
+- Without <code>--name</code>, all CVs in <code>data/cvs/</code> are built</p>
+<hr />
+<h3 id="22-explicit-output-directory">2.2 Explicit Output Directory<a class="headerlink" href="#22-explicit-output-directory" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Save generated PDFs to a custom location.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--output-dir<span class="w"> </span>&lt;PATH&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--output-dir<span class="w"> </span>/tmp/cv_output
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- <code>/tmp/cv_output/pdf/ramin/en/ramin_en.pdf</code>
+- <code>/tmp/cv_output/pdf/ramin/de/ramin_de.pdf</code> (if de exists)</p>
+<p><strong>Notes</strong>:
+- Output structure is preserved: <code>&lt;output&gt;/pdf/&lt;profile&gt;/&lt;lang&gt;/&lt;profile&gt;_&lt;lang&gt;.pdf</code>
+- Parent directories are created automatically
+- Use absolute paths to avoid confusion</p>
+<hr />
+<h3 id="23-verbose-mode">2.3 Verbose Mode<a class="headerlink" href="#23-verbose-mode" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: See detailed progress during generation.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Input directory: data/cvs
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Building CV for: ramin
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Processing ramin_en...
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>PDF generated: output/pdf/ramin/en/ramin_en.pdf
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- <code>-v</code> or <code>--verbose</code> enables INFO level logging
+- For more detail: <code>cvgen --debug build --name ramin</code>
+- For errors only: <code>cvgen -q build --name ramin</code></p>
+<hr />
+<h2 id="3-multi-language-builds">3. Multi-Language Builds<a class="headerlink" href="#3-multi-language-builds" title="Permanent link">&para;</a></h2>
+<h3 id="31-generate-endefa-in-one-command">3.1 Generate EN/DE/FA in One Command<a class="headerlink" href="#31-generate-endefa-in-one-command" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Build all language variants for a multilingual profile.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- <code>output/pdf/ramin/en/ramin_en.pdf</code>
+- <code>output/pdf/ramin/de/ramin_de.pdf</code>
+- <code>output/pdf/ramin/fa/ramin_fa.pdf</code></p>
+<p><strong>Notes</strong>:
+- The generator automatically detects all language files for a profile
+- Expected file patterns: <code>ramin.json</code>, <code>ramin_de.json</code>, <code>ramin_fa.json</code>
+- Alternative: <code>ramin.en.json</code>, <code>ramin.de.json</code>, <code>ramin.fa.json</code></p>
+<hr />
+<h3 id="32-file-naming-conventions">3.2 File Naming Conventions<a class="headerlink" href="#32-file-naming-conventions" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Structure multilingual CV files correctly.</p>
+<p><strong>File Layout (Flat Structure)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>data/cvs/
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>├── ramin.json       # English (default)
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>├── ramin_de.json    # German
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>├── ramin_fa.json    # Persian
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>├── mahsa.json       # Another profile
+</code></pre></div></p>
+<p><strong>Alternative (i18n Structure)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>data/cvs/
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>└── i18n/
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    └── ramin/
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>        ├── cv.en.json
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>        ├── cv.de.json
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>        └── cv.fa.json
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Flat structure is simpler for single-person repos
+- i18n structure scales better for many profiles
+- Both patterns are auto-detected</p>
+<hr />
+<h3 id="33-language-specific-output">3.3 Language-Specific Output<a class="headerlink" href="#33-language-specific-output" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Find the correct output file for each language.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>ls<span class="w"> </span>-la<span class="w"> </span>output/pdf/ramin/*/
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>output/pdf/ramin/
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>├── en/
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>│   └── ramin_en.pdf
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>├── de/
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>│   └── ramin_de.pdf
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>└── fa/
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    └── ramin_fa.pdf
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Each language gets its own subdirectory
+- PDF naming: <code>&lt;profile&gt;_&lt;lang&gt;.pdf</code>
+- Persian (fa) uses RTL text direction</p>
+<hr />
+<h2 id="4-batch-build-multiple-profiles">4. Batch Build Multiple Profiles<a class="headerlink" href="#4-batch-build-multiple-profiles" title="Permanent link">&para;</a></h2>
+<h3 id="41-build-all-profiles">4.1 Build All Profiles<a class="headerlink" href="#41-build-all-profiles" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Generate PDFs for everyone in the data directory.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>cvgen<span class="w"> </span>build
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- <code>output/pdf/ramin/en/ramin_en.pdf</code>
+- <code>output/pdf/ramin/de/ramin_de.pdf</code>
+- <code>output/pdf/mahsa/en/mahsa_en.pdf</code>
+- (all profiles × all languages)</p>
+<p><strong>Notes</strong>:
+- Processes every <code>.json</code> file in <code>data/cvs/</code>
+- Failed builds are reported but don't stop the batch
+- Use <code>-v</code> to track progress: <code>cvgen -v build</code></p>
+<hr />
+<h3 id="42-custom-input-directory">4.2 Custom Input Directory<a class="headerlink" href="#42-custom-input-directory" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Build from a folder of profiles outside the default location.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--input-dir<span class="w"> </span>&lt;PATH&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--input-dir<span class="w"> </span>/home/user/my_cvs
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- All <code>.json</code> files from the custom directory are processed
+- PDFs written to default <code>output/</code> (or specify <code>--output-dir</code>)</p>
+<p><strong>Notes</strong>:
+- Path can be absolute or relative
+- Directory must contain valid CV JSON files
+- Combine with <code>--name</code> to filter: <code>--input-dir /path --name jane</code></p>
+<hr />
+<h3 id="43-dry-run-no-pdf-compilation">4.3 Dry Run (No PDF Compilation)<a class="headerlink" href="#43-dry-run-no-pdf-compilation" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Test template rendering without running XeLaTeX.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--dry-run
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- Templates are rendered to <code>.tex</code> files
+- XeLaTeX compilation is skipped
+- LaTeX sources preserved in <code>output/latex/</code></p>
+<p><strong>Notes</strong>:
+- Useful for debugging template issues
+- Faster than full builds for testing changes
+- Combine with <code>--keep-latex</code> for inspection</p>
+<hr />
+<h3 id="44-parallel-processing-note">4.4 Parallel Processing Note<a class="headerlink" href="#44-parallel-processing-note" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Speed up batch builds.</p>
+<p><strong>Notes</strong>:
+- Currently, profiles are processed sequentially
+- For parallel builds, run multiple <code>cvgen</code> instances:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Example: parallel build with xargs</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>ls<span class="w"> </span>data/cvs/*.json<span class="w"> </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>-I<span class="o">{}</span><span class="w"> </span>basename<span class="w"> </span><span class="o">{}</span><span class="w"> </span>.json<span class="w"> </span><span class="p">|</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span>xargs<span class="w"> </span>-P4<span class="w"> </span>-I<span class="o">{}</span><span class="w"> </span>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span><span class="o">{}</span>
+</code></pre></div>
+<ul>
+<li>Each <code>cvgen</code> invocation handles one profile</li>
+<li>Ensure output directories don't conflict</li>
+</ul>
+<hr />
+<h2 id="5-validate-ensure">5. Validate / Ensure<a class="headerlink" href="#5-validate-ensure" title="Permanent link">&para;</a></h2>
+<h3 id="51-run-ensure-across-endefa">5.1 Run Ensure Across EN/DE/FA<a class="headerlink" href="#51-run-ensure-across-endefa" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Check that all language versions have consistent structure.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong> (all consistent):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>✓ All language files are consistent!
+</code></pre></div></p>
+<p><strong>What you get</strong> (issues found):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Found 3 issue(s):
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>=== Missing Keys/Paths ===
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>  [de] education[2] (hint: List item at index 2 missing in de version)
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>=== Extra Keys/Paths ===
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>  [fa] skills.Soft Skills.Management (hint: Unexpected key &#39;Management&#39; - not a known translation)
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>Summary: 1 missing, 1 extra, 0 schema errors, 0 mapping issues
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Exit code 0 = consistent, exit code 2 = mismatches found
+- English (en) is the canonical/reference version
+- Use in CI to catch translation drift</p>
+<hr />
+<h3 id="52-validate-specific-languages">5.2 Validate Specific Languages<a class="headerlink" href="#52-validate-specific-languages" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Check only English and German versions.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--langs<span class="w"> </span>en,de
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--langs<span class="w"> </span>en,de
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- Comparison between <code>ramin.json</code> (en) and <code>ramin_de.json</code> (de)
+- Persian file is ignored</p>
+<p><strong>Notes</strong>:
+- First language in the list is the canonical reference
+- Useful when not all translations are ready
+- Languages: <code>en</code>, <code>de</code>, <code>fa</code> supported by default</p>
+<hr />
+<h3 id="53-json-output-for-scripting">5.3 JSON Output for Scripting<a class="headerlink" href="#53-json-output-for-scripting" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Get machine-readable validation results.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--format<span class="w"> </span>json
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--format<span class="w"> </span>json
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="p">{</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="nt">&quot;missing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span><span class="nt">&quot;extra&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">  </span><span class="nt">&quot;mapping_missing&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="nt">&quot;schema_key_errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">  </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">    </span><span class="nt">&quot;total_issues&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">    </span><span class="nt">&quot;missing_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">    </span><span class="nt">&quot;extra_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">    </span><span class="nt">&quot;mapping_missing_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="w">    </span><span class="nt">&quot;schema_key_errors_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Pipe to <code>jq</code> for processing: <code>cvgen ensure --name ramin -f json | jq .summary</code>
+- Integrate with CI/CD pipelines
+- Check exit code: <code>if cvgen ensure --name ramin; then echo "OK"; fi</code></p>
+<hr />
+<h3 id="54-using-custom-language-mapping">5.4 Using Custom Language Mapping<a class="headerlink" href="#54-using-custom-language-mapping" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Provide translations for skill headings.</p>
+<p><strong>Sample <code>lang.json</code></strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="p">{</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span><span class="nt">&quot;Technical Skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">    </span><span class="nt">&quot;de&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Technische Fähigkeiten&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="nt">&quot;fa&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;مهارت‌های فنی&quot;</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">  </span><span class="nt">&quot;Soft Skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="w">    </span><span class="nt">&quot;de&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Soft Skills&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="w">    </span><span class="nt">&quot;fa&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;مهارت‌های نرم&quot;</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="w">  </span><span class="nt">&quot;Programming&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="w">    </span><span class="nt">&quot;de&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Programmierung&quot;</span><span class="p">,</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="w">    </span><span class="nt">&quot;fa&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;برنامه‌نویسی&quot;</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--lang-map<span class="w"> </span>&lt;PATH&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>cvgen<span class="w"> </span>ensure<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--lang-map<span class="w"> </span>data/cvs/lang.json
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Maps English skill headings to translations
+- Without mapping, keys must match exactly across languages
+- Default mapping at <code>src/cv_generator/lang_engine/lang.json</code></p>
+<hr />
+<h2 id="6-template-customization">6. Template Customization<a class="headerlink" href="#6-template-customization" title="Permanent link">&para;</a></h2>
+<h3 id="61-custom-templates-directory">6.1 Custom Templates Directory<a class="headerlink" href="#61-custom-templates-directory" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Use modified templates for a specific build.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--templates-dir<span class="w"> </span>&lt;PATH&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="c1"># Copy default templates</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>cp<span class="w"> </span>-r<span class="w"> </span>templates/<span class="w"> </span>my_templates/
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="c1"># Modify as needed</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>nano<span class="w"> </span>my_templates/header.tex
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="c1"># Build with custom templates</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--templates-dir<span class="w"> </span>my_templates
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- PDF generated using custom templates
+- Default templates remain unchanged</p>
+<p><strong>Notes</strong>:
+- Template directory must contain <code>layout.tex</code> and section files
+- Uses custom Jinja2 delimiters to avoid LaTeX conflicts: <code>&lt;VAR&gt;</code>, <code>&lt;BLOCK&gt;</code>, <code>/*/*/*...*/*/*/</code>
+- See <code>cvgen help templates</code> for syntax details</p>
+<hr />
+<h3 id="62-template-structure">6.2 Template Structure<a class="headerlink" href="#62-template-structure" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Understand which files to modify.</p>
+<p><strong>Template Files</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>templates/
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>├── layout.tex        # Main document structure
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>├── header.tex        # Personal info + social links
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a>├── education.tex     # Education section
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>├── experience.tex    # Work experience
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a>├── skills.tex        # Technical/soft skills
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>├── language.tex      # Language proficiencies
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a>├── projects.tex      # Projects
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a>├── certificates.tex  # Certifications
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a>├── publications.tex  # Academic publications
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a>└── references.tex    # References
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Each section file is optional; missing sections are skipped
+- Add new sections by creating <code>templates/newsection.tex</code>
+- Reference in <code>layout.tex</code>: <code>&lt;VAR&gt; newsection_section | default('') &lt;/VAR&gt;</code></p>
+<hr />
+<h3 id="63-jinja2-filters-available">6.3 Jinja2 Filters Available<a class="headerlink" href="#63-jinja2-filters-available" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Use template helpers for dynamic content.</p>
+<p><strong>Common Filters</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="c">%% Escape LaTeX special characters</span>
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>&lt;VAR&gt; text | latex<span class="nb">_</span>escape &lt;/VAR&gt;
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="c">%% Check if file exists</span>
+<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>&lt;BLOCK&gt; if OPT<span class="nb">_</span>NAME | find<span class="nb">_</span>pic &lt;/BLOCK&gt;
+<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a>  <span class="k">\photo</span><span class="nb">{</span>&lt;VAR&gt; OPT<span class="nb">_</span>NAME | get<span class="nb">_</span>pic &lt;/VAR&gt;<span class="nb">}</span>
+<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a>&lt;BLOCK&gt; endif &lt;/BLOCK&gt;
+<a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a>
+<a id="__codelineno-38-9" name="__codelineno-38-9" href="#__codelineno-38-9"></a><span class="c">%% Default value for optional fields</span>
+<a id="__codelineno-38-10" name="__codelineno-38-10" href="#__codelineno-38-10"></a>&lt;VAR&gt; optional<span class="nb">_</span>field | default(&#39;N/A&#39;) &lt;/VAR&gt;
+<a id="__codelineno-38-11" name="__codelineno-38-11" href="#__codelineno-38-11"></a>
+<a id="__codelineno-38-12" name="__codelineno-38-12" href="#__codelineno-38-12"></a><span class="c">%% Debug output (printed to console)</span>
+<a id="__codelineno-38-13" name="__codelineno-38-13" href="#__codelineno-38-13"></a>&lt;VAR&gt; skills | debug &lt;/VAR&gt;
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- <code>latex_escape</code>: escapes <code>#</code>, <code>%</code>, <code>_</code>, <code>&amp;</code>, <code>$</code>, <code>^</code>, <code>~</code>, <code>{</code>, <code>}</code>, <code>\</code>
+- <code>find_pic</code> / <code>get_pic</code>: profile photo helpers
+- <code>debug</code>: prints value during rendering (not in output)</p>
+<hr />
+<h2 id="7-images">7. Images<a class="headerlink" href="#7-images" title="Permanent link">&para;</a></h2>
+<h3 id="71-with-profile-photo">7.1 With Profile Photo<a class="headerlink" href="#71-with-profile-photo" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Add a profile picture to the CV.</p>
+<p><strong>Setup</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>data/cvs/ramin.json    # CV data
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>data/pics/ramin.jpg    # Profile photo (JPG format)
+</code></pre></div></p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- PDF with profile photo in the header
+- Photo is circular with Awesome-CV styling</p>
+<p><strong>Notes</strong>:
+- File names must match: <code>ramin.json</code> → <code>ramin.jpg</code>
+- Only JPG format is supported
+- Recommended size: 200×200 pixels or larger</p>
+<hr />
+<h3 id="72-missing-photo-behavior">7.2 Missing Photo Behavior<a class="headerlink" href="#72-missing-photo-behavior" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Build a CV when the profile photo doesn't exist.</p>
+<p><strong>Setup</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>data/cvs/jane.json    # CV data exists
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a># data/pics/jane.jpg  # Photo does NOT exist
+</code></pre></div></p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>jane
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- PDF generated successfully (no error)
+- Header renders without photo</p>
+<p><strong>Notes</strong>:
+- Missing photos are silently skipped
+- Use verbose mode to see photo detection: <code>cvgen -v build</code>
+- Template uses <code>find_pic</code> to check existence before rendering</p>
+<hr />
+<h3 id="73-fallback-profile-photo">7.3 Fallback Profile Photo<a class="headerlink" href="#73-fallback-profile-photo" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Use a default photo when individual photo is missing.</p>
+<p><strong>Setup</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a># Place a fallback photo at repo root
+<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a>profile_square.jpg
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- The <code>header.tex</code> template checks for <code>./profile_square.jpg</code> as fallback
+- This is only used if <code>data/pics/&lt;name&gt;.jpg</code> doesn't exist
+- Customize behavior by editing <code>templates/header.tex</code></p>
+<hr />
+<h2 id="8-keep-latex-artifacts">8. Keep LaTeX Artifacts<a class="headerlink" href="#8-keep-latex-artifacts" title="Permanent link">&para;</a></h2>
+<h3 id="81-keep-latex-source-files">8.1 Keep LaTeX Source Files<a class="headerlink" href="#81-keep-latex-source-files" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Preserve generated <code>.tex</code> files for debugging or manual editing.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--keep-latex
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--keep-latex
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>output/
+<a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>├── pdf/ramin/en/ramin_en.pdf
+<a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a>└── latex/
+<a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a>    └── ramin/
+<a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a>        └── en/
+<a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a>            ├── main.tex           # Combined document
+<a id="__codelineno-46-7" name="__codelineno-46-7" href="#__codelineno-46-7"></a>            └── sections/
+<a id="__codelineno-46-8" name="__codelineno-46-8" href="#__codelineno-46-8"></a>                ├── header.tex
+<a id="__codelineno-46-9" name="__codelineno-46-9" href="#__codelineno-46-9"></a>                ├── education.tex
+<a id="__codelineno-46-10" name="__codelineno-46-10" href="#__codelineno-46-10"></a>                ├── experience.tex
+<a id="__codelineno-46-11" name="__codelineno-46-11" href="#__codelineno-46-11"></a>                ├── skills.tex
+<a id="__codelineno-46-12" name="__codelineno-46-12" href="#__codelineno-46-12"></a>                └── ...
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Default behavior: LaTeX files are deleted after PDF compilation
+- Use <code>--keep-latex</code> or <code>-k</code> to preserve them
+- Useful for debugging compilation errors</p>
+<hr />
+<h3 id="82-inspect-latex-output">8.2 Inspect LaTeX Output<a class="headerlink" href="#82-inspect-latex-output" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Review the generated LaTeX before compilation.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="c1"># Generate without compiling</span>
+<a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--dry-run<span class="w"> </span>--keep-latex
+<a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a>
+<a id="__codelineno-47-4" name="__codelineno-47-4" href="#__codelineno-47-4"></a><span class="c1"># View the main document</span>
+<a id="__codelineno-47-5" name="__codelineno-47-5" href="#__codelineno-47-5"></a>cat<span class="w"> </span>output/latex/ramin/en/main.tex
+<a id="__codelineno-47-6" name="__codelineno-47-6" href="#__codelineno-47-6"></a>
+<a id="__codelineno-47-7" name="__codelineno-47-7" href="#__codelineno-47-7"></a><span class="c1"># Or open in editor</span>
+<a id="__codelineno-47-8" name="__codelineno-47-8" href="#__codelineno-47-8"></a>code<span class="w"> </span>output/latex/ramin/en/
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- Complete LaTeX document with all sections embedded
+- Individual section files in <code>sections/</code> subdirectory</p>
+<p><strong>Notes</strong>:
+- <code>--dry-run</code> skips XeLaTeX compilation
+- Combined with <code>--keep-latex</code>, allows template inspection
+- Edit and manually compile: <code>xelatex main.tex</code></p>
+<hr />
+<h3 id="83-latex-log-location">8.3 LaTeX Log Location<a class="headerlink" href="#83-latex-log-location" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Find compilation logs when PDF generation fails.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--keep-latex
+<a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a>cat<span class="w"> </span>output/latex/ramin/en/main.log
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+- Full XeLaTeX log with warnings and errors
+- Line numbers pointing to problematic LaTeX</p>
+<p><strong>Notes</strong>:
+- Log file is only preserved with <code>--keep-latex</code>
+- Search for "Error" or "!" to find issues
+- Also check <code>main.aux</code>, <code>main.out</code> for auxiliary files</p>
+<hr />
+<h2 id="9-troubleshooting-recipes">9. Troubleshooting Recipes<a class="headerlink" href="#9-troubleshooting-recipes" title="Permanent link">&para;</a></h2>
+<h3 id="91-latex-compile-error-finding-logs">9.1 LaTeX Compile Error: Finding Logs<a class="headerlink" href="#91-latex-compile-error-finding-logs" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: PDF generation fails with LaTeX errors.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="c1"># Run with keep-latex to preserve logs</span>
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>cvgen<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;<span class="w"> </span>--keep-latex
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a>
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="c1"># Find the log file</span>
+<a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a>cat<span class="w"> </span>output/latex/&lt;PROFILE&gt;/en/main.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A5<span class="w"> </span><span class="s2">&quot;^!&quot;</span>
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>! Missing $ inserted.
+<a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a>&lt;inserted text&gt;
+<a id="__codelineno-50-3" name="__codelineno-50-3" href="#__codelineno-50-3"></a>                $
+<a id="__codelineno-50-4" name="__codelineno-50-4" href="#__codelineno-50-4"></a>l.42 ...ogramming experience: 5+ years (C#, Python)
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Line number (l.42) helps locate the issue
+- Common causes: unescaped <code>#</code>, <code>%</code>, <code>_</code>, <code>&amp;</code>, <code>$</code>
+- Fix: use <code>| latex_escape</code> filter or escape in JSON</p>
+<hr />
+<h3 id="92-missing-fonts">9.2 Missing Fonts<a class="headerlink" href="#92-missing-fonts" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Font warnings in LaTeX output.</p>
+<p><strong>Symptom</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>LaTeX Font Warning: Font shape &#39;TU/Roboto&#39; undefined
+</code></pre></div></p>
+<p><strong>Solution</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="c1"># Linux</span>
+<a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>fonts-roboto<span class="w"> </span>fonts-font-awesome
+<a id="__codelineno-52-3" name="__codelineno-52-3" href="#__codelineno-52-3"></a>
+<a id="__codelineno-52-4" name="__codelineno-52-4" href="#__codelineno-52-4"></a><span class="c1"># macOS</span>
+<a id="__codelineno-52-5" name="__codelineno-52-5" href="#__codelineno-52-5"></a>brew<span class="w"> </span>install<span class="w"> </span>font-roboto<span class="w"> </span>font-source-sans-pro
+<a id="__codelineno-52-6" name="__codelineno-52-6" href="#__codelineno-52-6"></a>
+<a id="__codelineno-52-7" name="__codelineno-52-7" href="#__codelineno-52-7"></a><span class="c1"># Windows: Download from Google Fonts and install</span>
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Awesome-CV uses Roboto and Source Sans Pro fonts
+- Font Awesome for icons (optional)
+- After installing, rebuild: <code>cvgen build --name &lt;PROFILE&gt;</code></p>
+<hr />
+<h3 id="93-special-characters-in-json-needing-escaping">9.3 Special Characters in JSON Needing Escaping<a class="headerlink" href="#93-special-characters-in-json-needing-escaping" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Handle LaTeX special characters in your CV data.</p>
+<p><strong>Problematic JSON</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="p">{</span>
+<a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a><span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Improved performance by 50% using C# &amp; Python&quot;</span>
+<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Option 1: Escape in JSON</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="p">{</span>
+<a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Improved performance by 50\\% using C\\# \\&amp; Python&quot;</span>
+<a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Option 2: Template Filter (Preferred)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>&lt;VAR&gt; item.description | latex<span class="nb">_</span>escape &lt;/VAR&gt;
+</code></pre></div></p>
+<p><strong>LaTeX Special Characters</strong>:
+| Character | Escaped | Description |
+|-----------|---------|-------------|
+| <code>#</code> | <code>\#</code> | Hash |
+| <code>%</code> | <code>\%</code> | Percent |
+| <code>_</code> | <code>\_</code> | Underscore |
+| <code>&amp;</code> | <code>\&amp;</code> | Ampersand |
+| <code>$</code> | <code>\$</code> | Dollar |
+| <code>^</code> | <code>\^{}</code> | Caret |
+| <code>~</code> | <code>\textasciitilde{}</code> | Tilde |
+| <code>{</code> | <code>\{</code> | Left brace |
+| <code>}</code> | <code>\}</code> | Right brace |
+| <code>\</code> | <code>\textbackslash{}</code> | Backslash |</p>
+<p><strong>Notes</strong>:
+- Default templates already use <code>latex_escape</code> for most fields
+- Check <code>templates/*.tex</code> to verify filter usage
+- When in doubt, use the filter on any user-provided text</p>
+<hr />
+<h3 id="94-template-rendering-errors">9.4 Template Rendering Errors<a class="headerlink" href="#94-template-rendering-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Jinja2 template error during generation.</p>
+<p><strong>Symptom</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>jinja2.exceptions.UndefinedError: &#39;publications&#39; is undefined
+</code></pre></div></p>
+<p><strong>Command to Debug</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>cvgen<span class="w"> </span>--debug<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Solution Options</strong>:</p>
+<ol>
+<li>
+<p>Add the missing section to your JSON:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="p">{</span>
+<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a><span class="w">  </span><span class="nt">&quot;publications&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>Use default filter in template:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a>&lt;VAR&gt; publications | default([]) &lt;/VAR&gt;
+</code></pre></div></p>
+</li>
+<li>
+<p>Use conditional blocks:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a>&lt;BLOCK&gt; if publications is defined and publications|length &gt; 0 &lt;/BLOCK&gt;
+<a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a>  ...
+<a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a>&lt;BLOCK&gt; endif &lt;/BLOCK&gt;
+</code></pre></div></p>
+</li>
+</ol>
+<p><strong>Notes</strong>:
+- Templates use <code>StrictUndefined</code> to catch missing fields early
+- This is intentional to avoid silent failures
+- Check <code>data/cvs/ramin.json</code> for expected structure</p>
+<hr />
+<h3 id="95-windows-file-lock-issues">9.5 Windows File Lock Issues<a class="headerlink" href="#95-windows-file-lock-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: "Access is denied" when cleaning up output files.</p>
+<p><strong>Symptom</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a>PermissionError: [WinError 5] Access is denied: &#39;output\\latex\\ramin&#39;
+</code></pre></div></p>
+<p><strong>Solutions</strong>:
+1. Close any editors that have files open in <code>output/</code>
+2. Pause OneDrive or other cloud sync temporarily
+3. Run again (generator has automatic retry logic)</p>
+<p><strong>Command with verbose output</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a>cvgen<span class="w"> </span>-v<span class="w"> </span>build<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Generator uses <code>rmtree_reliable</code> with retries and backoff
+- Antivirus scanning can cause temporary locks
+- Consider excluding <code>output/</code> from real-time scanning</p>
+<hr />
+<h2 id="10-advanced-json-sqlite">10. Advanced: JSON ↔ SQLite<a class="headerlink" href="#10-advanced-json-sqlite" title="Permanent link">&para;</a></h2>
+<h3 id="101-initialize-the-database">10.1 Initialize the Database<a class="headerlink" href="#101-initialize-the-database" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Create a new SQLite database for CV management.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a>✅ Database initialized: data/db/cv.db
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Default location: <code>data/db/cv.db</code>
+- Use <code>--db &lt;PATH&gt;</code> for custom location
+- Use <code>--force</code> to recreate if exists</p>
+<hr />
+<h3 id="102-import-json-to-database">10.2 Import JSON to Database<a class="headerlink" href="#102-import-json-to-database" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Load CV JSON files into SQLite for querying and editing.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="c1"># Import all CVs</span>
+<a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import
+<a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a>
+<a id="__codelineno-65-4" name="__codelineno-65-4" href="#__codelineno-65-4"></a><span class="c1"># Import specific profile</span>
+<a id="__codelineno-65-5" name="__codelineno-65-5" href="#__codelineno-65-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import<span class="w"> </span>--name<span class="w"> </span>ramin
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a>📥 Import Results:
+<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a>   Files processed: 3
+<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a>   Total entries: 42
+<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a>   ✅ ramin.json: 14 entries
+<a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a>   ✅ ramin_de.json: 14 entries
+<a id="__codelineno-67-6" name="__codelineno-67-6" href="#__codelineno-67-6"></a>   ✅ ramin_fa.json: 14 entries
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Each CV section becomes database entries
+- Tags extracted from <code>type_key</code> fields
+- Use <code>--overwrite</code> to replace existing entries</p>
+<hr />
+<h3 id="103-list-database-contents">10.3 List Database Contents<a class="headerlink" href="#103-list-database-contents" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: See what's in the database.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a><span class="c1"># List all persons</span>
+<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>list
+<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a>
+<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="c1"># List all tags</span>
+<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>list<span class="w"> </span>--what<span class="w"> </span>tags
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-69-1" name="__codelineno-69-1" href="#__codelineno-69-1"></a>👥 Persons in database: 2
+<a id="__codelineno-69-2" name="__codelineno-69-2" href="#__codelineno-69-2"></a>   • ramin: 14 entries
+<a id="__codelineno-69-3" name="__codelineno-69-3" href="#__codelineno-69-3"></a>     Name: Ramin Yazdani
+<a id="__codelineno-69-4" name="__codelineno-69-4" href="#__codelineno-69-4"></a>   • ramin_de: 14 entries
+<a id="__codelineno-69-5" name="__codelineno-69-5" href="#__codelineno-69-5"></a>     Name: Ramin Yazdani
+<a id="__codelineno-69-6" name="__codelineno-69-6" href="#__codelineno-69-6"></a>
+<a id="__codelineno-69-7" name="__codelineno-69-7" href="#__codelineno-69-7"></a>🏷️  Tags in database: 8
+<a id="__codelineno-69-8" name="__codelineno-69-8" href="#__codelineno-69-8"></a>   • Academic: used 5 times
+<a id="__codelineno-69-9" name="__codelineno-69-9" href="#__codelineno-69-9"></a>   • Bioinformatics: used 3 times
+<a id="__codelineno-69-10" name="__codelineno-69-10" href="#__codelineno-69-10"></a>   • Full CV: used 10 times
+<a id="__codelineno-69-11" name="__codelineno-69-11" href="#__codelineno-69-11"></a>   ...
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Persons are stored by slug (profile name)
+- Tags come from <code>type_key</code> arrays in JSON
+- Use <code>--format json</code> for machine-readable output</p>
+<hr />
+<h3 id="104-edit-tags-web-ui">10.4 Edit Tags (Web UI)<a class="headerlink" href="#104-edit-tags-web-ui" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Manage tags using a web interface.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a> * Running on http://127.0.0.1:5000
+</code></pre></div></p>
+<p>Open in browser to:
+- View all entries by section
+- Add/remove tags on entries
+- Create new tags
+- Search and filter</p>
+<p><strong>Notes</strong>:
+- Requires database to be initialized and populated
+- Use <code>--port &lt;PORT&gt;</code> for custom port
+- Use <code>--host 0.0.0.0</code> for LAN access</p>
+<hr />
+<h3 id="105-export-database-to-json">10.5 Export Database to JSON<a class="headerlink" href="#105-export-database-to-json" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Export modified data back to JSON files.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="c1"># Export all persons</span>
+<a id="__codelineno-72-2" name="__codelineno-72-2" href="#__codelineno-72-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span>
+<a id="__codelineno-72-3" name="__codelineno-72-3" href="#__codelineno-72-3"></a>
+<a id="__codelineno-72-4" name="__codelineno-72-4" href="#__codelineno-72-4"></a><span class="c1"># Export specific profile</span>
+<a id="__codelineno-72-5" name="__codelineno-72-5" href="#__codelineno-72-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--name<span class="w"> </span>&lt;PROFILE&gt;
+<a id="__codelineno-72-6" name="__codelineno-72-6" href="#__codelineno-72-6"></a>
+<a id="__codelineno-72-7" name="__codelineno-72-7" href="#__codelineno-72-7"></a><span class="c1"># Export to custom directory</span>
+<a id="__codelineno-72-8" name="__codelineno-72-8" href="#__codelineno-72-8"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--output-dir<span class="w"> </span>&lt;PATH&gt;
+</code></pre></div></p>
+<p><strong>Example</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--name<span class="w"> </span>ramin<span class="w"> </span>--output-dir<span class="w"> </span>./exported
+</code></pre></div></p>
+<p><strong>What you get</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-74-1" name="__codelineno-74-1" href="#__codelineno-74-1"></a>📤 Export Results:
+<a id="__codelineno-74-2" name="__codelineno-74-2" href="#__codelineno-74-2"></a>   Files exported: 1
+<a id="__codelineno-74-3" name="__codelineno-74-3" href="#__codelineno-74-3"></a>   ✅ ramin.json
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Exports reconstruct JSON from database entries
+- Use <code>--format min</code> for minified JSON
+- Changes made via web UI are included</p>
+<hr />
+<h3 id="106-compare-json-with-database">10.6 Compare JSON with Database<a class="headerlink" href="#106-compare-json-with-database" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Check if JSON files match database exports.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-75-1" name="__codelineno-75-1" href="#__codelineno-75-1"></a>cvgen<span class="w"> </span>db<span class="w"> </span>diff
+</code></pre></div></p>
+<p><strong>What you get</strong> (no differences):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a>🔍 Diff Results:
+<a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a>   Files compared: 3
+<a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a>   Matches: 3
+<a id="__codelineno-76-4" name="__codelineno-76-4" href="#__codelineno-76-4"></a>   Mismatches: 0
+<a id="__codelineno-76-5" name="__codelineno-76-5" href="#__codelineno-76-5"></a>   ✅ ramin.json: Match
+<a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a>   ✅ ramin_de.json: Match
+<a id="__codelineno-76-7" name="__codelineno-76-7" href="#__codelineno-76-7"></a>   ✅ ramin_fa.json: Match
+</code></pre></div></p>
+<p><strong>What you get</strong> (with differences):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a>🔍 Diff Results:
+<a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a>   Files compared: 1
+<a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a>   Matches: 0
+<a id="__codelineno-77-4" name="__codelineno-77-4" href="#__codelineno-77-4"></a>   Mismatches: 1
+<a id="__codelineno-77-5" name="__codelineno-77-5" href="#__codelineno-77-5"></a>   ❌ ramin.json: 2 differences
+<a id="__codelineno-77-6" name="__codelineno-77-6" href="#__codelineno-77-6"></a>      - education[0].gpa: value_changed
+<a id="__codelineno-77-7" name="__codelineno-77-7" href="#__codelineno-77-7"></a>      - skills.Technical Skills.Programming[0].short_name: value_changed
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Use after editing via web UI to see changes
+- Exit code 2 if mismatches found
+- Use <code>--format json</code> for detailed diff output</p>
+<hr />
+<h3 id="107-complete-db-workflow">10.7 Complete DB Workflow<a class="headerlink" href="#107-complete-db-workflow" title="Permanent link">&para;</a></h3>
+<p><strong>Scenario</strong>: Full round-trip from JSON to database and back.</p>
+<p><strong>Command(s)</strong>:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-78-1" name="__codelineno-78-1" href="#__codelineno-78-1"></a><span class="c1"># 1. Initialize database</span>
+<a id="__codelineno-78-2" name="__codelineno-78-2" href="#__codelineno-78-2"></a>cvgen<span class="w"> </span>db<span class="w"> </span>init
+<a id="__codelineno-78-3" name="__codelineno-78-3" href="#__codelineno-78-3"></a>
+<a id="__codelineno-78-4" name="__codelineno-78-4" href="#__codelineno-78-4"></a><span class="c1"># 2. Import all CVs</span>
+<a id="__codelineno-78-5" name="__codelineno-78-5" href="#__codelineno-78-5"></a>cvgen<span class="w"> </span>db<span class="w"> </span>import
+<a id="__codelineno-78-6" name="__codelineno-78-6" href="#__codelineno-78-6"></a>
+<a id="__codelineno-78-7" name="__codelineno-78-7" href="#__codelineno-78-7"></a><span class="c1"># 3. Start web UI to edit tags</span>
+<a id="__codelineno-78-8" name="__codelineno-78-8" href="#__codelineno-78-8"></a>cvgen<span class="w"> </span>web<span class="w"> </span>tags
+<a id="__codelineno-78-9" name="__codelineno-78-9" href="#__codelineno-78-9"></a><span class="c1"># (make edits in browser, then Ctrl+C)</span>
+<a id="__codelineno-78-10" name="__codelineno-78-10" href="#__codelineno-78-10"></a>
+<a id="__codelineno-78-11" name="__codelineno-78-11" href="#__codelineno-78-11"></a><span class="c1"># 4. Check what changed</span>
+<a id="__codelineno-78-12" name="__codelineno-78-12" href="#__codelineno-78-12"></a>cvgen<span class="w"> </span>db<span class="w"> </span>diff
+<a id="__codelineno-78-13" name="__codelineno-78-13" href="#__codelineno-78-13"></a>
+<a id="__codelineno-78-14" name="__codelineno-78-14" href="#__codelineno-78-14"></a><span class="c1"># 5. Export back to JSON</span>
+<a id="__codelineno-78-15" name="__codelineno-78-15" href="#__codelineno-78-15"></a>cvgen<span class="w"> </span>db<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--output-dir<span class="w"> </span>data/cvs
+<a id="__codelineno-78-16" name="__codelineno-78-16" href="#__codelineno-78-16"></a>
+<a id="__codelineno-78-17" name="__codelineno-78-17" href="#__codelineno-78-17"></a><span class="c1"># 6. Rebuild PDFs with new data</span>
+<a id="__codelineno-78-18" name="__codelineno-78-18" href="#__codelineno-78-18"></a>cvgen<span class="w"> </span>build
+</code></pre></div></p>
+<p><strong>Notes</strong>:
+- Database stores structured entries with tags
+- Web UI provides visual tag management
+- Export preserves all data including tag changes
+- Use version control to track JSON changes</p>
+<hr />
+<h2 id="sample-json-snippet">Sample JSON Snippet<a class="headerlink" href="#sample-json-snippet" title="Permanent link">&para;</a></h2>
+<p>For reference, here's a minimal CV JSON structure:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-79-1" name="__codelineno-79-1" href="#__codelineno-79-1"></a><span class="p">{</span>
+<a id="__codelineno-79-2" name="__codelineno-79-2" href="#__codelineno-79-2"></a><span class="w">  </span><span class="nt">&quot;basics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="w">    </span><span class="nt">&quot;fname&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jane&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-4" name="__codelineno-79-4" href="#__codelineno-79-4"></a><span class="w">    </span><span class="nt">&quot;lname&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Doe&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-5" name="__codelineno-79-5" href="#__codelineno-79-5"></a><span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Software Engineer&quot;</span><span class="p">],</span>
+<a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="w">    </span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jane@example.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="w">    </span><span class="nt">&quot;phone&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;formatted&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;+1 555-0100&quot;</span><span class="p">},</span>
+<a id="__codelineno-79-8" name="__codelineno-79-8" href="#__codelineno-79-8"></a><span class="w">    </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="w">      </span><span class="nt">&quot;city&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;San Francisco&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="w">      </span><span class="nt">&quot;region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CA&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-11" name="__codelineno-79-11" href="#__codelineno-79-11"></a><span class="w">      </span><span class="nt">&quot;country&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;USA&quot;</span>
+<a id="__codelineno-79-12" name="__codelineno-79-12" href="#__codelineno-79-12"></a><span class="w">    </span><span class="p">}]</span>
+<a id="__codelineno-79-13" name="__codelineno-79-13" href="#__codelineno-79-13"></a><span class="w">  </span><span class="p">}],</span>
+<a id="__codelineno-79-14" name="__codelineno-79-14" href="#__codelineno-79-14"></a><span class="w">  </span><span class="nt">&quot;education&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-79-15" name="__codelineno-79-15" href="#__codelineno-79-15"></a><span class="w">    </span><span class="nt">&quot;studyType&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M.Sc.&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-16" name="__codelineno-79-16" href="#__codelineno-79-16"></a><span class="w">    </span><span class="nt">&quot;area&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Computer Science&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-17" name="__codelineno-79-17" href="#__codelineno-79-17"></a><span class="w">    </span><span class="nt">&quot;institution&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Stanford University&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-18" name="__codelineno-79-18" href="#__codelineno-79-18"></a><span class="w">    </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Stanford, CA&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-19" name="__codelineno-79-19" href="#__codelineno-79-19"></a><span class="w">    </span><span class="nt">&quot;startDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2018&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-20" name="__codelineno-79-20" href="#__codelineno-79-20"></a><span class="w">    </span><span class="nt">&quot;endDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2020&quot;</span>
+<a id="__codelineno-79-21" name="__codelineno-79-21" href="#__codelineno-79-21"></a><span class="w">  </span><span class="p">}],</span>
+<a id="__codelineno-79-22" name="__codelineno-79-22" href="#__codelineno-79-22"></a><span class="w">  </span><span class="nt">&quot;experiences&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-79-23" name="__codelineno-79-23" href="#__codelineno-79-23"></a><span class="w">    </span><span class="nt">&quot;institution&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Tech Corp&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-24" name="__codelineno-79-24" href="#__codelineno-79-24"></a><span class="w">    </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Senior Engineer&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-25" name="__codelineno-79-25" href="#__codelineno-79-25"></a><span class="w">    </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;San Francisco, CA&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-26" name="__codelineno-79-26" href="#__codelineno-79-26"></a><span class="w">    </span><span class="nt">&quot;duration&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2020 – Present&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-27" name="__codelineno-79-27" href="#__codelineno-79-27"></a><span class="w">    </span><span class="nt">&quot;primaryFocus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Backend development&quot;</span><span class="p">,</span>
+<a id="__codelineno-79-28" name="__codelineno-79-28" href="#__codelineno-79-28"></a><span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Built scalable microservices&quot;</span>
+<a id="__codelineno-79-29" name="__codelineno-79-29" href="#__codelineno-79-29"></a><span class="w">  </span><span class="p">}],</span>
+<a id="__codelineno-79-30" name="__codelineno-79-30" href="#__codelineno-79-30"></a><span class="w">  </span><span class="nt">&quot;skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-31" name="__codelineno-79-31" href="#__codelineno-79-31"></a><span class="w">    </span><span class="nt">&quot;Technical Skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-32" name="__codelineno-79-32" href="#__codelineno-79-32"></a><span class="w">      </span><span class="nt">&quot;Programming&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-79-33" name="__codelineno-79-33" href="#__codelineno-79-33"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;short_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;long_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python 3.x&quot;</span><span class="p">},</span>
+<a id="__codelineno-79-34" name="__codelineno-79-34" href="#__codelineno-79-34"></a><span class="w">        </span><span class="p">{</span><span class="nt">&quot;short_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Go&quot;</span><span class="p">}</span>
+<a id="__codelineno-79-35" name="__codelineno-79-35" href="#__codelineno-79-35"></a><span class="w">      </span><span class="p">]</span>
+<a id="__codelineno-79-36" name="__codelineno-79-36" href="#__codelineno-79-36"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-79-37" name="__codelineno-79-37" href="#__codelineno-79-37"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-79-38" name="__codelineno-79-38" href="#__codelineno-79-38"></a><span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="self-audit-checklist">Self-Audit Checklist<a class="headerlink" href="#self-audit-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>[x] Every example uses real commands/flags verified against CLI source</li>
+<li>[x] Output paths match the unified <code>output/pdf/&lt;profile&gt;/&lt;lang&gt;/</code> structure</li>
+<li>[x] Placeholders (<code>&lt;PROFILE&gt;</code>, <code>&lt;PATH&gt;</code>, <code>&lt;LANG&gt;</code>) are consistent</li>
+<li>[x] Each recipe follows the template: Scenario → Commands → What you get → Notes</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

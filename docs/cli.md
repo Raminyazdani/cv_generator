@@ -16,6 +16,53 @@ These options apply to all commands:
 
 ## Commands
 
+### init
+
+Create a new CV project with a minimal working structure.
+
+```bash
+cvgen init <path> [OPTIONS]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `<path>` | Directory where the project will be created |
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-p, --profile NAME` | Name for your CV profile (default: mycv) |
+| `-l, --lang LANG` | Language code: en, de, or fa (default: en) |
+| `-f, --force` | Overwrite existing files if directory is not empty |
+
+**Examples:**
+
+```bash
+# Create a new project
+cvgen init ./my-cv --profile jane
+
+# Create a German CV project
+cvgen init ./german-cv --profile hans --lang de
+
+# Overwrite an existing project
+cvgen init ./my-cv --force
+```
+
+**Generated Structure:**
+
+```
+<path>/
+├── cvs/
+│   └── <profile>.<lang>.json    # Your CV data (edit this!)
+├── output/                       # Build output directory
+├── cv_generator.toml             # Configuration file
+├── README.md                     # Next steps documentation
+└── .gitignore                    # Git ignore rules
+```
+
 ### build
 
 Generate PDF CVs from JSON files.

@@ -9,6 +9,8 @@ Provides the `cvgen` command with the following subcommands:
 - doctor: System health checks
 - profile: Manage CV profile selection
 - init: Create a new CV project scaffold
+- diff: Compare current vs previous TeX artifacts
+- clean: Clean output directories with backup support
 """
 
 import argparse
@@ -58,6 +60,8 @@ def build_command(args: argparse.Namespace) -> int:
     Returns:
         Exit code.
     """
+    from .report import BuildArtifact, BuildReport, write_build_report
+
     # Load config if available
     config = getattr(args, "_config", None)
     if config is None:
@@ -121,6 +125,9 @@ def build_command(args: argparse.Namespace) -> int:
     if incremental:
         logger.info("Incremental build enabled")
 
+    # Check for report mode
+    generate_report = getattr(args, "report", False)
+
     # Check for watch mode
     watch_mode = getattr(args, "watch", False)
     if watch_mode:
@@ -133,6 +140,16 @@ def build_command(args: argparse.Namespace) -> int:
             keep_latex=args.keep_latex,
             variant=variant,
         )
+
+    # Initialize build report if requested
+    report = None
+    if generate_report:
+        report = BuildReport(
+            dry_run=args.dry_run,
+            incremental=incremental,
+            variant=variant,
+        )
+        report.start()
 
     try:
         results = generate_all_cvs(
@@ -147,9 +164,17 @@ def build_command(args: argparse.Namespace) -> int:
         )
     except CVGeneratorError as e:
         logger.error(str(e))
+        if report:
+            report.add_error(str(e))
+            report.finish()
+            _write_report(report, output_dir)
         return e.exit_code
     except Exception as e:
         logger.exception(f"Unexpected error: {e}")
+        if report:
+            report.add_error(f"Unexpected error: {e}")
+            report.finish()
+            _write_report(report, output_dir)
         return EXIT_ERROR
 
     # Check results
@@ -160,6 +185,27 @@ def build_command(args: argparse.Namespace) -> int:
             logger.error("No CV files found")
         return EXIT_CONFIG_ERROR
 
+    # Populate report with results
+    if report:
+        for result in results:
+            artifact = BuildArtifact(
+                profile=result.name,
+                lang=result.lang,
+                pdf_path=str(result.pdf_path) if result.pdf_path else None,
+                tex_path=str(result.tex_path) if getattr(result, 'tex_path', None) else None,
+                success=result.success,
+                error=result.error,
+                skipped=getattr(result, 'skipped', False),
+            )
+            report.add_artifact(artifact)
+            if result.error:
+                report.add_error(f"{result.name}_{result.lang}: {result.error}")
+
+        report.finish()
+        report_paths = _write_report(report, output_dir)
+        if report_paths:
+            print(f"📊 Build report written to: {report_paths.get('json')}")
+
     # Report results
     failed = [r for r in results if not r.success]
     if failed:
@@ -168,6 +214,16 @@ def build_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
     return EXIT_SUCCESS
+
+
+def _write_report(report, output_dir: Optional[Path]) -> Optional[dict]:
+    """Helper to write build report."""
+    from .report import write_build_report
+    try:
+        return write_build_report(report, output_dir)
+    except Exception as e:
+        logger.error(f"Failed to write build report: {e}")
+        return None
 
 
 def _run_watch_mode(
@@ -1064,6 +1120,103 @@ def init_command(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
+def diff_command(args: argparse.Namespace) -> int:
+    """
+    Execute the diff command to compare current vs previous TeX artifacts.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .tex_diff import diff_command_handler
+
+    output_dir = Path(args.output_dir) if args.output_dir else None
+
+    report, output = diff_command_handler(
+        profile=args.name,
+        lang=args.lang,
+        output_root=output_dir,
+        format=args.format,
+    )
+
+    print(output)
+
+    # Return non-zero if there are changes (useful for CI)
+    if report.has_previous_build and (
+        report.files_changed > 0 or report.files_added > 0 or report.files_removed > 0
+    ):
+        return EXIT_ENSURE_ERROR
+
+    return EXIT_SUCCESS
+
+
+def clean_command(args: argparse.Namespace) -> int:
+    """
+    Execute the clean command to remove output directories.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .cleanup import clean_output_directory, list_backups
+
+    output_dir = Path(args.output_dir) if args.output_dir else None
+    backup = getattr(args, "backup", True)
+    yes = getattr(args, "yes", False)
+    verbose = getattr(args, "verbose", False)
+
+    # Parse output types
+    output_types = None
+    if args.type:
+        output_types = [t.strip() for t in args.type.split(",")]
+
+    # Handle list-backups action
+    if getattr(args, "list_backups", False):
+        backups = list_backups(output_dir)
+        if not backups:
+            print("No backups found.")
+        else:
+            print(f"\n📦 Backups ({len(backups)}):")
+            for backup_path in backups:
+                size_mb = backup_path.stat().st_size / (1024 * 1024)
+                print(f"   • {backup_path.name} ({size_mb:.2f} MB)")
+        return EXIT_SUCCESS
+
+    results = clean_output_directory(
+        output_types=output_types,
+        output_root=output_dir,
+        backup=backup,
+        yes=yes,
+        verbose=verbose,
+    )
+
+    # Report results
+    if results["cleaned"]:
+        print(f"\n🗑️ Cleaned {len(results['cleaned'])} directory(ies)")
+        for path in results["cleaned"]:
+            print(f"   • {path}")
+
+    if results["backups"]:
+        print(f"\n📦 Created {len(results['backups'])} backup(s)")
+        for path in results["backups"]:
+            print(f"   • {path}")
+
+    if results["skipped"]:
+        print(f"\nℹ️ Skipped {len(results['skipped'])} directory(ies)")
+
+    if results["failed"]:
+        print(f"\n❌ Failed to clean {len(results['failed'])} directory(ies)")
+        for item in results["failed"]:
+            print(f"   • {item['path']}: {item['error']}")
+        return EXIT_ERROR
+
+    return EXIT_SUCCESS
+
+
 # Extended help topics for 'cvgen help <topic>'
 HELP_TOPICS = {
     "build": """
@@ -1882,6 +2035,12 @@ def create_parser() -> argparse.ArgumentParser:
         dest="watch",
         help="Watch for file changes and rebuild automatically"
     )
+    build_parser.add_argument(
+        "--report",
+        action="store_true",
+        dest="report",
+        help="Generate a build report in output/reports/"
+    )
 
     build_parser.set_defaults(func=build_command)
 
@@ -2373,6 +2532,81 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     doctor_parser.set_defaults(func=doctor_command)
+
+    # Diff command for comparing TeX artifacts
+    diff_parser = subparsers.add_parser(
+        "diff",
+        help="Compare current vs previous TeX artifacts",
+        description="Show differences between current and previous build outputs."
+    )
+    diff_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        required=True,
+        help="Profile name (e.g., 'ramin')"
+    )
+    diff_parser.add_argument(
+        "--lang", "-l",
+        type=str,
+        required=True,
+        help="Language code (e.g., 'en', 'de')"
+    )
+    diff_parser.add_argument(
+        "--output-dir", "-o",
+        type=str,
+        help="Output directory root (default: output)"
+    )
+    diff_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    diff_parser.set_defaults(func=diff_command)
+
+    # Clean command for removing output directories
+    clean_parser = subparsers.add_parser(
+        "clean",
+        help="Clean output directories with optional backup",
+        description="Remove generated output files with safety features."
+    )
+    clean_parser.add_argument(
+        "--type", "-t",
+        type=str,
+        help="Comma-separated output types to clean (pdf,latex,html,md). Default: all"
+    )
+    clean_parser.add_argument(
+        "--output-dir", "-o",
+        type=str,
+        help="Output directory root (default: output)"
+    )
+    clean_parser.add_argument(
+        "--backup",
+        action="store_true",
+        default=True,
+        dest="backup",
+        help="Create backup before cleaning (default: True)"
+    )
+    clean_parser.add_argument(
+        "--no-backup",
+        action="store_false",
+        dest="backup",
+        help="Skip backup creation"
+    )
+    clean_parser.add_argument(
+        "--yes", "-y",
+        action="store_true",
+        dest="yes",
+        help="Skip confirmation prompts (for CI use)"
+    )
+    clean_parser.add_argument(
+        "--list-backups",
+        action="store_true",
+        dest="list_backups",
+        help="List existing backups instead of cleaning"
+    )
+    clean_parser.set_defaults(func=clean_command)
 
     # Help command for extended help topics
     help_parser = subparsers.add_parser(

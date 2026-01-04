@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from cv_generator.ensure import (
+    EXIT_ENSURE_ERROR,
     EnsureIssue,
     EnsureReport,
     compare_cv_structure,
@@ -18,6 +19,7 @@ from cv_generator.ensure import (
     match_list_items,
     run_ensure,
 )
+from cv_generator.errors import EXIT_SUCCESS
 
 # Get fixtures directory
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -401,3 +403,221 @@ class TestEnsureCommand:
             assert "missing" in output
             assert "extra" in output
             assert "summary" in output
+
+
+class TestEnsureStrictMode:
+    """Tests for strict mode functionality."""
+
+    def test_strict_mode_returns_nonzero_on_mismatch(self):
+        """Test that --strict returns non-zero exit code on any mismatch."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "mismatch"
+        lang_map_path = fixture_dir / "lang.json"
+
+        if fixture_dir.exists():
+            result = main([
+                "ensure",
+                "--name", "mismatch",
+                "--langs", "en,de",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--strict",
+            ])
+
+            assert result == EXIT_ENSURE_ERROR
+
+    def test_strict_mode_returns_zero_on_valid(self):
+        """Test that --strict returns zero exit code when valid."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "ramin"
+        lang_map_path = fixture_dir / "lang.json"
+
+        if fixture_dir.exists():
+            result = main([
+                "ensure",
+                "--name", "ramin",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--strict",
+            ])
+
+            assert result == EXIT_SUCCESS
+
+
+class TestEnsureFixMode:
+    """Tests for fix mode functionality."""
+
+    def test_fix_creates_output_files(self, tmp_path):
+        """Test that --fix creates fixed output files."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "mismatch"
+        lang_map_path = fixture_dir / "lang.json"
+        fix_out = tmp_path / "fixed"
+
+        if fixture_dir.exists():
+            main([
+                "ensure",
+                "--name", "mismatch",
+                "--langs", "en,de",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--fix",
+                "--fix-out", str(fix_out),
+            ])
+
+            # Check fixed file was created
+            fixed_file = fix_out / "cv.de.json"
+            assert fixed_file.exists()
+
+            # Check fixed file is valid JSON
+            with open(fixed_file) as f:
+                fixed_data = json.load(f)
+
+            # Check that missing keys were added
+            assert "phone" in fixed_data["basics"][0]
+
+    def test_fix_refuses_data_path(self, tmp_path):
+        """Test that --fix refuses to write to data/ directory."""
+        from cv_generator.ensure import write_fixed_cvs, is_path_under_data
+
+        # Test the path detection
+        assert is_path_under_data(Path("data/cvs/fixed"))
+        assert is_path_under_data(Path("/path/to/data/cvs/"))
+        assert not is_path_under_data(Path("output/fixed"))
+        assert not is_path_under_data(Path(tmp_path))
+
+    def test_fix_preserves_existing_data(self, tmp_path):
+        """Test that --fix preserves existing data in target file."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "mismatch"
+        lang_map_path = fixture_dir / "lang.json"
+        fix_out = tmp_path / "fixed"
+
+        if fixture_dir.exists():
+            main([
+                "ensure",
+                "--name", "mismatch",
+                "--langs", "en,de",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--fix",
+                "--fix-out", str(fix_out),
+            ])
+
+            fixed_file = fix_out / "cv.de.json"
+            with open(fixed_file) as f:
+                fixed_data = json.load(f)
+
+            # Existing data should be preserved
+            assert fixed_data["basics"][0]["fname"] == "Test"
+            assert fixed_data["basics"][0]["email"] == "test@example.com"
+
+
+class TestEnsureReportOutput:
+    """Tests for report output functionality."""
+
+    def test_report_json_to_file(self, tmp_path):
+        """Test that --report-out writes report to file."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "mismatch"
+        lang_map_path = fixture_dir / "lang.json"
+        report_out = tmp_path / "reports" / "ensure.json"
+
+        if fixture_dir.exists():
+            main([
+                "ensure",
+                "--name", "mismatch",
+                "--langs", "en,de",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--report", "json",
+                "--report-out", str(report_out),
+            ])
+
+            # Check report file was created
+            assert report_out.exists()
+
+            # Check report is valid JSON
+            with open(report_out) as f:
+                report_data = json.load(f)
+
+            assert "summary" in report_data
+            assert "profile_name" in report_data
+            assert report_data["profile_name"] == "mismatch"
+
+    def test_report_includes_fixability(self, capsys):
+        """Test that report includes fixability information."""
+        from cv_generator.cli import main
+
+        fixture_dir = FIXTURES_DIR / "mismatch"
+        lang_map_path = fixture_dir / "lang.json"
+
+        if fixture_dir.exists():
+            main([
+                "ensure",
+                "--name", "mismatch",
+                "--langs", "en,de",
+                "--dir", str(fixture_dir),
+                "--lang-map", str(lang_map_path),
+                "--format", "json",
+            ])
+
+            captured = capsys.readouterr()
+            output = json.loads(captured.out)
+
+            assert "fixable_count" in output["summary"]
+            assert "non_fixable_count" in output["summary"]
+            assert output["summary"]["fixable_count"] >= 0
+
+
+class TestEnsureReportMetadata:
+    """Tests for report metadata fields."""
+
+    def test_report_includes_profile_name(self):
+        """Test that report includes profile name."""
+        report = run_ensure(
+            name="test_profile",
+            langs=["en", "de"],
+            cvs_dir=Path("/nonexistent"),
+        )
+
+        assert report.profile_name == "test_profile"
+
+    def test_report_includes_langs(self):
+        """Test that report includes languages."""
+        report = run_ensure(
+            name="test",
+            langs=["en", "de", "fa"],
+            cvs_dir=Path("/nonexistent"),
+        )
+
+        assert report.langs == ["en", "de", "fa"]
+
+    def test_report_includes_anchor_lang(self):
+        """Test that report includes anchor language."""
+        report = run_ensure(
+            name="test",
+            langs=["de", "en"],
+            cvs_dir=Path("/nonexistent"),
+        )
+
+        # Should use 'en' as anchor if present
+        assert report.anchor_lang == "en"
+
+    def test_report_dict_includes_metadata(self):
+        """Test that to_dict includes metadata."""
+        report = EnsureReport()
+        report.profile_name = "test"
+        report.langs = ["en", "de"]
+        report.anchor_lang = "en"
+
+        result = report.to_dict()
+
+        assert result["profile_name"] == "test"
+        assert result["langs"] == ["en", "de"]
+        assert result["anchor_lang"] == "en"

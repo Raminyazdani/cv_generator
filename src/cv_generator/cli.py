@@ -258,8 +258,10 @@ def ensure_command(args: argparse.Namespace) -> int:
         args: Parsed command-line arguments.
 
     Returns:
-        Exit code (0 if OK, 2 if mismatches found).
+        Exit code (0 if OK, 2 if mismatches found, non-zero in strict mode).
     """
+    from .ensure import write_fixed_cvs
+
     # Parse languages
     langs = [lang.strip() for lang in args.langs.split(",")]
 
@@ -294,28 +296,85 @@ def ensure_command(args: argparse.Namespace) -> int:
     logger.info(f"Languages: {', '.join(langs)}")
     if cvs_dir:
         logger.info(f"Input directory: {cvs_dir}")
+    if args.strict:
+        logger.info("Running in strict mode (any issue = failure)")
+    if args.fix:
+        fix_out = Path(args.fix_out) if args.fix_out else Path("output/fixed")
+        logger.info(f"Fix mode enabled, output to: {fix_out}")
 
-    try:
-        report = run_ensure(
-            name=args.name,
-            langs=langs,
-            cvs_dir=cvs_dir,
-            paths=paths,
-            lang_map=lang_map,
-            max_errors=args.max_errors,
-            fail_fast=args.fail_fast,
-        )
-    except Exception as e:
-        logger.exception(f"Error during ensure check: {e}")
-        return EXIT_ERROR
+    # Handle fix mode
+    if args.fix:
+        fix_out = Path(args.fix_out) if args.fix_out else Path("output/fixed")
+        try:
+            report, written_files = write_fixed_cvs(
+                name=args.name,
+                langs=langs,
+                fix_out=fix_out,
+                cvs_dir=cvs_dir,
+                paths=paths,
+                lang_map=lang_map,
+            )
+
+            # Report written files
+            if written_files:
+                print(f"\n✅ Fixed {len(written_files)} file(s):")
+                for lang, path in written_files.items():
+                    print(f"   {lang}: {path}")
+            else:
+                if report.is_valid:
+                    print("✓ No fixes needed - all files are consistent!")
+                else:
+                    print("⚠️  No files written (possibly no fixable issues)")
+
+        except ValueError as e:
+            # Safety check failed - trying to write to data/
+            logger.error(str(e))
+            print(f"❌ Error: {e}")
+            return EXIT_ERROR
+        except Exception as e:
+            logger.exception(f"Error during fix operation: {e}")
+            return EXIT_ERROR
+    else:
+        # Normal ensure mode
+        try:
+            report = run_ensure(
+                name=args.name,
+                langs=langs,
+                cvs_dir=cvs_dir,
+                paths=paths,
+                lang_map=lang_map,
+                max_errors=args.max_errors,
+                fail_fast=args.fail_fast,
+            )
+        except Exception as e:
+            logger.exception(f"Error during ensure check: {e}")
+            return EXIT_ERROR
 
     # Output the report
-    if args.format == "json":
-        print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    report_format = getattr(args, "report", None) or args.format
+
+    if report_format == "json":
+        report_content = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
+
+        # Write to file if --report-out specified
+        if args.report_out:
+            report_out_path = Path(args.report_out)
+            report_out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(report_out_path, "w", encoding="utf-8") as f:
+                f.write(report_content)
+                f.write("\n")
+            logger.info(f"Report written to: {report_out_path}")
+            print(f"📄 Report written to: {report_out_path}")
+        else:
+            print(report_content)
     else:
-        print(report.format_text())
+        # Text format
+        verbose = getattr(args, "verbose", False)
+        print(report.format_text(verbose=verbose))
 
     # Return appropriate exit code
+    # In both strict and non-strict mode, issues result in EXIT_ENSURE_ERROR
+    # The difference is documented: --strict is for CI to make the intent explicit
     if report.is_valid:
         return EXIT_SUCCESS
     else:
@@ -1067,6 +1126,11 @@ DESCRIPTION
     - No keys are missing or extra in any language
     - Skill headings are properly translated
 
+MODES
+    --strict            Fail with non-zero exit code on any mismatch (CI mode)
+    --fix               Generate corrected copies with missing keys filled in
+    --report json       Output machine-readable JSON report
+
 OPTIONS
     --name, -n NAME     Name of the person (required)
     --langs, -l LANGS   Comma-separated language codes (default: en,de,fa)
@@ -1076,6 +1140,16 @@ OPTIONS
     --lang-map          Path to language mapping file (lang.json)
     --fail-fast         Stop at first batch of errors
     --max-errors N      Maximum errors before stopping
+    --strict            Fail on ANY mismatch (for CI pipelines)
+    --fix               Generate corrected copies in --fix-out directory
+    --fix-out DIR       Output directory for fixed files (default: output/fixed)
+    --report FMT        Report format: text or json
+    --report-out FILE   Write JSON report to FILE (e.g., output/reports/ensure.json)
+
+SAFETY
+    The data/ directory is LOCKED. The --fix option can ONLY write to output/
+    or other non-data directories. Attempting to use --fix-out with a path
+    under data/ will result in an error.
 
 EXAMPLES
     # Check ramin's CV consistency across all languages
@@ -1087,9 +1161,21 @@ EXAMPLES
     # Output as JSON for programmatic use
     cvgen ensure --name ramin --format json
 
+    # Strict mode for CI (exit non-zero on any issue)
+    cvgen ensure --name ramin --strict
+
+    # Generate fixed copies (writes to output/fixed/)
+    cvgen ensure --name ramin --fix
+
+    # Generate fixed copies to a custom directory
+    cvgen ensure --name ramin --fix --fix-out output/my-fixes/
+
+    # Generate JSON report to file for CI
+    cvgen ensure --name ramin --report json --report-out output/reports/ensure.json
+
 EXIT CODES
     0  All languages are consistent
-    2  Mismatches found
+    2  Mismatches found (always in --strict mode, also in normal mode)
 """,
 
     "lint": """
@@ -1705,6 +1791,33 @@ def create_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Maximum number of errors before stopping"
+    )
+    ensure_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail with non-zero exit code on any mismatch (for CI use)"
+    )
+    ensure_parser.add_argument(
+        "--fix",
+        action="store_true",
+        help="Generate corrected copies of language variants (writes to --fix-out, never to data/)"
+    )
+    ensure_parser.add_argument(
+        "--fix-out",
+        type=str,
+        default="output/fixed",
+        help="Output directory for fixed files (default: output/fixed). Cannot be under data/."
+    )
+    ensure_parser.add_argument(
+        "--report",
+        type=str,
+        choices=["text", "json"],
+        help="Report format (overrides --format for report output)"
+    )
+    ensure_parser.add_argument(
+        "--report-out",
+        type=str,
+        help="Path to write JSON report file (e.g., output/reports/ensure.json)"
     )
 
     ensure_parser.set_defaults(func=ensure_command)

@@ -6,6 +6,7 @@ have consistent schema structure and properly translated content.
 """
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -20,10 +21,11 @@ class EnsureIssue:
 
     lang: str
     path: str
-    issue_type: str  # 'missing', 'extra', 'mapping_missing', 'schema_key_translated'
+    issue_type: str  # 'missing', 'extra', 'mapping_missing', 'schema_key_translated', 'type_mismatch'
     expected: Optional[str] = None
     found: Optional[str] = None
     hint: Optional[str] = None
+    fixable: bool = True  # Whether this issue can be auto-fixed
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON output."""
@@ -31,6 +33,7 @@ class EnsureIssue:
             "lang": self.lang,
             "path": self.path,
             "issue_type": self.issue_type,
+            "fixable": self.fixable,
         }
         if self.expected is not None:
             result["expected"] = self.expected
@@ -49,37 +52,76 @@ class EnsureReport:
     extra: List[EnsureIssue] = field(default_factory=list)
     mapping_missing: List[EnsureIssue] = field(default_factory=list)
     schema_key_errors: List[EnsureIssue] = field(default_factory=list)
+    type_mismatches: List[EnsureIssue] = field(default_factory=list)
+
+    # Metadata fields
+    profile_name: Optional[str] = None
+    langs: List[str] = field(default_factory=list)
+    anchor_lang: str = "en"
 
     @property
     def total_issues(self) -> int:
         """Total number of issues found."""
         return (len(self.missing) + len(self.extra) +
-                len(self.mapping_missing) + len(self.schema_key_errors))
+                len(self.mapping_missing) + len(self.schema_key_errors) +
+                len(self.type_mismatches))
 
     @property
     def is_valid(self) -> bool:
         """Returns True if no issues were found."""
         return self.total_issues == 0
 
+    @property
+    def fixable_count(self) -> int:
+        """Count of issues that can be auto-fixed."""
+        all_issues = (self.missing + self.extra + self.mapping_missing +
+                      self.schema_key_errors + self.type_mismatches)
+        return sum(1 for issue in all_issues if issue.fixable)
+
+    @property
+    def non_fixable_count(self) -> int:
+        """Count of issues that cannot be auto-fixed."""
+        return self.total_issues - self.fixable_count
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON output."""
-        return {
+        result: Dict[str, Any] = {
             "missing": [i.to_dict() for i in self.missing],
             "extra": [i.to_dict() for i in self.extra],
             "mapping_missing": [i.to_dict() for i in self.mapping_missing],
             "schema_key_errors": [i.to_dict() for i in self.schema_key_errors],
+            "type_mismatches": [i.to_dict() for i in self.type_mismatches],
             "summary": {
                 "total_issues": self.total_issues,
                 "missing_count": len(self.missing),
                 "extra_count": len(self.extra),
                 "mapping_missing_count": len(self.mapping_missing),
                 "schema_key_errors_count": len(self.schema_key_errors),
+                "type_mismatches_count": len(self.type_mismatches),
+                "fixable_count": self.fixable_count,
+                "non_fixable_count": self.non_fixable_count,
             }
         }
 
-    def format_text(self) -> str:
+        # Add metadata if present
+        if self.profile_name:
+            result["profile_name"] = self.profile_name
+        if self.langs:
+            result["langs"] = self.langs
+        result["anchor_lang"] = self.anchor_lang
+
+        return result
+
+    def format_text(self, verbose: bool = False) -> str:
         """Format report as human-readable text."""
         lines = []
+
+        # Header with metadata
+        if self.profile_name:
+            lines.append(f"Profile: {self.profile_name}")
+        if self.langs:
+            lines.append(f"Languages: {', '.join(self.langs)} (anchor: {self.anchor_lang})")
+            lines.append("")
 
         if self.is_valid:
             lines.append("✓ All language files are consistent!")
@@ -90,34 +132,50 @@ class EnsureReport:
         if self.missing:
             lines.append("=== Missing Keys/Paths ===")
             for issue in self.missing:
-                hint_str = f" (hint: {issue.hint})" if issue.hint else ""
-                lines.append(f"  [{issue.lang}] {issue.path}{hint_str}")
+                fix_str = " [fixable]" if issue.fixable else " [NOT fixable]"
+                hint_str = f" (hint: {issue.hint})" if issue.hint and verbose else ""
+                lines.append(f"  [{issue.lang}] {issue.path}{fix_str}{hint_str}")
             lines.append("")
 
         if self.extra:
             lines.append("=== Extra Keys/Paths ===")
             for issue in self.extra:
-                found_str = f" (found: {issue.found})" if issue.found else ""
-                lines.append(f"  [{issue.lang}] {issue.path}{found_str}")
+                fix_str = " [fixable]" if issue.fixable else " [NOT fixable]"
+                found_str = f" (found: {issue.found})" if issue.found and verbose else ""
+                lines.append(f"  [{issue.lang}] {issue.path}{fix_str}{found_str}")
+            lines.append("")
+
+        if self.type_mismatches:
+            lines.append("=== Type Mismatches ===")
+            for issue in self.type_mismatches:
+                fix_str = " [fixable]" if issue.fixable else " [NOT fixable]"
+                exp = issue.expected or ""
+                fnd = issue.found or ""
+                lines.append(f"  [{issue.lang}] {issue.path}: expected {exp}, found {fnd}{fix_str}")
             lines.append("")
 
         if self.schema_key_errors:
             lines.append("=== Schema Key Translation Errors ===")
             for issue in self.schema_key_errors:
+                fix_str = " [fixable]" if issue.fixable else " [NOT fixable]"
                 exp = issue.expected or ""
                 fnd = issue.found or ""
-                lines.append(f"  [{issue.lang}] {issue.path}: expected '{exp}', found '{fnd}'")
+                lines.append(f"  [{issue.lang}] {issue.path}: expected '{exp}', found '{fnd}'{fix_str}")
             lines.append("")
 
         if self.mapping_missing:
             lines.append("=== Missing Translation Mappings ===")
             for issue in self.mapping_missing:
-                lines.append(f"  [{issue.lang}] {issue.path}: {issue.hint}")
+                fix_str = " [fixable]" if issue.fixable else " [NOT fixable]"
+                hint_str = f": {issue.hint}" if issue.hint and verbose else ""
+                lines.append(f"  [{issue.lang}] {issue.path}{fix_str}{hint_str}")
             lines.append("")
 
         lines.append(f"Summary: {len(self.missing)} missing, {len(self.extra)} extra, "
+                    f"{len(self.type_mismatches)} type mismatches, "
                     f"{len(self.schema_key_errors)} schema errors, "
                     f"{len(self.mapping_missing)} mapping issues")
+        lines.append(f"Fixability: {self.fixable_count} fixable, {self.non_fixable_count} non-fixable")
 
         return "\n".join(lines)
 
@@ -393,13 +451,17 @@ def _compare_lists(
 
     # Check for extra items in other list
     matched_other_indices = {m[1] for m in matches if m[1] is not None}
+    # Check if this is within a skills section with translations
+    is_in_skills = path.startswith("skills") or "/skills" in path
     for other_idx in range(len(other_list)):
         if other_idx not in matched_other_indices:
             report.extra.append(EnsureIssue(
                 lang=lang,
                 path=f"{path}[{other_idx}]",
                 issue_type="extra",
-                hint=f"Extra list item at index {other_idx} in {lang} version"
+                hint=f"Extra list item at index {other_idx} in {lang} version",
+                # Extra items in skills with translations need manual fix
+                fixable=not is_in_skills,
             ))
 
 
@@ -521,7 +583,9 @@ def _compare_skills_headings(
             path=current_path,
             issue_type="extra",
             found=other_key,
-            hint=f"Unexpected key '{other_key}' - not a known translation"
+            hint=f"Unexpected key '{other_key}' - not a known translation",
+            # Skills with translations need manual fix
+            fixable=False,
         ))
 
 
@@ -646,18 +710,24 @@ def run_ensure(
     """
     report = EnsureReport()
 
+    # Set metadata
+    report.profile_name = name
+    report.langs = list(langs)
+
     # Find CV files
     cv_files = find_cv_files(name, langs, cvs_dir, paths)
 
     # Determine canonical language (should be 'en' or first in list)
     canonical_lang = "en" if "en" in langs else langs[0]
+    report.anchor_lang = canonical_lang
 
     if canonical_lang not in cv_files:
         report.missing.append(EnsureIssue(
             lang=canonical_lang,
             path="",
             issue_type="missing",
-            hint=f"Canonical ({canonical_lang}) CV file not found for '{name}'"
+            hint=f"Canonical ({canonical_lang}) CV file not found for '{name}'",
+            fixable=False,  # Cannot fix missing anchor
         ))
         return report
 
@@ -681,7 +751,8 @@ def run_ensure(
                 lang=lang,
                 path="",
                 issue_type="missing",
-                hint=f"CV file not found for language '{lang}'"
+                hint=f"CV file not found for language '{lang}'",
+                fixable=False,  # Cannot fix missing file without template
             ))
             continue
 
@@ -696,3 +767,340 @@ def run_ensure(
         )
 
     return report
+
+
+def is_path_under_data(path: Path) -> bool:
+    """
+    Check if a path is under the data/ directory.
+
+    Args:
+        path: Path to check
+
+    Returns:
+        True if path is under data/, False otherwise
+    """
+    try:
+        resolved = path.resolve()
+        resolved_str = str(resolved)
+
+        # Check if path contains /data/cvs, /data/db, or /data/pics patterns
+        # These are the protected directories in the project structure
+        protected_patterns = [
+            "/data/cvs",
+            "/data/db",
+            "/data/pics",
+            "\\data\\cvs",  # Windows paths
+            "\\data\\db",
+            "\\data\\pics",
+        ]
+
+        for pattern in protected_patterns:
+            if pattern in resolved_str:
+                return True
+
+        # Also check if the path starts with 'data/' (relative path case)
+        path_str = str(path)
+        if path_str.startswith("data/") or path_str.startswith("data\\"):
+            # Check for protected subdirectories
+            for subdir in ("cvs", "db", "pics"):
+                if path_str.startswith(f"data/{subdir}") or path_str.startswith(f"data\\{subdir}"):
+                    return True
+
+        return False
+    except (OSError, ValueError):
+        return False
+
+
+def get_placeholder_value(value: Any) -> Any:
+    """
+    Get a placeholder value that matches the type of the original.
+
+    Args:
+        value: Original value to match type
+
+    Returns:
+        Placeholder value of the same type
+    """
+    if isinstance(value, str):
+        return ""
+    elif isinstance(value, bool):
+        return False
+    elif isinstance(value, int):
+        return 0
+    elif isinstance(value, float):
+        return 0.0
+    elif isinstance(value, list):
+        return []
+    elif isinstance(value, dict):
+        return {}
+    else:
+        return None
+
+
+def apply_fixes(
+    anchor_data: Dict[str, Any],
+    target_data: Dict[str, Any],
+    report: EnsureReport,
+    lang: str,
+) -> Dict[str, Any]:
+    """
+    Apply fixes to a target language CV based on the anchor and report.
+
+    This function only fixes issues that are marked as fixable:
+    - Missing keys: Add with empty/neutral placeholders
+    - Extra keys: Remove them (they are not in anchor)
+
+    Type mismatches are NOT auto-fixed as they require human judgment.
+
+    Args:
+        anchor_data: The anchor (canonical) CV data
+        target_data: The target language CV data to fix
+        report: The ensure report with issues
+        lang: The language being fixed
+
+    Returns:
+        Fixed copy of target_data
+    """
+    import copy
+    fixed = copy.deepcopy(target_data)
+
+    # Collect issues for this language
+    lang_missing = [i for i in report.missing if i.lang == lang and i.fixable]
+    lang_extra = [i for i in report.extra if i.lang == lang and i.fixable]
+
+    # Apply missing key fixes by adding placeholders
+    for issue in lang_missing:
+        if not issue.path:
+            continue  # Skip file-level missing
+        _add_missing_path(fixed, anchor_data, issue.path)
+
+    # Apply extra key fixes by removing them
+    for issue in lang_extra:
+        if not issue.path:
+            continue
+        _remove_extra_path(fixed, issue.path)
+
+    return fixed
+
+
+def _parse_path(path: str) -> List[str]:
+    """Parse a JSONPath-like path into components."""
+    components: List[str] = []
+    current = ""
+    i = 0
+    while i < len(path):
+        c = path[i]
+        if c == ".":
+            if current:
+                components.append(current)
+                current = ""
+        elif c == "[":
+            if current:
+                components.append(current)
+                current = ""
+            # Find closing bracket
+            j = i + 1
+            while j < len(path) and path[j] != "]":
+                j += 1
+            components.append(f"[{path[i+1:j]}]")
+            i = j
+        else:
+            current += c
+        i += 1
+    if current:
+        components.append(current)
+    return components
+
+
+def _get_value_at_path(data: Any, path: str) -> Any:
+    """Get value at a given path in the data structure."""
+    if not path:
+        return data
+    components = _parse_path(path)
+    current = data
+    for comp in components:
+        if comp.startswith("[") and comp.endswith("]"):
+            idx = int(comp[1:-1])
+            if isinstance(current, list) and 0 <= idx < len(current):
+                current = current[idx]
+            else:
+                return None
+        elif isinstance(current, dict):
+            if comp in current:
+                current = current[comp]
+            else:
+                return None
+        else:
+            return None
+    return current
+
+
+def _add_missing_path(target: Any, anchor: Any, path: str) -> None:
+    """Add a missing path to target using anchor as template."""
+    components = _parse_path(path)
+    if not components:
+        return
+
+    # Navigate to parent in target, creating dicts as needed
+    current = target
+    anchor_current = anchor
+
+    for i, comp in enumerate(components[:-1]):
+        if comp.startswith("[") and comp.endswith("]"):
+            idx = int(comp[1:-1])
+            if isinstance(current, list) and 0 <= idx < len(current):
+                current = current[idx]
+            else:
+                return  # Can't navigate
+            if isinstance(anchor_current, list) and 0 <= idx < len(anchor_current):
+                anchor_current = anchor_current[idx]
+            else:
+                anchor_current = None
+        elif isinstance(current, dict):
+            if comp not in current:
+                current[comp] = {}
+            current = current[comp]
+            if isinstance(anchor_current, dict) and comp in anchor_current:
+                anchor_current = anchor_current[comp]
+            else:
+                anchor_current = None
+        else:
+            return
+
+    # Add the final component
+    final_comp = components[-1]
+    if final_comp.startswith("[") and final_comp.endswith("]"):
+        # Adding list item
+        idx = int(final_comp[1:-1])
+        if isinstance(current, list):
+            anchor_val = _get_value_at_path(anchor, path)
+            placeholder = get_placeholder_value(anchor_val)
+            while len(current) <= idx:
+                current.append(placeholder)
+    elif isinstance(current, dict):
+        anchor_val = _get_value_at_path(anchor, path)
+        current[final_comp] = get_placeholder_value(anchor_val)
+
+
+def _remove_extra_path(target: Any, path: str) -> None:
+    """Remove an extra path from target."""
+    components = _parse_path(path)
+    if not components:
+        return
+
+    # Navigate to parent
+    current = target
+    for comp in components[:-1]:
+        if comp.startswith("[") and comp.endswith("]"):
+            idx = int(comp[1:-1])
+            if isinstance(current, list) and 0 <= idx < len(current):
+                current = current[idx]
+            else:
+                return
+        elif isinstance(current, dict):
+            if comp in current:
+                current = current[comp]
+            else:
+                return
+        else:
+            return
+
+    # Remove the final component
+    final_comp = components[-1]
+    if final_comp.startswith("[") and final_comp.endswith("]"):
+        idx = int(final_comp[1:-1])
+        if isinstance(current, list) and 0 <= idx < len(current):
+            current.pop(idx)
+    elif isinstance(current, dict) and final_comp in current:
+        del current[final_comp]
+
+
+def write_fixed_cvs(
+    name: str,
+    langs: List[str],
+    fix_out: Path,
+    cvs_dir: Optional[Path] = None,
+    paths: Optional[Dict[str, Path]] = None,
+    lang_map: Optional[Dict[str, Dict[str, str]]] = None,
+) -> Tuple[EnsureReport, Dict[str, Path]]:
+    """
+    Generate fixed copies of CV files and write them to fix_out directory.
+
+    This function:
+    1. Runs ensure to get the report
+    2. Applies fixes to each language variant
+    3. Writes fixed copies to fix_out (NEVER to data/)
+
+    Args:
+        name: Person's name
+        langs: Languages to process
+        fix_out: Output directory for fixed files (must not be under data/)
+        cvs_dir: Base directory for CV files
+        paths: Optional explicit paths per language
+        lang_map: Optional language mapping
+
+    Returns:
+        Tuple of (EnsureReport, dict mapping lang to output path)
+
+    Raises:
+        ValueError: If fix_out is under data/ directory
+    """
+    # SAFETY CHECK: Ensure fix_out is not under data/
+    if is_path_under_data(fix_out):
+        raise ValueError(
+            f"Cannot write fixed files to '{fix_out}' - path is under data/ directory. "
+            "The data/ folder is LOCKED. Choose a path under output/ instead."
+        )
+
+    # Run ensure to get the report
+    report = run_ensure(
+        name=name,
+        langs=langs,
+        cvs_dir=cvs_dir,
+        paths=paths,
+        lang_map=lang_map,
+    )
+
+    # If no issues, no fixes needed
+    if report.is_valid:
+        return report, {}
+
+    # Find CV files
+    cv_files = find_cv_files(name, langs, cvs_dir, paths)
+    canonical_lang = report.anchor_lang
+
+    if canonical_lang not in cv_files:
+        return report, {}
+
+    # Load canonical data
+    with open(cv_files[canonical_lang], "r", encoding="utf-8") as f:
+        canonical_data = json.load(f)
+
+    # Create output directory
+    fix_out.mkdir(parents=True, exist_ok=True)
+
+    written_files: Dict[str, Path] = {}
+
+    for lang in langs:
+        if lang == canonical_lang:
+            continue  # Don't fix the anchor
+
+        if lang not in cv_files:
+            continue
+
+        # Load target data
+        with open(cv_files[lang], "r", encoding="utf-8") as f:
+            target_data = json.load(f)
+
+        # Apply fixes
+        fixed_data = apply_fixes(canonical_data, target_data, report, lang)
+
+        # Write fixed file
+        output_path = fix_out / f"cv.{lang}.json"
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(fixed_data, f, indent=2, ensure_ascii=False)
+            f.write("\n")  # Trailing newline
+
+        written_files[lang] = output_path
+
+    return report, written_files

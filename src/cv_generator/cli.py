@@ -60,7 +60,7 @@ def build_command(args: argparse.Namespace) -> int:
     Returns:
         Exit code.
     """
-    from .report import BuildArtifact, BuildReport, write_build_report
+    from .report import BuildArtifact, BuildReport
 
     # Load config if available
     config = getattr(args, "_config", None)
@@ -527,6 +527,180 @@ def lint_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         return EXIT_VALIDATION_ERROR
+
+
+def assets_check_command(args: argparse.Namespace) -> int:
+    """
+    Execute the assets check command.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .assets import check_assets
+    from .io import discover_cv_files, load_cv_json, parse_cv_filename
+
+    # Determine CVs directory
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    # Discover CV files
+    try:
+        cv_files = discover_cv_files(cvs_path=cvs_dir, name_filter=args.name)
+    except Exception as e:
+        logger.error(f"Error discovering CV files: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_CONFIG_ERROR
+
+    if not cv_files:
+        if args.name:
+            print(f"❌ No CV files found matching '{args.name}'")
+        else:
+            print("❌ No CV files found")
+        return EXIT_CONFIG_ERROR
+
+    logger.info(f"Checking assets in {len(cv_files)} CV file(s)")
+
+    # Check assets in each CV
+    all_valid = True
+    reports = []
+
+    for cv_file in cv_files:
+        profile_name, lang = parse_cv_filename(cv_file.name)
+
+        try:
+            cv_data = load_cv_json(cv_file)
+        except Exception as e:
+            logger.error(f"Error loading {cv_file.name}: {e}")
+            print(f"❌ Error loading {cv_file.name}: {e}")
+            continue
+
+        report = check_assets(cv_data, profile=profile_name, lang=lang)
+        reports.append(report)
+
+        if not report.is_valid:
+            all_valid = False
+
+    # Output results
+    if args.format == "json":
+        results = {
+            "files_checked": len(cv_files),
+            "all_valid": all_valid,
+            "reports": [r.to_dict() for r in reports],
+        }
+        print(json.dumps(results, indent=2, ensure_ascii=False))
+    else:
+        print("\n🔍 Asset Validation Results:")
+        print(f"   Files checked: {len(cv_files)}")
+        print()
+
+        for report in reports:
+            print(report.format_text(verbose=args.verbose))
+            print()
+
+    if all_valid:
+        return EXIT_SUCCESS
+    else:
+        return EXIT_VALIDATION_ERROR
+
+
+def assets_optimize_command(args: argparse.Namespace) -> int:
+    """
+    Execute the assets optimize command.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .assets import optimize_assets
+    from .io import discover_cv_files, load_cv_json
+
+    # Determine output directory
+    output_dir = Path(args.out)
+
+    # Determine CVs directory
+    cvs_dir = Path(args.input_dir) if args.input_dir else None
+
+    # Discover CV files
+    try:
+        cv_files = discover_cv_files(cvs_path=cvs_dir, name_filter=args.name)
+    except Exception as e:
+        logger.error(f"Error discovering CV files: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_CONFIG_ERROR
+
+    if not cv_files:
+        if args.name:
+            print(f"❌ No CV files found matching '{args.name}'")
+        else:
+            print("❌ No CV files found")
+        return EXIT_CONFIG_ERROR
+
+    logger.info(f"Optimizing assets from {len(cv_files)} CV file(s)")
+
+    # Process each CV
+    total_results = {
+        "processed": 0,
+        "optimized": 0,
+        "copied": 0,
+        "skipped": 0,
+        "errors": [],
+    }
+
+    for cv_file in cv_files:
+        try:
+            cv_data = load_cv_json(cv_file)
+        except Exception as e:
+            logger.error(f"Error loading {cv_file.name}: {e}")
+            continue
+
+        try:
+            results = optimize_assets(
+                cv_data=cv_data,
+                output_dir=output_dir,
+                max_width=args.max_width,
+                max_height=args.max_height,
+                quality=args.quality,
+            )
+
+            total_results["processed"] += results["processed"]
+            total_results["optimized"] += results["optimized"]
+            total_results["copied"] += results["copied"]
+            total_results["skipped"] += results["skipped"]
+            total_results["errors"].extend(results["errors"])
+
+        except ValueError as e:
+            # Safety check failed (trying to write to data/)
+            print(f"❌ Error: {e}")
+            return EXIT_CONFIG_ERROR
+        except Exception as e:
+            logger.error(f"Error optimizing assets: {e}")
+            total_results["errors"].append(str(e))
+
+    # Output results
+    if args.format == "json":
+        print(json.dumps(total_results, indent=2, ensure_ascii=False))
+    else:
+        print("\n📦 Asset Optimization Results:")
+        print(f"   Output directory: {output_dir}")
+        print(f"   Total processed: {total_results['processed']}")
+        print(f"   Optimized: {total_results['optimized']}")
+        print(f"   Copied (unchanged): {total_results['copied']}")
+        print(f"   Skipped: {total_results['skipped']}")
+
+        if total_results["errors"]:
+            print(f"\n⚠️  Errors ({len(total_results['errors'])}):")
+            for error in total_results["errors"][:5]:
+                print(f"   • {error}")
+            if len(total_results["errors"]) > 5:
+                print(f"   ... and {len(total_results['errors']) - 5} more")
+
+    if total_results["errors"]:
+        return EXIT_ERROR
+    return EXIT_SUCCESS
 
 
 def db_init_command(args: argparse.Namespace) -> int:
@@ -1670,6 +1844,78 @@ EXIT CODES
     2  One or more checks failed (unhealthy)
 """,
 
+    "assets": """
+cvgen assets — Asset validation and optimization
+
+SYNOPSIS
+    cvgen assets check [OPTIONS]
+    cvgen assets optimize --out <dir> [OPTIONS]
+
+DESCRIPTION
+    The assets command validates asset references (images, logos, certificates)
+    in CV JSON files and optionally optimizes images for faster LaTeX compilation.
+
+    This command is read-only for data/ and only writes to output/ or
+    user-specified directories.
+
+SUBCOMMANDS
+    check             Validate that all referenced assets exist
+    optimize          Copy and resize images to output directory
+
+CHECK OPTIONS
+    --name, -n NAME     Check only CVs matching this base name
+    --input-dir, -i     Directory containing CV JSON files (default: data/cvs)
+    --format, -f        Output format: text or json (default: text)
+
+OPTIMIZE OPTIONS
+    --out, -o DIR       Output directory for optimized assets
+                        (default: output/assets_optimized)
+    --name, -n NAME     Optimize only assets from CVs matching this name
+    --max-width N       Maximum width for resized images (default: 800)
+    --max-height N      Maximum height for resized images (default: 800)
+    --quality N         JPEG quality 1-100 (default: 85)
+    --format, -f        Output format: text or json (default: text)
+
+ASSET TYPES DETECTED
+    - Profile photos (basics[].Pictures[].URL)
+    - Institution logos (education[].logo_url)
+    - Certificates (workshop_and_certifications[].certifications[].URL)
+    - Reference letters (references[].URL)
+    - Language certifications (languages[].certifications[].URL)
+
+EXAMPLES
+    # Check all asset references
+    cvgen assets check
+
+    # Check assets for a specific profile
+    cvgen assets check --name ramin
+
+    # Optimize images for faster LaTeX compilation
+    cvgen assets optimize --out output/assets_optimized/
+
+    # Optimize with custom settings
+    cvgen assets optimize --max-width 600 --quality 90
+
+LOGO LIBRARY
+    A logo library can be configured at assets/logo_map.json with structure:
+
+    {
+      "mapping": {
+        "University of Berlin": "logos/berlin.png",
+        "MIT": "logos/mit.png"
+      },
+      "default": "logos/default.png"
+    }
+
+SAFETY
+    The optimize command NEVER writes to data/. If you try to specify an
+    output directory under data/, the command will refuse with an error.
+
+EXIT CODES
+    0  All assets valid / optimization successful
+    5  Asset validation errors found
+""",
+
     "profile": """
 cvgen profile — Manage CV profile selection
 
@@ -1858,6 +2104,7 @@ def help_command(args: argparse.Namespace) -> int:
         print("  export          Export CVs to HTML/Markdown")
         print("  ensure          Validate multilingual CV consistency")
         print("  lint            Validate CV JSON files against schema")
+        print("  assets          Asset validation and optimization")
         print("  doctor          System health checks")
         print("  profile         Manage CV profile selection")
         print("  config          Configuration file support")
@@ -1880,6 +2127,9 @@ def help_command(args: argparse.Namespace) -> int:
         "json": "json-schema",
         "scaffold": "init",
         "new": "init",
+        "asset": "assets",
+        "images": "assets",
+        "logos": "assets",
     }
     topic = topic_aliases.get(topic, topic)
 
@@ -1888,7 +2138,7 @@ def help_command(args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         print(f"Unknown help topic: '{topic}'")
-        print("\nAvailable topics: build, ensure, lint, doctor, languages, templates, json-schema, troubleshooting")
+        print("\nAvailable topics: build, ensure, lint, assets, doctor, languages, templates, json-schema, troubleshooting")
         return EXIT_ERROR
 
 
@@ -2177,6 +2427,95 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     lint_parser.set_defaults(func=lint_command)
+
+    # Assets command
+    assets_parser = subparsers.add_parser(
+        "assets",
+        help="Asset validation and optimization",
+        description="Validate asset references (images/logos) and optionally optimize images."
+    )
+
+    assets_subparsers = assets_parser.add_subparsers(
+        dest="assets_command",
+        title="assets commands",
+        description="Available asset commands"
+    )
+
+    # Assets check command
+    assets_check_parser = assets_subparsers.add_parser(
+        "check",
+        help="Validate asset references in CV files",
+        description="Check that all referenced images, logos, and files exist."
+    )
+    assets_check_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Check only CVs matching this base name (e.g., 'ramin')"
+    )
+    assets_check_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    assets_check_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    assets_check_parser.set_defaults(func=assets_check_command)
+
+    # Assets optimize command
+    assets_optimize_parser = assets_subparsers.add_parser(
+        "optimize",
+        help="Optimize images for faster LaTeX compilation",
+        description="Copy and resize images to an output directory. Never modifies data/."
+    )
+    assets_optimize_parser.add_argument(
+        "--out", "-o",
+        type=str,
+        default="output/assets_optimized",
+        help="Output directory for optimized assets (default: output/assets_optimized)"
+    )
+    assets_optimize_parser.add_argument(
+        "--name", "-n",
+        type=str,
+        help="Optimize only assets from CVs matching this base name"
+    )
+    assets_optimize_parser.add_argument(
+        "--input-dir", "-i",
+        type=str,
+        help="Input directory containing CV JSON files (default: data/cvs)"
+    )
+    assets_optimize_parser.add_argument(
+        "--max-width",
+        type=int,
+        default=800,
+        help="Maximum width for resized images (default: 800)"
+    )
+    assets_optimize_parser.add_argument(
+        "--max-height",
+        type=int,
+        default=800,
+        help="Maximum height for resized images (default: 800)"
+    )
+    assets_optimize_parser.add_argument(
+        "--quality",
+        type=int,
+        default=85,
+        help="JPEG quality 1-100 (default: 85)"
+    )
+    assets_optimize_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    assets_optimize_parser.set_defaults(func=assets_optimize_command)
+
+    assets_parser.set_defaults(func=lambda args: assets_parser.print_help() or EXIT_SUCCESS)
 
     # DB command
     db_parser = subparsers.add_parser(

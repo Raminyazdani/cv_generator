@@ -528,20 +528,15 @@ def _validate_tar_member_path(member_name: str) -> None:
     Raises:
         ValueError: If the path attempts path traversal.
     """
-    # Reject absolute paths
-    if member_name.startswith('/') or member_name.startswith('\\'):
+    # Normalize the path first to handle all cases consistently
+    safe_path = os.path.normpath(member_name)
+
+    # Reject absolute paths (cross-platform check)
+    if os.path.isabs(safe_path):
         logger.warning(f"Unsafe absolute path in archive: {member_name}")
         raise ValueError(f"Unsafe path in archive: {member_name}")
 
-    # Reject paths starting with ..
-    if member_name.startswith('..'):
-        logger.warning(f"Path traversal attempt in archive: {member_name}")
-        raise ValueError(f"Path traversal detected: {member_name}")
-
-    # Normalize and check for traversal after normalization
-    safe_path = os.path.normpath(member_name)
-
-    # After normalization, check if it still tries to escape
-    if safe_path.startswith('..') or os.path.isabs(safe_path):
-        logger.warning(f"Path traversal detected after normalization: {member_name}")
+    # Reject paths that try to escape the destination (after normalization)
+    if safe_path.startswith('..'):
+        logger.warning(f"Path traversal detected: {member_name}")
         raise ValueError(f"Path traversal detected: {member_name}")

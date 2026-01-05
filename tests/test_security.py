@@ -57,7 +57,8 @@ class TestTarfilePathTraversal:
         assert result is True
         # File should NOT be extracted to /etc/passwd (that would be a vulnerability!)
         assert not Path("/etc/passwd").read_text().startswith("test_data")
-        # File should be safely within the restore directory
+        # File should be safely within the restore directory's parent (destination.parent)
+        # restore_backup extracts to destination.parent, so files go to tmp_path/etc/passwd
         safe_path = tmp_path / "etc" / "passwd"
         assert safe_path.exists()
         assert safe_path.read_text().strip() == "test_data"

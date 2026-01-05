@@ -190,6 +190,114 @@ def render_layout(
     return rendered_layout
 
 
+def _filter_item_by_variant(item: Any, variant: str) -> Optional[Any]:
+    """
+    Filter a single item by variant (type_key).
+
+    Handles nested structures recursively. Items are included if:
+    - They have no type_key (universal)
+    - Their type_key matches the variant
+    - Their type_key list contains the variant
+
+    Args:
+        item: Item to filter (dict, list, or primitive).
+        variant: Variant name to filter by.
+
+    Returns:
+        Filtered item, or None if item should be excluded.
+    """
+    if item is None:
+        return None
+
+    # Handle primitives - always include
+    if not isinstance(item, (dict, list)):
+        return item
+
+    # Handle lists - filter each element recursively
+    if isinstance(item, list):
+        filtered_list = []
+        for element in item:
+            filtered_element = _filter_item_by_variant(element, variant)
+            if filtered_element is not None:
+                filtered_list.append(filtered_element)
+        return filtered_list if filtered_list else []
+
+    # Handle dicts - check type_key and filter nested structures
+    if isinstance(item, dict):
+        type_key = item.get("type_key")
+
+        # Check if this item should be included based on type_key
+        if type_key is not None:
+            # Has type_key - check if variant matches
+            if isinstance(type_key, list):
+                if variant not in type_key:
+                    return None  # Exclude this item
+            elif type_key != variant:
+                return None  # Exclude this item
+
+        # Item passes type_key check - now filter nested structures
+        filtered_dict = {}
+        for key, value in item.items():
+            if isinstance(value, list):
+                # Recursively filter list items
+                filtered_list = []
+                for element in value:
+                    filtered_element = _filter_item_by_variant(element, variant)
+                    if filtered_element is not None:
+                        filtered_list.append(filtered_element)
+                filtered_dict[key] = filtered_list
+            elif isinstance(value, dict) and key != 'type_key':
+                # Recursively filter nested dicts (like skill categories)
+                filtered_value = _filter_nested_dict(value, variant)
+                if filtered_value:  # Only include if non-empty
+                    filtered_dict[key] = filtered_value
+            else:
+                # Keep primitive values as-is
+                filtered_dict[key] = value
+
+        return filtered_dict
+
+    return item
+
+
+def _filter_nested_dict(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
+    """
+    Filter a nested dictionary structure by variant.
+
+    Used for skills section which has nested categories/subcategories.
+    Each level may contain items with type_key that need filtering.
+
+    Args:
+        data: Dictionary to filter (e.g., skills categories).
+        variant: Variant name to filter by.
+
+    Returns:
+        Filtered dictionary.
+    """
+    filtered = {}
+
+    for key, value in data.items():
+        if isinstance(value, list):
+            # List of items (like skill entries) - filter by type_key
+            filtered_list = []
+            for item in value:
+                filtered_item = _filter_item_by_variant(item, variant)
+                if filtered_item is not None:
+                    filtered_list.append(filtered_item)
+            # Always include the list (even if empty) to preserve structure
+            filtered[key] = filtered_list
+        elif isinstance(value, dict):
+            # Nested category - recurse
+            filtered_value = _filter_nested_dict(value, variant)
+            # Always include nested dict to preserve structure
+            filtered[key] = filtered_value
+        else:
+            # Primitive value - keep as-is
+            filtered[key] = value
+
+    return filtered
+
+
 def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
     """
     Filter CV data entries by variant (type_key).
@@ -197,6 +305,9 @@ def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
     This filters list sections (like experiences, education, etc.) to only
     include entries that have a matching type_key. Entries without type_key
     are always included (they are considered "universal").
+
+    Also handles nested structures like skills with categories/subcategories
+    that may contain items with type_key.
 
     Args:
         data: CV data dictionary.
@@ -211,8 +322,12 @@ def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
         "workshop_and_certifications", "references", "awards", "honors"
     ]
 
+    # Protected sections that should not be filtered
+    protected_sections = {'basics', 'profiles', 'languages', 'meta', 'metadata'}
+
     filtered = copy.deepcopy(data)
 
+    # Handle list sections
     for section in list_sections:
         if section not in filtered:
             continue
@@ -247,7 +362,33 @@ def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
                 f"(variant={variant})"
             )
 
+    # Handle skills section specially (nested structure)
+    if 'skills' in filtered and isinstance(filtered['skills'], dict):
+        original_skills = filtered['skills']
+        filtered_skills = _filter_nested_dict(original_skills, variant)
+        filtered['skills'] = filtered_skills
+
+        # Log if skills were filtered
+        original_count = _count_skill_items(original_skills)
+        filtered_count = _count_skill_items(filtered_skills)
+        if filtered_count < original_count:
+            logger.debug(
+                f"Filtered skills: {original_count} -> {filtered_count} items "
+                f"(variant={variant})"
+            )
+
     return filtered
+
+
+def _count_skill_items(skills_dict: Dict[str, Any]) -> int:
+    """Count total skill items in a nested skills dictionary."""
+    count = 0
+    for value in skills_dict.values():
+        if isinstance(value, list):
+            count += len(value)
+        elif isinstance(value, dict):
+            count += _count_skill_items(value)
+    return count
 
 
 def generate_cv(

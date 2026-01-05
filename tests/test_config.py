@@ -301,6 +301,91 @@ class TestVariantFiltering:
         assert filtered["basics"] == [{"fname": "Test"}]
         assert filtered["skills"] == {"Technical": {"Python": []}}
 
+    def test_filter_by_variant_nested_skills(self):
+        """Test variant filtering works on nested skills with type_key (F-010)."""
+        from cv_generator.generator import filter_by_variant
+
+        data = {
+            "basics": [{"fname": "Test"}],
+            "skills": {
+                "Programming & Scripting": {
+                    "Programming Languages": [
+                        {"long_name": "Python", "type_key": ["Full CV", "Programming"]},
+                        {"long_name": "JavaScript", "type_key": ["Full CV"]},
+                        {"long_name": "Rust", "type_key": ["Programming"]},
+                    ]
+                },
+                "Soft Skills": {
+                    "Core Soft Skills": [
+                        {"long_name": "Team Collaboration", "type_key": ["Full CV"]},
+                        {"long_name": "Leadership"},  # No type_key - universal
+                    ]
+                }
+            },
+        }
+
+        # Filter for "Programming" variant
+        filtered = filter_by_variant(data, "Programming")
+
+        # Should include Python and Rust (both have "Programming")
+        prog_langs = filtered["skills"]["Programming & Scripting"]["Programming Languages"]
+        assert len(prog_langs) == 2
+        assert prog_langs[0]["long_name"] == "Python"
+        assert prog_langs[1]["long_name"] == "Rust"
+
+        # Should include Leadership (no type_key) but not Team Collaboration
+        soft_skills = filtered["skills"]["Soft Skills"]["Core Soft Skills"]
+        assert len(soft_skills) == 1
+        assert soft_skills[0]["long_name"] == "Leadership"
+
+    def test_filter_by_variant_nested_skills_empty_result(self):
+        """Test variant filtering with no matching skills (F-010)."""
+        from cv_generator.generator import filter_by_variant
+
+        data = {
+            "basics": [{"fname": "Test"}],
+            "skills": {
+                "Technical": {
+                    "Languages": [
+                        {"long_name": "Python", "type_key": ["Academic"]},
+                    ]
+                }
+            },
+        }
+
+        # Filter for "Industry" variant - no skills match
+        filtered = filter_by_variant(data, "Industry")
+
+        # Structure should be preserved but list should be empty
+        assert "skills" in filtered
+        assert "Technical" in filtered["skills"]
+        assert "Languages" in filtered["skills"]["Technical"]
+        assert filtered["skills"]["Technical"]["Languages"] == []
+
+    def test_filter_by_variant_skills_universal_items(self):
+        """Test that skills without type_key are always included (F-010)."""
+        from cv_generator.generator import filter_by_variant
+
+        data = {
+            "basics": [{"fname": "Test"}],
+            "skills": {
+                "Technical": {
+                    "Languages": [
+                        {"long_name": "Python"},  # No type_key - universal
+                        {"long_name": "Java", "type_key": ["Enterprise"]},
+                    ]
+                }
+            },
+        }
+
+        # Filter for "Academic" variant
+        filtered = filter_by_variant(data, "Academic")
+
+        # Python should be included (no type_key), Java should be excluded
+        langs = filtered["skills"]["Technical"]["Languages"]
+        assert len(langs) == 1
+        assert langs[0]["long_name"] == "Python"
+
 
 class TestProfileCLI:
     """Tests for profile CLI commands."""

@@ -5,6 +5,7 @@ Provides functions for:
 - Discovering CV JSON files in a directory
 - Loading CV JSON data
 - Loading language translation maps
+- Language code validation
 """
 
 import json
@@ -18,6 +19,48 @@ from .paths import get_default_cvs_path, get_lang_engine_path
 
 logger = logging.getLogger(__name__)
 
+# ISO 639-1 two-letter language codes (common ones for CV generator)
+VALID_LANGUAGE_CODES = {
+    'en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'ru', 'zh', 'ja', 'ko',
+    'ar', 'he', 'fa', 'tr', 'pl', 'uk', 'cs', 'sv', 'da', 'no', 'fi',
+    'hu', 'ro', 'bg', 'hr', 'sr', 'sk', 'sl', 'et', 'lv', 'lt', 'el',
+    'hi', 'bn', 'ur', 'vi', 'th', 'id', 'ms', 'tl',
+}
+
+# ISO 639-2 three-letter codes (if needed)
+VALID_LANGUAGE_CODES_3LETTER = {
+    'eng', 'deu', 'fra', 'spa', 'ita', 'por', 'nld', 'rus', 'zho', 'jpn',
+    'kor', 'ara', 'heb', 'fas', 'tur', 'pol', 'ukr', 'ces', 'swe', 'dan',
+    'nor', 'fin', 'hun', 'ron', 'bul', 'hrv', 'srp', 'slk', 'slv', 'est',
+    'lav', 'lit', 'ell', 'hin', 'ben', 'urd', 'vie', 'tha', 'ind', 'msa',
+}
+
+
+def is_valid_language_code(code: str) -> bool:
+    """
+    Check if string is a valid ISO 639 language code.
+
+    Args:
+        code: Potential language code.
+
+    Returns:
+        True if valid language code.
+    """
+    if not code:
+        return False
+
+    code_lower = code.lower()
+
+    # Check 2-letter codes
+    if len(code) == 2:
+        return code_lower in VALID_LANGUAGE_CODES
+
+    # Check 3-letter codes
+    if len(code) == 3:
+        return code_lower in VALID_LANGUAGE_CODES_3LETTER
+
+    return False
+
 
 def parse_cv_filename(filename: str) -> Tuple[str, str]:
     """
@@ -27,6 +70,9 @@ def parse_cv_filename(filename: str) -> Tuple[str, str]:
     - name-<lang>.json (e.g., ramin-de.json)
     - name_<lang>.json (e.g., ramin_fa.json)
     - name.json (defaults to lang='en')
+
+    Note: Language suffix is only recognized if it's a valid ISO 639 code.
+    For example, john_doe.json returns (john_doe, en), not (john, doe).
 
     Args:
         filename: The CV filename to parse.
@@ -40,9 +86,17 @@ def parse_cv_filename(filename: str) -> Tuple[str, str]:
     # Pattern: name-lang or name_lang where lang is 2-3 lowercase letters
     match = re.match(r'^(.+?)[-_]([a-z]{2,3})$', name)
     if match:
-        return match.group(1), match.group(2)
+        potential_lang = match.group(2)
+        # Only treat as language code if it's a valid ISO 639 code
+        if is_valid_language_code(potential_lang):
+            return match.group(1), potential_lang
+        # Not a valid language code - treat full name as base name
+        logger.debug(
+            f"'{potential_lang}' is not a valid language code, "
+            f"treating '{name}' as full base name"
+        )
 
-    # No language suffix - default to English
+    # No valid language suffix - default to English
     return name, "en"
 
 
@@ -120,6 +174,13 @@ def validate_cv_data(data: Dict[str, Any], filename: str) -> bool:
     """
     Validate CV data structure.
 
+    Performs quick structural validation:
+    1. Checks that data is a dictionary
+    2. Checks for required 'basics' section
+    3. Validates that basics is a list/array (per schema)
+    4. Validates that list sections are actually lists
+    5. Validates that skills section is a dict if present
+
     Args:
         data: The CV data dictionary.
         filename: Name of the source file (for error messages).
@@ -127,8 +188,52 @@ def validate_cv_data(data: Dict[str, Any], filename: str) -> bool:
     Returns:
         True if valid, False if the CV should be skipped.
     """
+    # Check top-level type
+    if not isinstance(data, dict):
+        logger.warning(
+            f"Skipping {filename}: CV data must be a dictionary, "
+            f"got {type(data).__name__}"
+        )
+        return False
+
+    # Check for basics section
     if "basics" not in data:
         logger.warning(f"Skipping {filename}: missing 'basics' key (incompatible schema)")
+        return False
+
+    # Validate basics structure (schema expects an array)
+    basics = data["basics"]
+    if not isinstance(basics, list):
+        logger.warning(
+            f"Skipping {filename}: section 'basics' should be a list, "
+            f"got {type(basics).__name__}"
+        )
+        return False
+
+    if len(basics) == 0:
+        logger.warning(f"Skipping {filename}: section 'basics' is empty")
+        return False
+
+    # Check that list sections are actually lists
+    list_sections = [
+        'education', 'experiences', 'projects', 'publications',
+        'references', 'languages', 'workshop_and_certifications',
+        'awards', 'honors', 'profiles'
+    ]
+    for section in list_sections:
+        if section in data and not isinstance(data[section], list):
+            logger.warning(
+                f"Skipping {filename}: section '{section}' should be a list, "
+                f"got {type(data[section]).__name__}"
+            )
+            return False
+
+    # Check that skills is dict if present
+    if 'skills' in data and not isinstance(data['skills'], dict):
+        logger.warning(
+            f"Skipping {filename}: section 'skills' should be a dictionary, "
+            f"got {type(data['skills']).__name__}"
+        )
         return False
 
     return True

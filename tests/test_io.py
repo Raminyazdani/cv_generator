@@ -50,11 +50,34 @@ class TestParseCVFilename:
         assert lang == "eng"
 
     def test_name_with_underscore(self):
-        """Test parsing filename with underscore in the name."""
+        """Test parsing filename with underscore in the name.
+        
+        F-012 fix: 'doe' is not a valid ISO 639 language code,
+        so 'john_doe' is treated as the full base name.
+        """
         base_name, lang = parse_cv_filename("john_doe.json")
-        # This should treat "doe" as a language code (2-3 letters)
-        assert base_name == "john"
-        assert lang == "doe"
+        # "doe" is NOT a valid language code, so full name is base_name
+        assert base_name == "john_doe"
+        assert lang == "en"
+
+    def test_name_with_valid_language_suffix(self):
+        """Test parsing filename with valid language suffix after underscore."""
+        # "en" IS a valid language code
+        base_name, lang = parse_cv_filename("john_doe_en.json")
+        assert base_name == "john_doe"
+        assert lang == "en"
+
+        # "de" IS a valid language code
+        base_name, lang = parse_cv_filename("john_doe_de.json")
+        assert base_name == "john_doe"
+        assert lang == "de"
+
+    def test_invalid_suffix_treated_as_name(self):
+        """Test that invalid language codes are treated as part of the name."""
+        # "xyz" is not a valid ISO 639 code
+        base_name, lang = parse_cv_filename("person_xyz.json")
+        assert base_name == "person_xyz"
+        assert lang == "en"
 
 
 class TestDiscoverCVFiles:
@@ -130,6 +153,82 @@ class TestValidateCVData:
         """Test that CV without basics is invalid."""
         data = {"education": []}
         assert validate_cv_data(data, "test.json") is False
+
+    def test_basics_not_list(self):
+        """Test that CV with non-list basics is invalid (F-013)."""
+        data = {"basics": {"fname": "Test"}}  # dict instead of list
+        assert validate_cv_data(data, "test.json") is False
+
+    def test_empty_basics(self):
+        """Test that CV with empty basics list is invalid (F-013)."""
+        data = {"basics": []}
+        assert validate_cv_data(data, "test.json") is False
+
+    def test_invalid_top_level_type(self):
+        """Test that non-dict CV data is invalid (F-013)."""
+        data = [{"basics": [{"fname": "Test"}]}]  # list instead of dict
+        assert validate_cv_data(data, "test.json") is False
+
+    def test_list_section_not_list(self):
+        """Test that list sections must be lists (F-013)."""
+        data = {
+            "basics": [{"fname": "Test"}],
+            "education": {"school": "Test"}  # dict instead of list
+        }
+        assert validate_cv_data(data, "test.json") is False
+
+    def test_skills_must_be_dict(self):
+        """Test that skills section must be a dict (F-013)."""
+        data = {
+            "basics": [{"fname": "Test"}],
+            "skills": ["Python", "JavaScript"]  # list instead of dict
+        }
+        assert validate_cv_data(data, "test.json") is False
+
+    def test_valid_complete_cv(self):
+        """Test validation of a complete valid CV structure (F-013)."""
+        data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "education": [{"institution": "University"}],
+            "experiences": [{"role": "Developer"}],
+            "skills": {"Technical": {"Programming": []}},
+            "languages": [],
+            "projects": []
+        }
+        assert validate_cv_data(data, "test.json") is True
+
+
+class TestIsValidLanguageCode:
+    """Tests for is_valid_language_code function (F-012)."""
+
+    def test_valid_two_letter_codes(self):
+        """Test valid ISO 639-1 two-letter codes."""
+        from cv_generator.io import is_valid_language_code
+
+        assert is_valid_language_code("en") is True
+        assert is_valid_language_code("de") is True
+        assert is_valid_language_code("fr") is True
+        assert is_valid_language_code("fa") is True  # Persian
+        assert is_valid_language_code("ar") is True  # Arabic
+
+    def test_valid_three_letter_codes(self):
+        """Test valid ISO 639-2 three-letter codes."""
+        from cv_generator.io import is_valid_language_code
+
+        assert is_valid_language_code("eng") is True
+        assert is_valid_language_code("deu") is True
+        assert is_valid_language_code("fra") is True
+
+    def test_invalid_codes(self):
+        """Test that invalid codes are rejected."""
+        from cv_generator.io import is_valid_language_code
+
+        assert is_valid_language_code("doe") is False  # not a lang code
+        assert is_valid_language_code("xyz") is False
+        assert is_valid_language_code("ab") is False  # not in list
+        assert is_valid_language_code("abcd") is False  # 4 letters
+        assert is_valid_language_code("") is False
+        assert is_valid_language_code("1") is False
 
 
 class TestLoadLangMap:

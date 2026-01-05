@@ -13,6 +13,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tarfile
 import time
 import uuid
@@ -24,6 +25,31 @@ from .paths import get_repo_root
 
 logger = logging.getLogger(__name__)
 
+# Characters that could enable shell injection if passed to subprocess with shell=True
+DANGEROUS_PATH_CHARS = ['&', '|', ';', '$', '`', '<', '>', '(', ')', '\n', '\r']
+
+
+def validate_path_for_subprocess(path: Path) -> None:
+    """
+    Validate that a path doesn't contain dangerous characters for subprocess calls.
+
+    This prevents shell injection attacks when passing paths to subprocess.run().
+
+    Args:
+        path: Path to validate.
+
+    Raises:
+        ValueError: If path contains potentially dangerous characters.
+    """
+    path_str = str(path)
+    for char in DANGEROUS_PATH_CHARS:
+        if char in path_str:
+            logger.warning(f"Path contains dangerous character '{char}': {path_str}")
+            raise ValueError(
+                f"Path contains potentially dangerous characters: {path_str}. "
+                "Please rename the directory to remove special characters like & | ; $ ` < >"
+            )
+
 
 def _clear_readonly_windows(root: Path) -> None:
     """
@@ -31,16 +57,25 @@ def _clear_readonly_windows(root: Path) -> None:
 
     Args:
         root: Root directory to clear read-only attributes from.
+
+    Raises:
+        ValueError: If path contains potentially dangerous characters.
     """
     if os.name == "nt":
         try:
+            # Validate path before passing to subprocess to prevent injection
+            validate_path_for_subprocess(root)
+
+            logger.debug(f"Clearing Windows read-only attributes for {root}")
             subprocess.run(
                 ["attrib", "-R", str(root / "*"), "/S", "/D"],
                 check=False,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                shell=True,
+                shell=False,  # Security: Never use shell=True with user-controlled paths
             )
+        except ValueError:
+            raise  # Re-raise path validation errors
         except Exception:
             pass
 
@@ -404,7 +439,8 @@ def restore_backup(
         True if restoration was successful, False otherwise.
 
     Raises:
-        ValueError: If destination is under data/ directory.
+        ValueError: If destination is under data/ directory or archive contains
+                   path traversal attempts.
     """
     if is_data_path(destination):
         raise ValueError(
@@ -429,11 +465,78 @@ def restore_backup(
     try:
         destination.mkdir(parents=True, exist_ok=True)
         with tarfile.open(archive_path, "r:gz") as tar:
-            tar.extractall(destination.parent)
+            logger.info(f"Restoring backup from {archive_path}")
+            logger.debug(f"Validating {len(tar.getmembers())} archive members")
+
+            # Security: Use safe extraction with path traversal protection
+            _safe_extract_tar(tar, destination.parent)
+
         if verbose:
             print(f"✅ Restored: {archive_path} -> {destination}")
         return True
+    except ValueError:
+        # Re-raise path traversal errors for proper handling
+        raise
     except Exception as e:
         if verbose:
             print(f"❌ Error restoring backup: {e}")
         return False
+
+
+def _safe_extract_tar(tar: tarfile.TarFile, destination: Path) -> None:
+    """
+    Safely extract a tar archive with path traversal protection.
+
+    For Python 3.12+, uses the built-in 'data' filter.
+    For older versions, performs manual validation of all member paths.
+
+    Args:
+        tar: Open TarFile object.
+        destination: Destination directory for extraction.
+
+    Raises:
+        ValueError: If any member path attempts path traversal.
+    """
+    # Python 3.12+ has the filter parameter for safe extraction
+    if sys.version_info >= (3, 12):
+        logger.debug("Using Python 3.12+ tar filter='data' for safe extraction")
+        try:
+            tar.extractall(destination, filter='data')
+        except tarfile.OutsideDestinationError as e:
+            # Convert to ValueError for consistent error handling
+            logger.warning(f"Path traversal blocked: {e}")
+            raise ValueError(f"Path traversal detected: {e}") from e
+        except tarfile.FilterError as e:
+            # Catch other filter errors (e.g., AbsolutePathError, LinkOutsideDestinationError)
+            logger.warning(f"Unsafe archive content blocked: {e}")
+            raise ValueError(f"Unsafe path in archive: {e}") from e
+    else:
+        # Manual validation for Python < 3.12
+        logger.debug("Using manual path validation for safe extraction")
+        for member in tar.getmembers():
+            _validate_tar_member_path(member.name)
+            tar.extract(member, destination)
+
+
+def _validate_tar_member_path(member_name: str) -> None:
+    """
+    Validate that a tar member path is safe (no path traversal).
+
+    Args:
+        member_name: The member name/path from the tar archive.
+
+    Raises:
+        ValueError: If the path attempts path traversal.
+    """
+    # Normalize the path first to handle all cases consistently
+    safe_path = os.path.normpath(member_name)
+
+    # Reject absolute paths (cross-platform check)
+    if os.path.isabs(safe_path):
+        logger.warning(f"Unsafe absolute path in archive: {member_name}")
+        raise ValueError(f"Unsafe path in archive: {member_name}")
+
+    # Reject paths that try to escape the destination (after normalization)
+    if safe_path.startswith('..'):
+        logger.warning(f"Path traversal detected: {member_name}")
+        raise ValueError(f"Path traversal detected: {member_name}")

@@ -7,14 +7,13 @@ Tests the enhanced exception system with context, suggestions, and error codes.
 import pytest
 
 from cv_generator.errors_enhanced import (
-    CVGeneratorError,
     ConfigurationError,
+    CVGeneratorError,
     LaTeXCompilationError,
     PluginError,
     TemplateError,
     ValidationError,
     get_latex_error_suggestion,
-    parse_latex_errors,
 )
 from cv_generator.latex import parse_latex_log
 

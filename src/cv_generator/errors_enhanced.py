@@ -312,49 +312,12 @@ class ValidationError(CVGeneratorError):
         super().__init__(message, context=context, suggestions=suggestions, **kwargs)
 
 
-# LaTeX error patterns for diagnostics
-LATEX_ERROR_PATTERNS = [
-    # Pattern: (regex_pattern, error_type, suggestion)
-    (r"! LaTeX Error: File `(.+)' not found", "missing_file", "Install the missing LaTeX package"),
-    (r"! Package inputenc Error: Unicode char", "unicode", "Use XeLaTeX or escape special characters"),
-    (r"! Undefined control sequence", "undefined_command", "Check template for undefined LaTeX commands"),
-    (r"! Missing \$ inserted", "math_mode", "Escape $ characters or enter math mode"),
-    (r"! Missing { inserted", "brace", "Check for mismatched braces in template"),
-    (r"! Emergency stop", "fatal", "Critical error - check log file for details"),
-    (r"! Font .+ not found", "font", "Install the required font or use a different one"),
-    (r"! Package fontspec Error", "fontspec", "Check font configuration in template"),
-]
-
-
-def parse_latex_errors(log_content: str) -> List[str]:
-    """
-    Parse LaTeX log content for error messages.
-
-    Args:
-        log_content: Content of the LaTeX log file
-
-    Returns:
-        List of parsed error messages
-    """
-    import re
-
-    errors = []
-
-    # Look for lines starting with !
-    for line in log_content.split("\n"):
-        line = line.strip()
-        if line.startswith("!"):
-            errors.append(line)
-        # Also capture context lines (file:line: error)
-        if re.match(r"^\./.*:\d+:", line) or re.match(r"^l\.\d+", line):
-            errors.append(line)
-
-    return errors[:10]  # Return at most 10 errors
-
-
 def get_latex_error_suggestion(error_msg: str) -> Optional[str]:
     """
     Get a suggestion for a LaTeX error message.
+
+    This function is imported from latex.py for consistency.
+    Use this for standalone error message suggestions.
 
     Args:
         error_msg: The LaTeX error message
@@ -362,7 +325,10 @@ def get_latex_error_suggestion(error_msg: str) -> Optional[str]:
     Returns:
         Suggestion string or None
     """
+    # Import here to avoid circular imports
     import re
+
+    from .latex import LATEX_ERROR_PATTERNS
 
     for pattern, error_type, suggestion in LATEX_ERROR_PATTERNS:
         if re.search(pattern, error_msg, re.IGNORECASE):

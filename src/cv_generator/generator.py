@@ -249,8 +249,8 @@ def _filter_item_by_variant(item: Any, variant: str) -> Optional[Any]:
             elif isinstance(value, dict) and key != 'type_key':
                 # Recursively filter nested dicts (like skill categories)
                 filtered_value = _filter_nested_dict(value, variant)
-                if filtered_value:  # Only include if non-empty
-                    filtered_dict[key] = filtered_value
+                # Always include to preserve structure
+                filtered_dict[key] = filtered_value
             else:
                 # Keep primitive values as-is
                 filtered_dict[key] = value

@@ -52,8 +52,8 @@ class CVGeneratorError(Exception):
         full_message = self._build_full_message()
         super().__init__(full_message)
 
-        # Log the error
-        logger.error(f"[{self.error_code}] {full_message}")
+        # Log the error (full_message already includes error code)
+        logger.error(full_message)
 
     def _build_full_message(self) -> str:
         """Build comprehensive error message with all context."""

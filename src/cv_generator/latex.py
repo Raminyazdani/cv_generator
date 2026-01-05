@@ -187,12 +187,15 @@ def compile_latex(
         )
     except subprocess.TimeoutExpired:
         # Enhanced timeout error with helpful message (F-009)
-        logger.error(f"xelatex timed out after {timeout} seconds")
-        logger.error("Suggestions:")
-        logger.error(f"  1. Try increasing timeout: --latex-timeout {timeout * 2}")
-        logger.error("  2. Check for infinite loops or very large documents")
-        logger.error("  3. Complex CVs with many images may need more time")
-        logger.error(f"  4. Manual compilation: xelatex {tex_file}")
+        suggestions = (
+            f"xelatex timed out after {timeout} seconds\n"
+            f"Suggestions:\n"
+            f"  1. Try increasing timeout: --latex-timeout {timeout * 2}\n"
+            f"  2. Check for infinite loops or very large documents\n"
+            f"  3. Complex CVs with many images may need more time\n"
+            f"  4. Manual compilation: xelatex {tex_file}"
+        )
+        logger.error(suggestions)
         return None
     except Exception as e:
         logger.error(f"Error running xelatex: {e}")

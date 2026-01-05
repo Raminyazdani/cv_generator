@@ -208,7 +208,10 @@ class LanguageConfig:
                     logger.info(f"Loaded custom metadata for {len(metadata)} languages")
 
         except ImportError:
-            logger.warning("tomli/tomllib not available, cannot load language config from file")
+            logger.warning(
+                "tomli/tomllib not available, cannot load language config from file. "
+                "Install with: pip install tomli (Python 3.10 and earlier)"
+            )
         except Exception as e:
             logger.error(f"Failed to load language config from {config_file}: {e}")
 

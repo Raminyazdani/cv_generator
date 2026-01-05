@@ -35,10 +35,9 @@ Backward Compatibility:
   maps it to the canonical EN key if a reverse lookup is possible
 """
 
-import json
+from __future__ import annotations
+
 import logging
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)

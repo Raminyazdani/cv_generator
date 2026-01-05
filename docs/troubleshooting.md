@@ -400,5 +400,91 @@ Unicode characters pass through unchanged; only LaTeX special characters are esc
 1. Check the [CLI Reference](cli.md) for command options
 2. Review the [JSON Schema](json-schema.md) for data format
 3. See [Templates](templates.md) for customization
-4. Use `cvgen help <topic>` for extended help
-5. Open an issue on GitHub for bugs or feature requests
+4. See [Web UI Cookbook](webui_cookbook.md) for web interface guide
+5. Use `cvgen help <topic>` for extended help
+6. Open an issue on GitHub for bugs or feature requests
+
+## Web UI Troubleshooting
+
+### Tags Not Showing Translations
+
+**Symptom:** Tags display English labels even when language is set to DE/FA.
+
+**Cause:** The tag catalog may not have translations for custom tags.
+
+**Solution:**
+
+Built-in tags (Full CV, Academic, Biotechnology, etc.) have translations.
+Custom tags use the canonical ID as fallback display. To add translations,
+extend the TAG_TRANSLATIONS dictionary in `src/cv_generator/tags.py`.
+
+### Orphan Tag References
+
+**Symptom:** Entries show tags that don't exist in the tag catalog, or diagnostics shows orphan references.
+
+**Cause:** Tags were deleted but references remained in entry data_json.
+
+**Solution:**
+
+1. Go to the Diagnostics page in the Web UI
+2. Click "Clean Up Orphan Tag References"
+3. Confirm the cleanup action
+4. Orphan references will be removed from all entries
+
+### Missing Language Counterparts
+
+**Symptom:** Some entries exist only in one language, not all three (EN/DE/FA).
+
+**Cause:** Entries were created before multi-language sync was available, or sync was disabled.
+
+**Solution:**
+
+1. Go to Diagnostics to see which entries are missing counterparts
+2. For new entries, always enable "Sync to all languages"
+3. For existing entries, manually create counterparts or use the CRUD API
+
+### Export Preview Shows Stale Data
+
+**Symptom:** The export preview doesn't reflect recent changes.
+
+**Cause:** Changes may have been made to JSON files directly instead of through the database.
+
+**Solution:**
+
+1. Re-import your CV data: `cvgen db import`
+2. The preview regenerates from the database source of truth
+3. Any changes made to `data/` files need to be imported to reflect in the UI
+
+### Web UI Not Starting
+
+**Symptom:** `cvgen web tags` command fails or shows errors.
+
+**Cause:** Database not initialized or corrupted.
+
+**Solution:**
+
+1. Initialize the database: `cvgen db init`
+2. Import CV data: `cvgen db import`
+3. Run health check: `cvgen db doctor`
+4. Try starting the server again
+
+### Authentication Not Working
+
+**Symptom:** 401 errors or can't log in to the Web UI.
+
+**Cause:** Incorrect authentication configuration.
+
+**Solution:**
+
+Check your environment variables:
+
+```bash
+# Combined format (username:password)
+export CVGEN_WEB_AUTH=admin:secretpass
+
+# Or separate variables
+export CVGEN_WEB_USER=admin
+export CVGEN_WEB_PASSWORD=secretpass
+```
+
+Note: If no auth is configured, the Web UI runs without authentication.

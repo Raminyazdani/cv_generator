@@ -1054,3 +1054,153 @@ class TestWebCrudRoutes:
         response = client.get("/entry/2")
         assert response.status_code == 200
         assert b"Edit Entry" in response.data
+
+
+class TestDiagnosticsRoute:
+    """Tests for the diagnostics page."""
+
+    @pytest.fixture
+    def app_with_data(self, tmp_path):
+        """Create a test Flask app with CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create CV with tags
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["TagA", "TagB"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_data):
+        """Create a test client."""
+        return app_with_data.test_client()
+
+    def test_diagnostics_page_loads(self, client):
+        """Test that the diagnostics page loads successfully."""
+        response = client.get("/diagnostics")
+        assert response.status_code == 200
+        assert b"Diagnostics" in response.data
+        assert b"Database Health" in response.data
+
+    def test_diagnostics_shows_stats(self, client):
+        """Test that diagnostics shows database statistics."""
+        response = client.get("/diagnostics")
+        assert response.status_code == 200
+        assert b"Persons" in response.data
+        assert b"Entries" in response.data
+        assert b"Tags" in response.data
+
+
+class TestPreviewExportRoute:
+    """Tests for the export preview page."""
+
+    @pytest.fixture
+    def app_with_data(self, tmp_path):
+        """Create a test Flask app with CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create CV with tags
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "url": "https://example.com"}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_data):
+        """Create a test client."""
+        return app_with_data.test_client()
+
+    def test_preview_export_page_loads(self, client):
+        """Test that the preview export page loads successfully."""
+        response = client.get("/p/testuser/preview")
+        assert response.status_code == 200
+        assert b"Preview" in response.data
+        assert b"testuser" in response.data
+
+    def test_preview_shows_json(self, client):
+        """Test that preview shows JSON content."""
+        response = client.get("/p/testuser/preview")
+        assert response.status_code == 200
+        # Check for JSON structure markers
+        assert b"fname" in response.data
+        assert b"Test" in response.data
+
+    def test_preview_with_language_param(self, client):
+        """Test that preview respects language parameter."""
+        response = client.get("/p/testuser/preview?language=de")
+        assert response.status_code == 200
+        assert b"DE" in response.data
+
+
+class TestLanguageSelectorInHeader:
+    """Tests for the language selector in the header."""
+
+    @pytest.fixture
+    def app_with_data(self, tmp_path):
+        """Create a test Flask app with CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        cv_data = {"basics": [{"fname": "Test", "lname": "User"}]}
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_data):
+        """Create a test client."""
+        return app_with_data.test_client()
+
+    def test_header_shows_language_selector(self, client):
+        """Test that the header shows language selector."""
+        response = client.get("/")
+        assert response.status_code == 200
+        # Check for language codes in the response
+        assert b"EN" in response.data
+        assert b"DE" in response.data
+        assert b"FA" in response.data
+
+    def test_diagnostics_link_in_header(self, client):
+        """Test that diagnostics link appears in header."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Diagnostics" in response.data
+
+    def test_cv_json_manager_title(self, client):
+        """Test that the new title is displayed."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"CV JSON Manager" in response.data

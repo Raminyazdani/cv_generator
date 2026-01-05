@@ -17,7 +17,6 @@ This module handles collision detection and disambiguation automatically.
 """
 
 import hashlib
-import re
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from urllib.parse import quote, unquote
 

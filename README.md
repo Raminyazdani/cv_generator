@@ -431,7 +431,7 @@ cvgen web tags
 cvgen db export --apply-tags --force
 ```
 
-### Web UI for Tag Management
+### Web UI for CV JSON Management
 
 Start the local web server:
 
@@ -439,12 +439,37 @@ Start the local web server:
 cvgen web tags
 ```
 
-Then open http://127.0.0.1:5000 to:
+Then open http://127.0.0.1:5000 to access the **CV JSON Manager** which provides:
+
+**Navigation & Browsing:**
 - Browse persons and their CV sections
+- View entries with rich summaries
+- Navigate skills with category tree view
+- Switch between languages (EN/DE/FA) via top bar selector
+
+**Entry Management:**
 - View and edit individual entries
+- Create new entries with multi-language sync
+- Delete entries (with confirmation dialogs)
+- View linked language variants of entries
+
+**Tag Management:**
 - Create, rename, and delete tags
 - Assign/unassign tags to entries
-- Export CVs with tag updates
+- Language-aware tag display with localized labels
+- See tag usage counts across entries
+
+**Export & Preview:**
+- Preview export JSON before saving to disk
+- Export CVs with tag updates in selected language
+- View summary of export contents
+
+**Diagnostics & Validation:**
+- Database health checks (schema, orphaned entries)
+- Detect unused/orphan tags
+- Find entries needing translation
+- Identify missing language counterparts
+- Clean up orphan tag references
 
 ### Key Commands
 

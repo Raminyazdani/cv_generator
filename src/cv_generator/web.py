@@ -224,6 +224,57 @@ def is_localhost(host: str) -> bool:
     return False
 
 
+def get_secret_key() -> str:
+    """
+    Get Flask secret key with the following precedence:
+    1. Environment variable CVGEN_WEB_SECRET
+    2. State file .cvgen/web_secret
+    3. Generate new random key and save to state file
+
+    Returns:
+        A secret key string for Flask session management.
+    """
+    # Try environment variable first (highest precedence)
+    secret = os.environ.get('CVGEN_WEB_SECRET')
+    if secret and secret.strip():
+        logger.info("Using secret key from environment variable")
+        return secret.strip()
+
+    # Try state file
+    state_dir = Path.cwd() / '.cvgen'
+    secret_file = state_dir / 'web_secret'
+
+    if secret_file.exists():
+        try:
+            saved_secret = secret_file.read_text().strip()
+            if saved_secret:
+                logger.info("Using secret key from state file")
+                return saved_secret
+        except Exception as e:
+            logger.warning(f"Could not read secret key file: {e}")
+
+    # Generate new secret
+    logger.info("Generating new secret key")
+    try:
+        state_dir.mkdir(parents=True, exist_ok=True)
+        new_secret = secrets.token_urlsafe(32)
+        secret_file.write_text(new_secret)
+
+        # Restrict file permissions (Unix only, ignored on Windows)
+        try:
+            secret_file.chmod(0o600)
+            logger.debug(f"Set restricted permissions on {secret_file}")
+        except Exception:
+            pass  # chmod may fail on Windows, which is acceptable
+
+        return new_secret
+    except Exception as e:
+        # If we can't write to disk, generate an ephemeral secret
+        logger.warning(f"Could not save secret key to disk: {e}")
+        logger.warning("Using ephemeral secret key (sessions won't persist)")
+        return secrets.token_urlsafe(32)
+
+
 def get_entry_summary(section: str, data: dict[str, Any]) -> str:
     """
     Get a human-readable summary of an entry based on section type.
@@ -338,7 +389,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         template_folder=str(templates_dir),
         static_folder=str(static_dir)
     )
-    app.secret_key = "cvgen-web-local-only"
+    app.secret_key = get_secret_key()
 
     # Store db_path in app config
     if db_path is None:

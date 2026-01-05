@@ -22,6 +22,8 @@ Security Features (opt-in):
 - Rate limiting: Simple time-based throttle for export/write operations
 """
 
+from __future__ import annotations
+
 import functools
 import json
 import logging

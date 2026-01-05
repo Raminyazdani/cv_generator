@@ -86,6 +86,7 @@ class RegisteredHook:
     name: str
     priority: int = 100
     plugin_name: str = "unknown"
+    abort_on_error: bool = False
 
 
 class HookManager:
@@ -110,6 +111,7 @@ class HookManager:
         name: Optional[str] = None,
         priority: int = 100,
         plugin_name: str = "unknown",
+        abort_on_error: bool = False,
     ) -> None:
         """
         Register a hook callback.
@@ -120,6 +122,7 @@ class HookManager:
             name: Optional name for this hook registration.
             priority: Execution priority (lower = earlier). Default is 100.
             plugin_name: Name of the plugin registering this hook.
+            abort_on_error: If True, abort build if this hook fails.
 
         Raises:
             ValueError: If hook_type is invalid.
@@ -140,6 +143,7 @@ class HookManager:
             name=hook_name,
             priority=priority,
             plugin_name=plugin_name,
+            abort_on_error=abort_on_error,
         )
 
         self._hooks[hook_type].append(registered)
@@ -148,7 +152,7 @@ class HookManager:
 
         logger.debug(
             f"Registered hook '{hook_name}' for {hook_type.value} "
-            f"(plugin: {plugin_name}, priority: {priority})"
+            f"(plugin: {plugin_name}, priority: {priority}, abort_on_error: {abort_on_error})"
         )
 
     def unregister(
@@ -229,11 +233,29 @@ class HookManager:
                     f"Hook '{registered.name}' (plugin: {registered.plugin_name}) "
                     f"raised an error: {e}"
                 )
-                logger.error(error_msg)
+                # Log at WARNING level so users always see it, not just in debug mode
+                logger.warning(error_msg)
                 context.add_error(error_msg)
 
                 # Log detailed error for debugging
                 logger.debug("Hook error details:", exc_info=True)
+
+                # If abort_on_error is set, abort the build
+                if registered.abort_on_error:
+                    context.signal_abort(
+                        f"Plugin '{registered.plugin_name}' failed with abort_on_error=True: {e}"
+                    )
+                    logger.error(
+                        f"Aborting build due to plugin error in '{registered.name}'"
+                    )
+                    break
+
+        # Log summary of plugin errors if any occurred
+        if context.errors:
+            logger.warning(
+                f"Plugin execution completed with {len(context.errors)} error(s). "
+                "Errors may affect build output."
+            )
 
         return context
 
@@ -314,6 +336,7 @@ def register_hook(
     name: Optional[str] = None,
     priority: int = 100,
     plugin_name: str = "unknown",
+    abort_on_error: bool = False,
 ) -> None:
     """
     Convenience function to register a hook in the default manager.
@@ -324,6 +347,7 @@ def register_hook(
         name: Optional name for this hook registration.
         priority: Execution priority (lower = earlier).
         plugin_name: Name of the plugin registering this hook.
+        abort_on_error: If True, abort build if this hook fails.
     """
     get_hook_manager().register(
         hook_type,
@@ -331,6 +355,7 @@ def register_hook(
         name=name,
         priority=priority,
         plugin_name=plugin_name,
+        abort_on_error=abort_on_error,
     )
 
 
@@ -340,6 +365,7 @@ def hook(
     name: Optional[str] = None,
     priority: int = 100,
     plugin_name: str = "unknown",
+    abort_on_error: bool = False,
 ) -> Callable[[HookCallback], HookCallback]:
     """
     Decorator for registering hook callbacks.
@@ -350,11 +376,17 @@ def hook(
             if not context.data.get("required_field"):
                 context.add_error("Missing required field")
 
+        @hook("pre_compile", plugin_name="critical_plugin", abort_on_error=True)
+        def critical_check(context: HookContext) -> None:
+            # This hook will abort the build if it raises an exception
+            pass
+
     Args:
         hook_type: The type of hook to register for.
         name: Optional name for this hook.
         priority: Execution priority (lower = earlier).
         plugin_name: Name of the plugin.
+        abort_on_error: If True, abort build if this hook fails.
 
     Returns:
         Decorator function.
@@ -366,6 +398,7 @@ def hook(
             name=name or callback.__name__,
             priority=priority,
             plugin_name=plugin_name,
+            abort_on_error=abort_on_error,
         )
         return callback
 

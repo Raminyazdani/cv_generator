@@ -481,7 +481,7 @@ class TestEnsureFixMode:
 
     def test_fix_refuses_data_path(self, tmp_path):
         """Test that --fix refuses to write to data/ directory."""
-        from cv_generator.ensure import write_fixed_cvs, is_path_under_data
+        from cv_generator.ensure import is_path_under_data, write_fixed_cvs
 
         # Test the path detection
         assert is_path_under_data(Path("data/cvs/fixed"))

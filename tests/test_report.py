@@ -208,7 +208,7 @@ class TestWriteBuildReport:
         report = BuildReport()
         output_root = tmp_path / "nested" / "output"
 
-        result = write_build_report(report, output_root)
+        write_build_report(report, output_root)
 
         reports_dir = output_root / "reports"
         assert reports_dir.exists()

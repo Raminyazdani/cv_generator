@@ -10,6 +10,39 @@ permissions:
   contents: read
 
 jobs:
+  install-smoke:
+    name: Install Smoke Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package in editable mode
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Check for dependency issues
+        run: python -m pip check
+
+      - name: Verify package import
+        run: python -c "import cv_generator; print('cv_generator version:', cv_generator.__version__)"
+
+      - name: Verify CLI works
+        run: cvgen --help
+
+      - name: Verify CLI subcommand help
+        run: cvgen build --help
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

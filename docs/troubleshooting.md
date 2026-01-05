@@ -53,6 +53,165 @@ ERROR: Could not install packages due to an EnvironmentError
    pip install --user -e .
    ```
 
+### `cvgen` Command Not Found
+
+**Symptom:**
+```
+cvgen: command not found
+```
+or
+```
+'cvgen' is not recognized as an internal or external command
+```
+
+**Causes & Solutions:**
+
+1. **Virtual environment not activated:**
+   ```bash
+   # Linux/macOS
+   source .venv/bin/activate
+   
+   # Windows PowerShell
+   .venv\Scripts\Activate.ps1
+   
+   # Windows CMD
+   .venv\Scripts\activate.bat
+   ```
+
+2. **Package not installed in editable mode:**
+   ```bash
+   pip install -e .
+   ```
+
+3. **Scripts directory not in PATH (rare):**
+   ```bash
+   # Check where pip installs scripts
+   python -m site --user-base
+   # Add the Scripts subdirectory to your PATH
+   ```
+
+4. **Wrong Python/pip used:**
+   ```bash
+   # Verify you're using the right Python
+   which python  # Linux/macOS
+   where python  # Windows
+   
+   # Should point to your venv, not system Python
+   ```
+
+### Imports Fail from Repo Root
+
+**Symptom:**
+```python
+>>> import cv_generator
+ModuleNotFoundError: No module named 'cv_generator'
+```
+
+**Causes & Solutions:**
+
+1. **Package not installed:**
+   ```bash
+   pip install -e .
+   ```
+
+2. **Using wrong Python interpreter:**
+   ```bash
+   # Check which Python you're using
+   which python
+   
+   # Ensure it matches your venv
+   ```
+
+3. **Verify installation:**
+   ```bash
+   python -c "import cv_generator; print(cv_generator.__file__)"
+   # Should print: /path/to/cv_generator/src/cv_generator/__init__.py
+   ```
+
+### Changes Not Reflected After Editing
+
+**Symptom:** You edit a `.py` file but `cvgen` still uses old behavior.
+
+**Causes & Solutions:**
+
+1. **Not using editable install:**
+   ```bash
+   # Check if editable
+   pip show cv-generator | grep "Editable project location"
+   
+   # If empty, reinstall in editable mode:
+   pip install -e .
+   ```
+
+2. **Using different environment:**
+   ```bash
+   # Verify Python path
+   python -c "import cv_generator; print(cv_generator.__file__)"
+   
+   # Should point to YOUR repo, not site-packages
+   ```
+
+3. **Stale bytecode cache:**
+   ```bash
+   # Remove __pycache__ directories
+   find . -type d -name "__pycache__" -exec rm -rf {} +  # Linux/macOS
+   # Or just: pip install -e . --force-reinstall
+   ```
+
+### Dependency Conflicts
+
+**Symptom:**
+```
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed.
+```
+
+**Solution:**
+
+1. Check for conflicts:
+   ```bash
+   pip check
+   ```
+
+2. If conflicts found, recreate environment:
+   ```bash
+   deactivate
+   rm -rf .venv
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -e ".[dev]"
+   ```
+
+3. For reproducible environments, use the lockfile:
+   ```bash
+   pip install -r requirements-lock.txt
+   pip install -e . --no-deps
+   ```
+
+### Windows PowerShell Execution Policy
+
+**Symptom:**
+```
+.venv\Scripts\Activate.ps1 cannot be loaded because running scripts is disabled on this system
+```
+
+**Solution:**
+
+```powershell
+# Check current policy
+Get-ExecutionPolicy
+
+# Allow scripts for current user only
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Then activate normally
+.venv\Scripts\Activate.ps1
+```
+
+Alternatively, use CMD instead of PowerShell:
+```cmd
+.venv\Scripts\activate.bat
+```
+
 ## LaTeX Compilation Issues
 
 ### Special Character Errors

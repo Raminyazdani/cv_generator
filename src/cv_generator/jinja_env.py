@@ -161,15 +161,51 @@ def cblock(s: Any) -> str:
     return "".join("% " + line + "\n" for line in lines)
 
 
-def find_pic(opt_name: str) -> bool:
-    """Check if a profile picture exists for the given name."""
-    pic_path = get_repo_root() / "data" / "pics" / f"{opt_name}.jpg"
+def find_pic(opt_name: str, pics_dir: Optional[Path] = None) -> bool:
+    """
+    Check if a profile picture exists for the given name.
+    
+    Args:
+        opt_name: Picture filename without extension
+        pics_dir: Directory containing pictures (defaults to data/pics for backward compatibility)
+    
+    Returns:
+        True if picture exists, False otherwise
+    """
+    if pics_dir is None:
+        # Backward compatibility: use legacy data/pics
+        repo_root = get_repo_root()
+        if repo_root:
+            pics_dir = repo_root / "data" / "pics"
+        else:
+            # Fallback to home directory
+            pics_dir = Path.home() / ".cvgen" / "pics"
+    
+    pic_path = pics_dir / f"{opt_name}.jpg"
     return pic_path.exists()
 
 
-def get_pic(opt_name: str) -> str:
-    """Get the path to the profile picture for the given name."""
-    pic_path = get_repo_root() / "data" / "pics" / f"{opt_name}.jpg"
+def get_pic(opt_name: str, pics_dir: Optional[Path] = None) -> str:
+    """
+    Get the path to the profile picture for the given name.
+    
+    Args:
+        opt_name: Picture filename without extension
+        pics_dir: Directory containing pictures (defaults to data/pics for backward compatibility)
+    
+    Returns:
+        String path to the picture
+    """
+    if pics_dir is None:
+        # Backward compatibility: use legacy data/pics
+        repo_root = get_repo_root()
+        if repo_root:
+            pics_dir = repo_root / "data" / "pics"
+        else:
+            # Fallback to home directory
+            pics_dir = Path.home() / ".cvgen" / "pics"
+    
+    pic_path = pics_dir / f"{opt_name}.jpg"
     return str(pic_path)
 
 
@@ -235,6 +271,7 @@ def create_jinja_env(
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
     lang: str = "en",
     cache_dir: Optional[Path] = None,
+    pics_dir: Optional[Path] = None,
 ) -> Environment:
     """
     Create a Jinja2 environment configured for LaTeX template rendering.
@@ -245,6 +282,7 @@ def create_jinja_env(
         lang: Target language code (default: "en").
         cache_dir: Directory for template bytecode cache (optional).
                    If provided, enables template caching for faster reloads.
+        pics_dir: Directory containing profile pictures (optional).
 
     Returns:
         Configured Jinja2 Environment.
@@ -277,6 +315,13 @@ def create_jinja_env(
         auto_reload=True,  # Ensure templates are reloaded when changed
     )
 
+    # Create partial functions with pics_dir bound
+    def find_pic_bound(opt_name: str) -> bool:
+        return find_pic(opt_name, pics_dir)
+
+    def get_pic_bound(opt_name: str) -> str:
+        return get_pic(opt_name, pics_dir)
+
     # Register common filters
     env.filters["latex_escape"] = latex_escape
     env.filters["latex_raw"] = latex_raw
@@ -285,8 +330,8 @@ def create_jinja_env(
     env.filters["cmt"] = cmt
     env.filters["cblock"] = cblock
     env.filters["file_exists"] = file_exists
-    env.filters["get_pic"] = get_pic
-    env.filters["find_pic"] = find_pic
+    env.filters["get_pic"] = get_pic_bound
+    env.filters["find_pic"] = find_pic_bound
 
     # Add translation filters if lang_map provided
     if lang_map is not None:

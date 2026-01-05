@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 _repo_root: Optional[Path] = None
 
 
-def get_repo_root() -> Path:
+def get_repo_root(raise_on_not_found: bool = False) -> Optional[Path]:
     """
     Get the repository root directory.
 
@@ -39,33 +39,51 @@ def get_repo_root() -> Path:
     - generate_cv.py
     - awesome-cv.cls
 
+    Args:
+        raise_on_not_found: If True, raise error if repo root not found
+
     Returns:
-        Path to the repository root.
+        Path to the repository root if found, None otherwise
 
     Raises:
-        RuntimeError: If the repository root cannot be determined.
+        FileNotFoundError: If raise_on_not_found=True and repo root not found
     """
     global _repo_root
 
+    # Return cached value if already found
     if _repo_root is not None:
         return _repo_root
 
-    # Start from this file's location and search upward
-    current = Path(__file__).resolve()
-
     # Marker files that indicate repo root
-    markers = ["pyproject.toml", "generate_cv.py", "awesome-cv.cls"]
+    markers = ["pyproject.toml", "generate_cv.py", "awesome-cv.cls", "setup.py", "setup.cfg"]
 
-    # Walk up the directory tree
+    # Start from this file's location and search upward
+    current = Path(__file__).resolve().parent
+
+    # Walk up directory tree
     for parent in [current] + list(current.parents):
         for marker in markers:
             if (parent / marker).exists():
                 _repo_root = parent
+                logger.debug(f"Found repo root: {_repo_root} (marker: {marker})")
                 return _repo_root
 
-    # Fallback: use CWD
-    _repo_root = Path.cwd().resolve()
-    return _repo_root
+    # Not found
+    if raise_on_not_found:
+        raise FileNotFoundError(
+            "Could not find repository root. Searched for markers: " + ", ".join(markers) + "\n"
+            "Please specify --repo-root explicitly or ensure you're running from "
+            "within the cv_generator repository."
+        )
+
+    logger.warning("Repository root not found, returning None")
+    return None
+
+
+def reset_repo_root_cache():
+    """Reset cached repo root (useful for testing)."""
+    global _repo_root
+    _repo_root = None
 
 
 def resolve_path(path: str | os.PathLike, base: Optional[Path] = None) -> Path:

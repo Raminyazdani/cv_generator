@@ -1474,7 +1474,7 @@ def delete_tag(name: str, db_path: Optional[Path] = None) -> bool:
 
         logger.info(f"Deleted tag '{name}' and updated {len(affected_entries)} entries")
         return True
-    except Exception:
+    except sqlite3.Error:
         conn.rollback()
         raise
     finally:
@@ -1645,7 +1645,7 @@ def remove_tag_from_entry(
             "data": data,
             "tags": current_tags
         }
-    except Exception:
+    except sqlite3.Error:
         conn.rollback()
         raise
     finally:
@@ -1728,7 +1728,7 @@ def cleanup_orphan_tag_references(db_path: Optional[Path] = None) -> Dict[str, A
             "entries_cleaned": entries_cleaned,
             "orphan_tags_found": sorted(orphan_tags_found)
         }
-    except Exception:
+    except sqlite3.Error:
         conn.rollback()
         raise
     finally:

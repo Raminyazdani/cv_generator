@@ -39,7 +39,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ DEFAULT_LANGUAGE = "en"
 
 # Built-in tag translations
 # These are the CV type tags used in type_key arrays with their translations
-TAG_TRANSLATIONS: Dict[str, Dict[str, str]] = {
+TAG_TRANSLATIONS: dict[str, dict[str, str]] = {
     "Full CV": {
         "en": "Full CV",
         "de": "Vollständiger Lebenslauf",
@@ -114,10 +114,10 @@ TAG_TRANSLATIONS: Dict[str, Dict[str, str]] = {
 
 # Reverse lookup: localized name -> canonical ID
 # Built dynamically from TAG_TRANSLATIONS
-_REVERSE_LOOKUP: Dict[str, str] = {}
+_REVERSE_LOOKUP: dict[str, str] = {}
 
 
-def _build_reverse_lookup() -> Dict[str, str]:
+def _build_reverse_lookup() -> dict[str, str]:
     """Build reverse lookup from localized names to canonical IDs."""
     result = {}
     for canonical_id, labels in TAG_TRANSLATIONS.items():
@@ -128,7 +128,7 @@ def _build_reverse_lookup() -> Dict[str, str]:
     return result
 
 
-def get_reverse_lookup() -> Dict[str, str]:
+def get_reverse_lookup() -> dict[str, str]:
     """Get the reverse lookup dictionary (localized name -> canonical ID)."""
     global _REVERSE_LOOKUP
     if not _REVERSE_LOOKUP:
@@ -147,7 +147,7 @@ class TagCatalog:
     - Validation of tags and language coverage
     """
 
-    def __init__(self, additional_translations: Optional[Dict[str, Dict[str, str]]] = None):
+    def __init__(self, additional_translations: Optional[dict[str, dict[str, str]]] = None):
         """
         Initialize the tag catalog.
 
@@ -158,9 +158,10 @@ class TagCatalog:
         self._translations = TAG_TRANSLATIONS.copy()
         if additional_translations:
             self._translations.update(additional_translations)
-        self._reverse_lookup = _build_reverse_lookup()
+        # Use the global reverse lookup for efficiency
+        self._reverse_lookup = get_reverse_lookup()
 
-    def get_all_tags(self) -> List[str]:
+    def get_all_tags(self) -> list[str]:
         """Get all canonical tag IDs."""
         return list(self._translations.keys())
 
@@ -182,7 +183,7 @@ class TagCatalog:
         # Fallback to canonical ID
         return tag_id
 
-    def get_tag_labels(self, tag_id: str) -> Dict[str, str]:
+    def get_tag_labels(self, tag_id: str) -> dict[str, str]:
         """
         Get all labels for a tag.
 
@@ -250,7 +251,7 @@ class TagCatalog:
         labels = self._translations[tag_id]
         return language in labels and bool(labels[language])
 
-    def get_missing_translations(self, language: str) -> List[str]:
+    def get_missing_translations(self, language: str) -> list[str]:
         """
         Get list of tags missing translations for a language.
 
@@ -269,8 +270,8 @@ class TagCatalog:
     def add_tag(
         self,
         tag_id: str,
-        labels: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+        labels: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]:
         """
         Add a new tag to the catalog.
 
@@ -329,9 +330,9 @@ def get_tag_catalog() -> TagCatalog:
 
 
 def translate_tags(
-    tags: List[str],
+    tags: list[str],
     language: str = DEFAULT_LANGUAGE
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     Translate a list of tags to the target language.
 
@@ -346,7 +347,7 @@ def translate_tags(
     return [(tag, catalog.get_tag_label(tag, language)) for tag in tags]
 
 
-def canonicalize_tags(tags: List[str]) -> List[str]:
+def canonicalize_tags(tags: list[str]) -> list[str]:
     """
     Convert a list of tag values to canonical IDs.
 
@@ -363,9 +364,9 @@ def canonicalize_tags(tags: List[str]) -> List[str]:
 
 
 def export_tags(
-    tags: List[str],
+    tags: list[str],
     language: str = DEFAULT_LANGUAGE
-) -> List[str]:
+) -> list[str]:
     """
     Export tags in the specified language.
 
@@ -381,9 +382,9 @@ def export_tags(
 
 
 def validate_tags(
-    tags: List[str],
+    tags: list[str],
     language: str = DEFAULT_LANGUAGE
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Validate tags and report any issues.
 
@@ -418,10 +419,10 @@ def validate_tags(
 
 
 def get_tags_for_language(
-    tags: List[str],
+    tags: list[str],
     language: str,
     include_all: bool = False
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     Get tags suitable for a specific language.
 

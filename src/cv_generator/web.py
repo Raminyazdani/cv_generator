@@ -30,7 +30,7 @@ import secrets
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 
@@ -59,11 +59,14 @@ from .tags import (
 
 logger = logging.getLogger(__name__)
 
+# Maximum number of items to show in warning messages
+MAX_WARNING_ITEMS = 5
+
 # Rate limiting configuration
 THROTTLE_SECONDS = 5  # Minimum seconds between export/write operations
 
 
-def get_auth_credentials() -> Optional[Tuple[str, str]]:
+def get_auth_credentials() -> Optional[tuple[str, str]]:
     """
     Get authentication credentials from environment variables.
 
@@ -201,7 +204,7 @@ def is_localhost(host: str) -> bool:
     return False
 
 
-def get_entry_summary(section: str, data: Dict[str, Any]) -> str:
+def get_entry_summary(section: str, data: dict[str, Any]) -> str:
     """
     Get a human-readable summary of an entry based on section type.
 
@@ -332,7 +335,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         catalog = get_tag_catalog()
         return catalog.get_tag_label(tag_name, lang)
 
-    def get_tag_display(tag: Dict[str, Any], language: Optional[str] = None) -> Dict[str, Any]:
+    def get_tag_display(tag: dict[str, Any], language: Optional[str] = None) -> dict[str, Any]:
         """Add display_label to a tag dict for the current language."""
         lang = language or get_current_language()
         catalog = get_tag_catalog()
@@ -449,9 +452,11 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             if entry["tags"] and current_lang != DEFAULT_LANGUAGE:
                 validation = validate_tags(entry["tags"], current_lang)
                 if validation["missing_translations"]:
+                    missing = validation["missing_translations"]
                     flash(
                         f"Some tags lack translation for {current_lang}: "
-                        f"{', '.join(validation['missing_translations'][:3])}",
+                        f"{', '.join(missing[:MAX_WARNING_ITEMS])}"
+                        f"{'...' if len(missing) > MAX_WARNING_ITEMS else ''}",
                         "warning"
                     )
         except ConfigurationError as e:
@@ -507,7 +512,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             if missing:
                 flash(
                     f"Warning: {len(missing)} tag(s) lack translation for {current_lang}: "
-                    f"{', '.join(missing[:5])}{'...' if len(missing) > 5 else ''}",
+                    f"{', '.join(missing[:MAX_WARNING_ITEMS])}"
+                    f"{'...' if len(missing) > MAX_WARNING_ITEMS else ''}",
                     "warning"
                 )
 

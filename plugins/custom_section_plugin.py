@@ -139,8 +139,8 @@ def register(registry, hook_manager):
         normalizer=normalize_awards,
     )
 
-    # Register with priority 7 to place after publications (priority 6)
-    # Built-in sections have priorities 0-8
+    # Register with a high priority value to place after built-in sections.
+    # Priority is position-based: lower values appear earlier in the CV.
     registry.register(awards_adapter, priority=7)
 
     logger.info("Custom Section Plugin: Registered 'awards' section")

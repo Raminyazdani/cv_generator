@@ -118,8 +118,9 @@ def anonymize_phone(phone: str) -> str:
     if len(digits) < 4:
         return '*** ***'
 
-    # Get country code (first 2-3 digits) and last 3 digits
-    country = ''.join(digits[:2])
+    # Country codes can be 1-3 digits. We keep up to 3 digits and mask the rest.
+    # This is a simple approximation for demonstration purposes.
+    country = ''.join(digits[:3]) if len(digits) >= 6 else ''.join(digits[:2])
     last = ''.join(digits[-3:])
 
     return f"+{country} *** ***{last}"
@@ -195,19 +196,23 @@ def pre_validate_handler(context: HookContext) -> None:
         logger.info("Data Transform: Anonymizing contact information")
 
         basics = context.data.get("basics", [])
-        if basics and isinstance(basics, list):
-            for basic in basics:
-                if "email" in basic:
-                    basic["email"] = anonymize_email(basic["email"])
-                    _stats["anonymizations"] += 1
+        if not isinstance(basics, list):
+            # Handle case where basics might be a single dict
+            basics = [basics] if isinstance(basics, dict) else []
+        for basic in basics:
+            if not isinstance(basic, dict):
+                continue
+            if "email" in basic:
+                basic["email"] = anonymize_email(basic["email"])
+                _stats["anonymizations"] += 1
 
-                if "phone" in basic:
-                    phone = basic["phone"]
-                    if isinstance(phone, dict) and "formatted" in phone:
-                        phone["formatted"] = anonymize_phone(phone["formatted"])
-                    elif isinstance(phone, str):
-                        basic["phone"] = anonymize_phone(phone)
-                    _stats["anonymizations"] += 1
+            if "phone" in basic:
+                phone = basic["phone"]
+                if isinstance(phone, dict) and "formatted" in phone:
+                    phone["formatted"] = anonymize_phone(phone["formatted"])
+                elif isinstance(phone, str):
+                    basic["phone"] = anonymize_phone(phone)
+                _stats["anonymizations"] += 1
 
 
 def post_render_handler(context: HookContext) -> None:

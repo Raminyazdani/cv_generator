@@ -231,10 +231,13 @@ class JsonResumeExporter(Exporter):
                 "description": exp.get("description", ""),
             }
 
-            # Parse duration if available
+            # Duration parsing is not implemented as it requires complex
+            # date format handling. CV Generator uses freeform duration strings
+            # like "2020 – Present" which don't map directly to ISO dates.
+            # For production use, consider adding a date parsing library.
             duration = exp.get("duration", "")
             if duration:
-                work_item["startDate"] = ""  # Would need parsing
+                work_item["startDate"] = ""
                 work_item["endDate"] = ""
 
             result.append(work_item)

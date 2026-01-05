@@ -9,8 +9,8 @@ Usage:
     python scripts/verify_output_paths.py
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))

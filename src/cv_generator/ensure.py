@@ -6,7 +6,6 @@ have consistent schema structure and properly translated content.
 """
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple

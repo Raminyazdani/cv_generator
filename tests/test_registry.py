@@ -646,6 +646,7 @@ class TestHooksInGenerator:
     def test_hooks_fire_during_generate_cv(self, tmp_path):
         """Test that hooks fire during CV generation."""
         import json
+
         from cv_generator.generator import generate_cv
         from cv_generator.io import load_lang_map
         from cv_generator.paths import get_default_templates_path
@@ -716,6 +717,7 @@ class TestHooksInGenerator:
     def test_hook_abort_stops_generation(self, tmp_path):
         """Test that aborting in a hook stops CV generation."""
         import json
+
         from cv_generator.generator import generate_cv
         from cv_generator.io import load_lang_map
         from cv_generator.paths import get_default_templates_path

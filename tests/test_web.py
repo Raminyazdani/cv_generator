@@ -937,3 +937,120 @@ class TestCleanupOrphanTagReferences:
 
         assert "RealTag" in entry["tags"]
         assert "RealTag" in entry["data"]["type_key"]
+
+
+class TestWebCrudRoutes:
+    """Tests for the Web CRUD routes (create/edit/delete entries)."""
+
+    @pytest.fixture
+    def app_with_multi_lang(self, tmp_path):
+        """Create a test Flask app with multi-language CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Existing Project", "url": "https://example.com"}
+            ]
+        }
+        cv_en_path = tmp_path / "cvs" / "testuser.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        # Create DE CV
+        cv_de = {
+            "basics": [{"fname": "Test", "lname": "Benutzer"}],
+            "projects": [
+                {"title": "Bestehendes Projekt", "url": "https://example.com"}
+            ]
+        }
+        cv_de_path = tmp_path / "cvs" / "testuser_de.json"
+        cv_de_path.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_de_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_multi_lang):
+        """Create a test client."""
+        return app_with_multi_lang.test_client()
+
+    def test_create_entry_form_loads(self, client):
+        """Test that the create entry form loads."""
+        response = client.get("/p/testuser/projects/create")
+        assert response.status_code == 200
+        assert b"Create" in response.data
+        assert b"Title" in response.data
+
+    def test_create_entry_post_with_sync(self, client):
+        """Test creating an entry with multi-language sync."""
+        response = client.post(
+            "/p/testuser/projects/create",
+            data={
+                "field_title": "New Project",
+                "field_description": "A new project",
+                "field_url": "https://new-project.com",
+                "sync_languages": "on"
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"created successfully" in response.data.lower()
+
+    def test_create_entry_post_without_sync(self, client):
+        """Test creating an entry without multi-language sync."""
+        response = client.post(
+            "/p/testuser/projects/create",
+            data={
+                "field_title": "Solo Project"
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"created successfully" in response.data.lower()
+
+    def test_edit_entry_form_loads(self, client):
+        """Test that the edit entry form loads."""
+        # Get entry ID (skip basics which is entry 1)
+        response = client.get("/entry/2/edit")
+        assert response.status_code == 200
+        assert b"Edit" in response.data
+
+    def test_edit_entry_post(self, client):
+        """Test updating an entry."""
+        response = client.post(
+            "/entry/2/edit",
+            data={
+                "field_title": "Updated Project Title",
+                "field_url": "https://updated-url.com"
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"updated successfully" in response.data.lower()
+
+    def test_entry_linked_page_loads(self, client):
+        """Test that the linked entries page loads."""
+        response = client.get("/entry/2/linked")
+        assert response.status_code == 200
+        # Page should show language variants
+        assert b"Linked" in response.data or b"linked" in response.data.lower()
+
+    def test_section_entries_shows_add_button(self, client):
+        """Test that section entries page shows add button for supported sections."""
+        response = client.get("/p/testuser/projects")
+        assert response.status_code == 200
+        assert b"Add New" in response.data
+
+    def test_entry_detail_shows_edit_button(self, client):
+        """Test that entry detail page shows edit button."""
+        response = client.get("/entry/2")
+        assert response.status_code == 200
+        assert b"Edit Entry" in response.data

@@ -12,6 +12,13 @@
 
 <h2>{{ entry.summary }}</h2>
 
+{% if entry.section in ['projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
+<div style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+    <a href="{{ url_for('edit_entry_route', entry_id=entry.id) }}" class="btn btn-primary">✏️ Edit Entry</a>
+    <a href="{{ url_for('entry_linked_route', entry_id=entry.id) }}" class="btn btn-secondary">🌐 View Linked Languages</a>
+</div>
+{% endif %}
+
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3>Assign Tags</h3>

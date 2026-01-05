@@ -34,6 +34,21 @@ from typing import Any, Callable, Optional
 
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 
+from .crud import (
+    LIST_SECTIONS as CRUD_SECTIONS,
+)
+from .crud import (
+    create_entry as crud_create_entry,
+)
+from .crud import (
+    delete_entry as crud_delete_entry,
+)
+from .crud import (
+    get_linked_entries,
+)
+from .crud import (
+    update_entry as crud_update_entry,
+)
 from .db import (
     create_tag,
     delete_tag,
@@ -623,6 +638,233 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             flash(str(e), "error")
 
         return redirect(url_for("person_dashboard", person=person))
+
+    @app.route("/p/<person>/<section>/create", methods=["GET", "POST"])
+    @requires_auth
+    def create_entry_route(person: str, section: str):
+        """Create a new entry in a section with multi-language sync."""
+        if section not in CRUD_SECTIONS:
+            flash(f"Section '{section}' does not support CRUD operations.", "error")
+            return redirect(url_for("section_entries", person=person, section=section))
+
+        try:
+            persons = list_persons(app.config["DB_PATH"])
+            person_info = next((p for p in persons if p["slug"] == person), None)
+            if not person_info:
+                flash(f"Person '{person}' not found", "error")
+                return redirect(url_for("index"))
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        if request.method == "POST":
+            try:
+                # Build entry data from form
+                data = {}
+                for key in request.form:
+                    if key.startswith("field_"):
+                        field_name = key[6:]  # Remove 'field_' prefix
+                        value = request.form[key].strip()
+                        if value:
+                            data[field_name] = value
+
+                # Handle type_key as list
+                type_keys = request.form.getlist("type_key")
+                if type_keys:
+                    data["type_key"] = type_keys
+
+                # Handle sync option
+                sync_languages = request.form.get("sync_languages") == "on"
+
+                if not data:
+                    flash("Please fill in at least one field.", "error")
+                    return render_template(
+                        "entry_form.html",
+                        person=person_info,
+                        section=section,
+                        action="Create",
+                        entry=None,
+                        all_tags=[get_tag_display(tag) for tag in list_tags(app.config["DB_PATH"])]
+                    )
+
+                result = crud_create_entry(
+                    person_slug=person,
+                    section=section,
+                    data=data,
+                    db_path=app.config["DB_PATH"],
+                    sync_languages=sync_languages
+                )
+
+                lang_count = len(result.get("entries", {}))
+                flash(
+                    f"Entry created successfully in {lang_count} language(s). "
+                    f"Stable ID: {result['stable_id'][:8]}...",
+                    "success"
+                )
+                return redirect(url_for("section_entries", person=person, section=section))
+
+            except (ConfigurationError, ValidationError) as e:
+                flash(str(e), "error")
+
+        # GET request - show form
+        all_tags = list_tags(app.config["DB_PATH"])
+        return render_template(
+            "entry_form.html",
+            person=person_info,
+            section=section,
+            action="Create",
+            entry=None,
+            all_tags=[get_tag_display(tag) for tag in all_tags]
+        )
+
+    @app.route("/entry/<int:entry_id>/edit", methods=["GET", "POST"])
+    @requires_auth
+    def edit_entry_route(entry_id: int):
+        """Edit an existing entry."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            if section not in CRUD_SECTIONS:
+                flash(f"Section '{section}' does not support CRUD operations.", "error")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            persons = list_persons(app.config["DB_PATH"])
+            person_info = next((p for p in persons if p["slug"] == entry["person_slug"]), None)
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        if request.method == "POST":
+            try:
+                # Build entry data from form
+                data = {}
+                for key in request.form:
+                    if key.startswith("field_"):
+                        field_name = key[6:]
+                        value = request.form[key].strip()
+                        if value:
+                            data[field_name] = value
+
+                # Handle type_key as list
+                type_keys = request.form.getlist("type_key")
+                if type_keys:
+                    data["type_key"] = type_keys
+
+                # Handle sync option for shared fields
+                sync_shared_fields = request.form.get("sync_shared_fields") == "on"
+
+                crud_update_entry(
+                    entry_id=entry_id,
+                    data=data,
+                    section=section,
+                    db_path=app.config["DB_PATH"],
+                    sync_shared_fields=sync_shared_fields
+                )
+
+                msg = "Entry updated successfully."
+                if sync_shared_fields:
+                    msg += " Shared fields synced to other languages."
+                flash(msg, "success")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            except (ConfigurationError, ValidationError) as e:
+                flash(str(e), "error")
+
+        # GET request - show form with current data
+        all_tags = list_tags(app.config["DB_PATH"])
+
+        # Get linked entries for display
+        linked_entries = {}
+        try:
+            linked_entries = get_linked_entries(entry_id, section, app.config["DB_PATH"])
+        except Exception:
+            pass  # May not be linked
+
+        return render_template(
+            "entry_form.html",
+            person=person_info,
+            section=section,
+            action="Edit",
+            entry=entry,
+            all_tags=[get_tag_display(tag) for tag in all_tags],
+            linked_entries=linked_entries
+        )
+
+    @app.route("/entry/<int:entry_id>/delete", methods=["POST"])
+    @requires_auth
+    def delete_entry_route(entry_id: int):
+        """Delete an entry with optional multi-language sync."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            person_slug = entry["person_slug"]
+
+            if section not in CRUD_SECTIONS:
+                flash(f"Section '{section}' does not support CRUD operations.", "error")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            # Handle sync option
+            sync_languages = request.form.get("sync_languages") == "on"
+
+            result = crud_delete_entry(
+                entry_id=entry_id,
+                section=section,
+                db_path=app.config["DB_PATH"],
+                sync_languages=sync_languages
+            )
+
+            if result:
+                msg = "Entry deleted successfully."
+                if sync_languages:
+                    msg += " All language variants were removed."
+                flash(msg, "success")
+            else:
+                flash("Entry not found or already deleted.", "warning")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return redirect(url_for("section_entries", person=person_slug, section=section))
+
+    @app.route("/entry/<int:entry_id>/linked")
+    @requires_auth
+    def entry_linked_route(entry_id: int):
+        """View linked language variants of an entry."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            linked_entries = get_linked_entries(entry_id, section, app.config["DB_PATH"])
+
+            persons = list_persons(app.config["DB_PATH"])
+            person_info = next((p for p in persons if p["slug"] == entry["person_slug"]), None)
+
+            entry["summary"] = get_entry_summary(section, entry["data"])
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "entry_linked.html",
+            entry=entry,
+            person=person_info,
+            linked_entries=linked_entries,
+            supported_languages=SUPPORTED_LANGUAGES
+        )
 
     return app
 

@@ -69,6 +69,25 @@
             text-decoration: underline;
         }
         
+        .lang-selector {
+            margin-left: 2rem;
+            padding-left: 1rem;
+            border-left: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .lang-selector .lang-link {
+            margin-left: 0.5rem;
+            opacity: 0.7;
+        }
+        
+        .lang-selector .lang-active {
+            margin-left: 0.5rem;
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+        
         .breadcrumb {
             margin-bottom: 1rem;
             color: var(--gray-500);
@@ -320,15 +339,110 @@
             font-size: 1.2rem;
             margin-right: 0.5rem;
         }
+        
+        /* Confirmation dialog styles */
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .confirm-dialog.active {
+            display: flex;
+        }
+        
+        .confirm-dialog-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .confirm-dialog-content h3 {
+            margin-bottom: 1rem;
+            color: var(--danger);
+        }
+        
+        .confirm-dialog-content p {
+            margin-bottom: 1.5rem;
+            color: var(--gray-700);
+        }
+        
+        .confirm-dialog-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        /* Diagnostics styles */
+        .status-ok {
+            color: var(--success);
+        }
+        
+        .status-error {
+            color: var(--danger);
+        }
+        
+        .status-warning {
+            color: var(--warning);
+        }
+        
+        .health-check-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .health-check-item:last-child {
+            border-bottom: none;
+        }
+        
+        .issue-list {
+            list-style: disc;
+            margin-left: 1.5rem;
+            color: var(--gray-700);
+        }
+        
+        .issue-list li {
+            margin-bottom: 0.5rem;
+        }
     </style>
+    <script>
+        function confirmAction(formId, message) {
+            if (confirm(message)) {
+                document.getElementById(formId).submit();
+            }
+            return false;
+        }
+    </script>
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>🏷️ CV Tag Manager</h1>
+            <h1>📋 CV JSON Manager</h1>
             <nav>
                 <a href="{{ url_for('index') }}">Home</a>
                 <a href="{{ url_for('tags_list') }}">Tags</a>
+                <a href="{{ url_for('diagnostics') }}">Diagnostics</a>
+                <span class="lang-selector">
+                    {% for lang in supported_languages %}
+                        {% if lang == current_language %}
+                            <span class="lang-active">{{ lang|upper }}</span>
+                        {% else %}
+                            <a href="{{ url_for('set_language', lang=lang) }}" class="lang-link">{{ lang|upper }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </span>
             </nav>
         </div>
     </header>

@@ -28,6 +28,9 @@ nav:
     - Templates: templates.md
     - Languages: languages.md
     - SQLite & Tagging: sqlite_tagging_cookbook.md
+    - Web UI Cookbook: webui_cookbook.md
+    - Language-Aware Tagging: language_aware_tagging.md
+    - Multi-Language CRUD: multi_language_crud.md
     - Plugin Development: plugins.md
   - Reference:
     - CLI Reference: cli.md

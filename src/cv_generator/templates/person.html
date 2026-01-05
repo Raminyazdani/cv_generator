@@ -12,6 +12,7 @@
 
 <div class="card" style="margin-bottom: 2rem;">
     <div class="actions">
+        <a href="{{ url_for('preview_export', person=person.slug) }}" class="btn btn-primary">👁️ Preview Export</a>
         <form action="{{ url_for('export_person', person=person.slug) }}" method="post" style="display: inline;">
             <button type="submit" class="btn btn-success">📤 Export JSON</button>
         </form>

@@ -52,8 +52,11 @@ from .crud import (
     update_entry as crud_update_entry,
 )
 from .db import (
+    cleanup_orphan_tag_references,
     create_tag,
     delete_tag,
+    doctor,
+    export_cv,
     export_cv_to_file,
     get_db_path,
     get_entry,
@@ -868,7 +871,174 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             supported_languages=SUPPORTED_LANGUAGES
         )
 
+    @app.route("/diagnostics")
+    @requires_auth
+    def diagnostics():
+        """Diagnostics panel - show database health, orphan tags, and missing translations."""
+        try:
+            # Run doctor to get database health
+            health = doctor(app.config["DB_PATH"])
+
+            # Get missing translations for current language
+            current_lang = get_current_language()
+            catalog = get_tag_catalog()
+            missing_translations = []
+            if current_lang != DEFAULT_LANGUAGE:
+                missing_translations = catalog.get_missing_translations(current_lang)
+
+            # Get entries with needs_translation flag
+            entries_needing_translation = _get_entries_needing_translation(app.config["DB_PATH"])
+
+            # Get entries with missing language counterparts
+            missing_counterparts = _get_missing_counterparts(app.config["DB_PATH"])
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "diagnostics.html",
+            health=health,
+            missing_translations=missing_translations,
+            entries_needing_translation=entries_needing_translation,
+            missing_counterparts=missing_counterparts,
+            current_language=current_lang,
+        )
+
+    @app.route("/diagnostics/cleanup-orphans", methods=["POST"])
+    @requires_auth
+    def cleanup_orphans():
+        """Clean up orphan tag references in entries."""
+        try:
+            result = cleanup_orphan_tag_references(app.config["DB_PATH"])
+            if result["entries_cleaned"] > 0:
+                flash(
+                    f"Cleaned {result['entries_cleaned']} entries with orphan tag references.",
+                    "success"
+                )
+            else:
+                flash("No orphan tag references found.", "success")
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("diagnostics"))
+
+    @app.route("/p/<person>/preview")
+    @requires_auth
+    def preview_export(person: str):
+        """Preview export JSON for a person without writing to disk."""
+        try:
+            export_lang = request.args.get("language") or get_current_language()
+
+            # Export to dict (not file)
+            cv_data = export_cv(
+                person,
+                app.config["DB_PATH"],
+                apply_tags=True,
+                tag_language=export_lang
+            )
+
+            return render_template(
+                "preview.html",
+                person=person,
+                cv_data=cv_data,
+                export_language=export_lang,
+                json_preview=json.dumps(cv_data, indent=2, ensure_ascii=False)
+            )
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("person_dashboard", person=person))
+
     return app
+
+
+def _get_entries_needing_translation(db_path: Path) -> list[dict[str, Any]]:
+    """Get entries marked as needing translation."""
+    import sqlite3
+
+    entries = []
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Check if entry_lang_link table exists
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='entry_lang_link'"
+        )
+        if not cursor.fetchone():
+            return entries
+
+        cursor.execute(
+            """SELECT e.id, e.section, p.slug, ell.language, e.data_json
+               FROM entry_lang_link ell
+               JOIN entry e ON ell.entry_id = e.id
+               JOIN person p ON e.person_id = p.id
+               WHERE ell.needs_translation = 1
+               ORDER BY p.slug, e.section, e.id"""
+        )
+
+        for row in cursor.fetchall():
+            entry_id, section, person_slug, language, data_json = row
+            data = json.loads(data_json) if data_json else {}
+            entries.append({
+                "id": entry_id,
+                "section": section,
+                "person_slug": person_slug,
+                "language": language,
+                "summary": get_entry_summary(section, data),
+            })
+
+        conn.close()
+    except Exception:
+        pass  # Table may not exist yet
+
+    return entries
+
+
+def _get_missing_counterparts(db_path: Path) -> list[dict[str, Any]]:
+    """Get entries that are missing language counterparts."""
+    import sqlite3
+
+    missing = []
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Check if entry_lang_link and stable_entry tables exist
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='stable_entry'"
+        )
+        if not cursor.fetchone():
+            return missing
+
+        # Find stable entries that don't have all 3 languages
+        cursor.execute(
+            """SELECT se.id, se.section, se.base_person,
+                      GROUP_CONCAT(ell.language) as languages
+               FROM stable_entry se
+               LEFT JOIN entry_lang_link ell ON se.id = ell.stable_id
+               GROUP BY se.id
+               HAVING COUNT(DISTINCT ell.language) < 3"""
+        )
+
+        for row in cursor.fetchall():
+            stable_id, section, base_person, languages_str = row
+            existing_langs = set(languages_str.split(",")) if languages_str else set()
+            missing_langs = set(SUPPORTED_LANGUAGES) - existing_langs
+
+            missing.append({
+                "stable_id": stable_id,
+                "section": section,
+                "base_person": base_person,
+                "existing_languages": sorted(existing_langs),
+                "missing_languages": sorted(missing_langs),
+            })
+
+        conn.close()
+    except Exception:
+        pass  # Tables may not exist yet
+
+    return missing
 
 
 def run_server(

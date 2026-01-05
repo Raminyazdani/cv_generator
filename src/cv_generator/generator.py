@@ -255,6 +255,7 @@ def generate_cv(
     *,
     templates_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
+    pics_dir: Optional[Path] = None,
     lang_map: Optional[Dict[str, Dict[str, str]]] = None,
     dry_run: bool = False,
     keep_latex: bool = False,
@@ -269,6 +270,7 @@ def generate_cv(
         cv_file: Path to the CV JSON file.
         templates_dir: Path to templates directory.
         output_dir: Path to output directory root.
+        pics_dir: Path to profile pictures directory.
         lang_map: Language translation map (will be loaded if not provided).
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
@@ -283,6 +285,13 @@ def generate_cv(
         templates_dir = get_default_templates_path()
     if output_dir is None:
         output_dir = get_default_output_path()
+    if pics_dir is None:
+        # Backward compatibility: use legacy data/pics if repo root exists
+        repo_root = get_repo_root()
+        if repo_root:
+            pics_dir = repo_root / "data" / "pics"
+        else:
+            pics_dir = Path.home() / ".cvgen" / "pics"
 
     # Parse filename
     base_name, lang = parse_cv_filename(cv_file.name)
@@ -295,7 +304,7 @@ def generate_cv(
     if incremental and cache is not None:
         # Compute current input hashes
         assets = []
-        pic_path = get_repo_root() / "data" / "pics" / f"{base_name}.jpg"
+        pic_path = pics_dir / f"{base_name}.jpg"
         if pic_path.exists():
             assets.append(pic_path)
 
@@ -362,7 +371,7 @@ def generate_cv(
     jinja_cache_dir = None
     if incremental and cache is not None:
         jinja_cache_dir = get_cache_dir(output_dir)
-    env = create_jinja_env(templates_dir, lang_map, lang, cache_dir=jinja_cache_dir)
+    env = create_jinja_env(templates_dir, lang_map, lang, cache_dir=jinja_cache_dir, pics_dir=pics_dir)
 
     # Set up output paths using unified ArtifactPaths
     sections_dir = artifact_paths.sections_dir
@@ -500,6 +509,7 @@ def generate_all_cvs(
     cvs_dir: Optional[Path] = None,
     templates_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
+    pics_dir: Optional[Path] = None,
     name_filter: Optional[str] = None,
     dry_run: bool = False,
     keep_latex: bool = False,
@@ -513,6 +523,7 @@ def generate_all_cvs(
         cvs_dir: Path to directory containing CV JSON files.
         templates_dir: Path to templates directory.
         output_dir: Path to output directory root.
+        pics_dir: Path to profile pictures directory.
         name_filter: If provided, only generate CVs matching this base name.
         dry_run: If True, render LaTeX but don't compile to PDF.
         keep_latex: If True, keep LaTeX source files in output/latex/.
@@ -528,6 +539,13 @@ def generate_all_cvs(
         output_dir = get_default_output_path()
     if templates_dir is None:
         templates_dir = get_default_templates_path()
+    if pics_dir is None:
+        # Backward compatibility: use legacy data/pics if repo root exists
+        repo_root = get_repo_root()
+        if repo_root:
+            pics_dir = repo_root / "data" / "pics"
+        else:
+            pics_dir = Path.home() / ".cvgen" / "pics"
 
     # Log output configuration
     logger.info(f"📁 Output root: {output_dir}")
@@ -569,6 +587,7 @@ def generate_all_cvs(
             cv_file,
             templates_dir=templates_dir,
             output_dir=output_dir,
+            pics_dir=pics_dir,
             lang_map=lang_map,
             dry_run=dry_run,
             keep_latex=keep_latex,

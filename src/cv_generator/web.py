@@ -6,6 +6,15 @@ Provides a local-first web interface for:
 - Browsing CV entries by person and section
 - Assigning/unassigning tags to entries
 - Exporting updated CVs to JSON
+- Language-aware tag display and filtering
+
+Language-Aware Tagging Strategy:
+================================
+This module implements Option A from the tagging strategy design:
+- Canonical ID: English key (e.g., "Full CV")
+- Display: Localized name per active language
+- Storage: Database stores canonical IDs
+- Export: Writes language-specific tag strings based on export language
 
 Security Features (opt-in):
 - Basic auth: Set CVGEN_WEB_AUTH=user:pass or CVGEN_WEB_USER + CVGEN_WEB_PASSWORD
@@ -21,7 +30,7 @@ import secrets
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 
@@ -41,6 +50,12 @@ from .db import (
 )
 from .errors import ConfigurationError, ValidationError
 from .paths import get_default_output_path
+from .tags import (
+    DEFAULT_LANGUAGE,
+    SUPPORTED_LANGUAGES,
+    get_tag_catalog,
+    validate_tags,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -307,11 +322,37 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         db_path = get_db_path()
     app.config["DB_PATH"] = db_path
 
+    def get_current_language() -> str:
+        """Get current language from session, defaulting to English."""
+        return session.get("language", DEFAULT_LANGUAGE)
+
+    def get_tag_label(tag_name: str, language: Optional[str] = None) -> str:
+        """Get localized label for a tag."""
+        lang = language or get_current_language()
+        catalog = get_tag_catalog()
+        return catalog.get_tag_label(tag_name, lang)
+
+    def get_tag_display(tag: Dict[str, Any], language: Optional[str] = None) -> Dict[str, Any]:
+        """Add display_label to a tag dict for the current language."""
+        lang = language or get_current_language()
+        catalog = get_tag_catalog()
+        tag_copy = tag.copy()
+        tag_copy["display_label"] = catalog.get_tag_label(tag["name"], lang)
+        tag_copy["has_translation"] = catalog.has_translation(tag["name"], lang)
+        return tag_copy
+
     @app.context_processor
     def inject_helpers():
         """Inject helper functions into templates."""
+        catalog = get_tag_catalog()
+        current_lang = get_current_language()
         return {
-            "get_entry_summary": get_entry_summary
+            "get_entry_summary": get_entry_summary,
+            "get_tag_label": get_tag_label,
+            "get_tag_display": get_tag_display,
+            "current_language": current_lang,
+            "supported_languages": SUPPORTED_LANGUAGES,
+            "tag_catalog": catalog,
         }
 
     @app.route("/")
@@ -391,7 +432,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     @app.route("/entry/<int:entry_id>")
     @requires_auth
     def entry_detail(entry_id: int):
-        """Entry detail view with tag assignment."""
+        """Entry detail view with tag assignment and language-aware display."""
         try:
             entry = get_entry(entry_id, app.config["DB_PATH"])
             if not entry:
@@ -399,7 +440,20 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                 return redirect(url_for("index"))
 
             all_tags = list_tags(app.config["DB_PATH"])
+            # Add localized display labels to tags
+            all_tags_with_labels = [get_tag_display(tag) for tag in all_tags]
             entry["summary"] = get_entry_summary(entry["section"], entry["data"])
+
+            # Validate tags on this entry
+            current_lang = get_current_language()
+            if entry["tags"] and current_lang != DEFAULT_LANGUAGE:
+                validation = validate_tags(entry["tags"], current_lang)
+                if validation["missing_translations"]:
+                    flash(
+                        f"Some tags lack translation for {current_lang}: "
+                        f"{', '.join(validation['missing_translations'][:3])}",
+                        "warning"
+                    )
         except ConfigurationError as e:
             flash(str(e), "error")
             return redirect(url_for("index"))
@@ -407,7 +461,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         return render_template(
             "entry.html",
             entry=entry,
-            all_tags=all_tags,
+            all_tags=all_tags_with_labels,
             data_json=json.dumps(entry["data"], indent=2, ensure_ascii=False)
         )
 
@@ -436,14 +490,39 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     @app.route("/tags")
     @requires_auth
     def tags_list():
-        """List all tags."""
+        """List all tags with language-aware display."""
         try:
             tags = list_tags(app.config["DB_PATH"])
+            # Add localized display labels to tags
+            tags_with_labels = [get_tag_display(tag) for tag in tags]
         except ConfigurationError as e:
             flash(str(e), "error")
-            tags = []
+            tags_with_labels = []
 
-        return render_template("tags.html", tags=tags)
+        # Get validation warnings for missing translations
+        current_lang = get_current_language()
+        if current_lang != DEFAULT_LANGUAGE:
+            catalog = get_tag_catalog()
+            missing = catalog.get_missing_translations(current_lang)
+            if missing:
+                flash(
+                    f"Warning: {len(missing)} tag(s) lack translation for {current_lang}: "
+                    f"{', '.join(missing[:5])}{'...' if len(missing) > 5 else ''}",
+                    "warning"
+                )
+
+        return render_template("tags.html", tags=tags_with_labels)
+
+    @app.route("/language/<lang>")
+    @requires_auth
+    def set_language(lang: str):
+        """Set the current language for tag display."""
+        if lang not in SUPPORTED_LANGUAGES:
+            flash(f"Unsupported language: {lang}. Supported: {', '.join(SUPPORTED_LANGUAGES)}", "error")
+        else:
+            session["language"] = lang
+            flash(f"Language set to: {lang}", "success")
+        return redirect(request.referrer or url_for("index"))
 
     @app.route("/tags/create", methods=["GET", "POST"])
     @requires_auth
@@ -505,7 +584,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     @app.route("/export/<person>", methods=["POST"])
     @requires_auth
     def export_person(person: str):
-        """Export a person's CV to JSON with rate limiting and safe filenames."""
+        """Export a person's CV to JSON with rate limiting, safe filenames, and language-aware tags."""
         # Check throttle
         wait_time = check_throttle(f"export_{person}")
         if wait_time is not None:
@@ -516,21 +595,24 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             return redirect(url_for("person_dashboard", person=person))
 
         try:
+            # Get export language from form or session
+            export_lang = request.form.get("language") or get_current_language()
+
             # Use output directory instead of data/cvs for safety
             output_dir = get_default_output_path() / "json" / person
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Generate unique filename to prevent overwrites
-            # Timestamp in filename ensures uniqueness, so force=False is safe
-            filename = generate_unique_filename(person, ".json")
+            # Generate unique filename with language suffix
+            lang_suffix = f"_{export_lang}" if export_lang != DEFAULT_LANGUAGE else ""
+            filename = generate_unique_filename(f"{person}{lang_suffix}", ".json")
             output_path = output_dir / filename
 
-            # Always use apply_tags=True to ensure export reflects database source of truth
+            # Export with language-specific tags
             export_cv_to_file(
                 person, output_path, app.config["DB_PATH"],
-                apply_tags=True, force=False
+                apply_tags=True, force=False, tag_language=export_lang
             )
-            flash(f"Exported CV to {output_path}", "success")
+            flash(f"Exported CV to {output_path} (tags in {export_lang})", "success")
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")
 

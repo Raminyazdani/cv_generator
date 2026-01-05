@@ -13,7 +13,18 @@
 <h2>{{ entry.summary }}</h2>
 
 <div class="card">
-    <h3 style="margin-bottom: 1rem;">Assign Tags</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3>Assign Tags</h3>
+        <div class="language-selector">
+            <span style="color: var(--gray-500); font-size: 0.85rem;">Language: </span>
+            {% for lang in supported_languages %}
+            <a href="{{ url_for('set_language', lang=lang) }}" 
+               class="btn btn-sm {% if current_language == lang %}btn-primary{% else %}btn-secondary{% endif %}">
+                {{ lang | upper }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
     
     <form action="{{ url_for('update_entry_tags_route', entry_id=entry.id) }}" method="post">
         <div class="form-group">
@@ -23,7 +34,13 @@
                     <label class="checkbox-item">
                         <input type="checkbox" name="tags" value="{{ tag.name }}"
                             {% if tag.name in entry.tags %}checked{% endif %}>
-                        {{ tag.name }}
+                        {{ tag.display_label }}
+                        {% if tag.display_label != tag.name and current_language != 'en' %}
+                        <span style="color: var(--gray-400); font-size: 0.8rem;">({{ tag.name }})</span>
+                        {% endif %}
+                        {% if not tag.has_translation and current_language != 'en' %}
+                        <span class="tag" style="background: var(--warning); font-size: 0.65rem; margin-left: 0.25rem;">no translation</span>
+                        {% endif %}
                         <span class="tag tag-count" style="margin-left: auto;">{{ tag.usage_count }}</span>
                     </label>
                     {% endfor %}

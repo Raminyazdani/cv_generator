@@ -154,33 +154,95 @@ on Windows via `cmd.exe`, so ensure this works from a normal command prompt.
 
 ## Installation
 
+### Quick Start (End Users)
+
 1. **Clone this repository**:
 
 ```bash
-git clone https://github.com/<your-username>/cv_generator.git
+git clone https://github.com/Raminyazdani/cv_generator.git
 cd cv_generator
 ```
 
-2. **Create a virtual environment (optional but recommended)**:
+2. **Create a virtual environment (recommended)**:
 
 ```bash
 python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows:
 .venv\Scripts\activate
 ```
 
-3. **Install Python dependencies**:
+3. **Install the package**:
 
 ```bash
-pip install jinja2
+pip install -e .
 ```
 
-4. **Verify LaTeX**:
+4. **Verify installation**:
+
+```bash
+cvgen --version
+cvgen --help
+```
+
+5. **Verify LaTeX** (required for PDF generation):
 
 ```bash
 xelatex --version
 ```
 
 If this fails, install a LaTeX distribution and ensure `xelatex` is on `PATH`.
+
+### Developer Setup
+
+For contributors and developers:
+
+```bash
+# Clone and enter the repository
+git clone https://github.com/Raminyazdani/cv_generator.git
+cd cv_generator
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Verify everything works
+cvgen --version
+python -c "import cv_generator; print(cv_generator.__version__)"
+pip check
+pytest tests/ -q
+```
+
+### Editable Install: When to Reinstall
+
+With editable install (`pip install -e .`), code changes reflect immediately without reinstalling.
+
+| Action | Reinstall Needed? |
+|--------|-------------------|
+| Edit `.py` files | ❌ No |
+| Edit templates | ❌ No |
+| Dependencies changed in `pyproject.toml` | ✅ Yes: `pip install -e ".[dev]"` |
+| Entry points changed | ✅ Yes: `pip install -e ".[dev]"` |
+| New venv created | ✅ Yes: `pip install -e ".[dev]"` |
+| Switched Python version | ✅ Yes: recreate venv |
+
+### Update Workflow
+
+After pulling new changes from Git:
+
+```bash
+git pull
+
+# If pyproject.toml changed (or to be safe):
+pip install -e ".[dev]"
+
+# Run tests to verify
+pytest tests/ -q
+```
 
 ---
 
@@ -978,11 +1040,19 @@ This project uses GitHub Actions for CI. The workflow runs on:
 - **Pull requests** targeting `main`/`master`
 
 The CI pipeline includes:
+- **Install Smoke Tests**: Verifies editable install works on Ubuntu, Windows, macOS with Python 3.9 and 3.12
 - **Linting**: Checks code style with `ruff`
 - **Testing**: Runs `pytest` across a matrix of:
   - Operating systems: Ubuntu, Windows, macOS
   - Python versions: 3.9, 3.10, 3.11, 3.12
+- **Documentation**: Builds MkDocs documentation
 - **Coverage**: Generates coverage reports (uploaded as artifacts)
+
+The install smoke tests verify:
+- Package installs correctly: `pip install -e ".[dev]"`
+- No dependency conflicts: `pip check`
+- Package imports: `python -c "import cv_generator; print(cv_generator.__version__)"`
+- CLI works: `cvgen --help`
 
 To run CI checks locally:
 

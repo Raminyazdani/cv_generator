@@ -525,7 +525,11 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             filename = generate_unique_filename(person, ".json")
             output_path = output_dir / filename
 
-            export_cv_to_file(person, output_path, app.config["DB_PATH"], force=False)
+            # Always use apply_tags=True to ensure export reflects database source of truth
+            export_cv_to_file(
+                person, output_path, app.config["DB_PATH"],
+                apply_tags=True, force=False
+            )
             flash(f"Exported CV to {output_path}", "success")
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")

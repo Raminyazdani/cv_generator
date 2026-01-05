@@ -607,3 +607,333 @@ class TestAuthCredentialParsing:
 
         result = get_auth_credentials()
         assert result is None
+
+
+class TestTagDeletionCascade:
+    """Tests for tag deletion with cascade cleanup to data_json."""
+
+    @pytest.fixture
+    def populated_db(self, tmp_path):
+        """Create a database with imported CV data having tags across multiple entries."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["TagX", "TagY"]},
+                {"title": "Project B", "type_key": ["TagX", "TagZ"]},
+                {"title": "Project C", "type_key": ["TagY", "TagZ"]}
+            ],
+            "experiences": [
+                {"role": "Developer", "institution": "Company", "duration": "2020", "type_key": ["TagX"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        import_cv(cv_path, db_path)
+        return db_path
+
+    def test_delete_tag_removes_from_catalog(self, populated_db):
+        """Test that deleting a tag removes it from the tag catalog."""
+        # Verify tag exists
+        tag = get_tag_by_name("TagX", populated_db)
+        assert tag is not None
+
+        # Delete the tag
+        result = delete_tag("TagX", populated_db)
+        assert result is True
+
+        # Verify tag is gone from catalog
+        tag = get_tag_by_name("TagX", populated_db)
+        assert tag is None
+
+    def test_delete_tag_removes_from_all_entries_type_key(self, populated_db):
+        """Test that deleting a tag removes it from type_key in all entries."""
+        # Delete TagX which appears in multiple entries
+        delete_tag("TagX", populated_db)
+
+        # Verify TagX is not in any entry's type_key
+        entries = get_section_entries("testuser", "projects", populated_db)
+        for entry in entries:
+            assert "TagX" not in entry["tags"]
+            # Also check the raw data
+            entry_detail = get_entry(entry["id"], populated_db)
+            data = entry_detail["data"]
+            if "type_key" in data:
+                assert "TagX" not in data["type_key"]
+
+        # Check experiences too
+        exp_entries = get_section_entries("testuser", "experiences", populated_db)
+        for entry in exp_entries:
+            assert "TagX" not in entry["tags"]
+
+    def test_delete_tag_removes_from_exported_json(self, populated_db):
+        """Test that export JSON never contains deleted tags."""
+        # Delete TagX
+        delete_tag("TagX", populated_db)
+
+        # Export without apply_tags (uses data_json directly)
+        exported = export_cv("testuser", populated_db)
+
+        # Verify TagX is not in any type_key in exported data
+        for project in exported.get("projects", []):
+            type_key = project.get("type_key", [])
+            assert "TagX" not in type_key
+
+        for exp in exported.get("experiences", []):
+            type_key = exp.get("type_key", [])
+            assert "TagX" not in type_key
+
+    def test_delete_tag_preserves_other_tags(self, populated_db):
+        """Test that deleting one tag preserves other tags in entries."""
+        # Delete TagX
+        delete_tag("TagX", populated_db)
+
+        # Project A originally had [TagX, TagY], should now have [TagY]
+        entries = get_section_entries("testuser", "projects", populated_db)
+        project_a = next(e for e in entries if e["data"]["title"] == "Project A")
+        assert "TagY" in project_a["tags"]
+        assert "TagX" not in project_a["tags"]
+
+        # Project C originally had [TagY, TagZ], should be unchanged
+        project_c = next(e for e in entries if e["data"]["title"] == "Project C")
+        assert "TagY" in project_c["tags"]
+        assert "TagZ" in project_c["tags"]
+
+    def test_delete_tag_removes_empty_type_key(self, populated_db):
+        """Test that if type_key becomes empty after tag deletion, it's removed entirely."""
+        # Delete TagX from the experience which only has TagX
+        delete_tag("TagX", populated_db)
+
+        exp_entries = get_section_entries("testuser", "experiences", populated_db)
+        assert len(exp_entries) == 1
+        exp = exp_entries[0]
+
+        # type_key should be removed (not just empty)
+        assert "type_key" not in exp["data"]
+
+
+class TestRemoveTagFromEntry:
+    """Tests for removing a specific tag from an entry."""
+
+    @pytest.fixture
+    def populated_db(self, tmp_path):
+        """Create a database with imported CV data."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["TagA", "TagB", "TagC"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        import_cv(cv_path, db_path)
+        return db_path
+
+    def test_remove_tag_from_entry(self, populated_db):
+        """Test removing a single tag from an entry."""
+        from cv_generator.db import remove_tag_from_entry
+
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+
+        # Remove TagB
+        result = remove_tag_from_entry(entry_id, "TagB", populated_db)
+
+        assert "TagB" not in result["tags"]
+        assert "TagA" in result["tags"]
+        assert "TagC" in result["tags"]
+
+    def test_remove_tag_updates_data_json(self, populated_db):
+        """Test that removing a tag updates the data_json type_key."""
+        from cv_generator.db import remove_tag_from_entry
+
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+
+        # Remove TagB
+        remove_tag_from_entry(entry_id, "TagB", populated_db)
+
+        # Verify data_json is updated
+        entry = get_entry(entry_id, populated_db)
+        assert "TagB" not in entry["data"]["type_key"]
+        assert "TagA" in entry["data"]["type_key"]
+
+    def test_remove_tag_reflects_in_export(self, populated_db):
+        """Test that removing a tag is reflected in export."""
+        from cv_generator.db import remove_tag_from_entry
+
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+
+        # Remove TagB
+        remove_tag_from_entry(entry_id, "TagB", populated_db)
+
+        # Export and verify
+        exported = export_cv("testuser", populated_db)
+        project = exported["projects"][0]
+        assert "TagB" not in project["type_key"]
+        assert "TagA" in project["type_key"]
+
+    def test_remove_nonexistent_tag_no_error(self, populated_db):
+        """Test removing a nonexistent tag doesn't raise an error."""
+        from cv_generator.db import remove_tag_from_entry
+
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+
+        # Remove a tag that doesn't exist
+        result = remove_tag_from_entry(entry_id, "NonexistentTag", populated_db)
+
+        # Should work without error, original tags preserved
+        assert "TagA" in result["tags"]
+        assert "TagB" in result["tags"]
+        assert "TagC" in result["tags"]
+
+
+class TestExportConsistency:
+    """Tests for export consistency and determinism."""
+
+    @pytest.fixture
+    def populated_db(self, tmp_path):
+        """Create a database with imported CV data."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["Tag1", "Tag2"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        import_cv(cv_path, db_path)
+        return db_path
+
+    def test_export_twice_same_content(self, populated_db):
+        """Test that exporting twice produces the same content."""
+        exported1 = export_cv("testuser", populated_db)
+        exported2 = export_cv("testuser", populated_db)
+
+        assert exported1 == exported2
+
+    def test_export_after_tag_modification_consistent(self, populated_db):
+        """Test that exports are consistent after tag modifications."""
+        # Modify tags
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+        update_entry_tags(entry_id, ["NewTag1", "NewTag2"], populated_db)
+
+        # Export twice
+        exported1 = export_cv("testuser", populated_db, apply_tags=True)
+        exported2 = export_cv("testuser", populated_db, apply_tags=True)
+
+        assert exported1 == exported2
+        assert exported1["projects"][0]["type_key"] == ["NewTag1", "NewTag2"]
+
+    def test_export_after_delete_no_reintroduced_tags(self, populated_db):
+        """Test that deleted tags are never reintroduced in exports."""
+        # Delete a tag
+        delete_tag("Tag1", populated_db)
+
+        # Export multiple times
+        for _ in range(3):
+            exported = export_cv("testuser", populated_db)
+            type_key = exported["projects"][0].get("type_key", [])
+            assert "Tag1" not in type_key
+
+    def test_export_with_apply_tags_uses_database_truth(self, populated_db):
+        """Test that apply_tags uses database as source of truth."""
+        # Manually update entry_tag (simulating a different code path)
+        entries = get_section_entries("testuser", "projects", populated_db)
+        entry_id = entries[0]["id"]
+
+        # Update tags via the proper API
+        update_entry_tags(entry_id, ["OnlyThisTag"], populated_db)
+
+        # Export with apply_tags=True
+        exported = export_cv("testuser", populated_db, apply_tags=True)
+        assert exported["projects"][0]["type_key"] == ["OnlyThisTag"]
+
+
+class TestCleanupOrphanTagReferences:
+    """Tests for cleanup_orphan_tag_references function."""
+
+    @pytest.fixture
+    def db_with_orphans(self, tmp_path):
+        """Create a database with orphan tag references in data_json."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Import CV with tags
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "type_key": ["RealTag", "OrphanTag"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        import_cv(cv_path, db_path)
+
+        # Manually delete the tag from the catalog but NOT update data_json
+        # (simulating pre-fix behavior or a bug)
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM tag WHERE name = ?", ("OrphanTag",))
+        tag_id = cursor.fetchone()[0]
+        cursor.execute("DELETE FROM entry_tag WHERE tag_id = ?", (tag_id,))
+        cursor.execute("DELETE FROM tag WHERE id = ?", (tag_id,))
+        conn.commit()
+        conn.close()
+
+        return db_path
+
+    def test_cleanup_finds_orphan_references(self, db_with_orphans):
+        """Test that cleanup finds orphan tag references."""
+        from cv_generator.db import cleanup_orphan_tag_references
+
+        result = cleanup_orphan_tag_references(db_with_orphans)
+
+        assert result["entries_cleaned"] == 1
+        assert "OrphanTag" in result["orphan_tags_found"]
+
+    def test_cleanup_removes_orphan_from_data_json(self, db_with_orphans):
+        """Test that cleanup removes orphans from data_json."""
+        from cv_generator.db import cleanup_orphan_tag_references
+
+        cleanup_orphan_tag_references(db_with_orphans)
+
+        # Verify the data_json no longer contains OrphanTag
+        entries = get_section_entries("testuser", "projects", db_with_orphans)
+        entry = entries[0]
+
+        assert "OrphanTag" not in entry["data"].get("type_key", [])
+        assert "RealTag" in entry["data"]["type_key"]
+
+    def test_cleanup_preserves_valid_tags(self, db_with_orphans):
+        """Test that cleanup preserves valid tags."""
+        from cv_generator.db import cleanup_orphan_tag_references
+
+        cleanup_orphan_tag_references(db_with_orphans)
+
+        # Verify RealTag is still present
+        entries = get_section_entries("testuser", "projects", db_with_orphans)
+        entry = entries[0]
+
+        assert "RealTag" in entry["tags"]
+        assert "RealTag" in entry["data"]["type_key"]

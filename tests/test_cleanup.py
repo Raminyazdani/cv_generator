@@ -1,8 +1,16 @@
 """
 Tests for the cleanup module with backup functionality.
+
+Includes enhanced Windows cleanup tests for:
+- Locked file detection
+- Lock suggestions
+- Retry logic with exponential backoff
+- CleanupError exception handling
 """
 
+import shutil
 import tarfile
+import time
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -10,11 +18,16 @@ from unittest.mock import patch
 import pytest
 
 from cv_generator.cleanup import (
+    CleanupError,
+    _find_locked_files,
+    _get_lock_suggestions,
     confirm_action,
     create_backup,
     get_backups_dir,
     is_data_path,
+    is_windows,
     list_backups,
+    remove_directory,
     safe_cleanup,
 )
 
@@ -220,3 +233,257 @@ class TestConfirmAction:
         """Test KeyboardInterrupt returns False."""
         with patch("builtins.input", side_effect=KeyboardInterrupt):
             assert confirm_action("Delete?") is False
+
+
+class TestIsWindows:
+    """Tests for is_windows function."""
+
+    def test_is_windows_returns_bool(self):
+        """Test that is_windows returns a boolean."""
+        result = is_windows()
+        assert isinstance(result, bool)
+
+
+class TestCleanupError:
+    """Tests for CleanupError exception class."""
+
+    def test_cleanup_error_with_message(self):
+        """Test CleanupError with basic message."""
+        error = CleanupError("Test error", Path("/test"))
+        assert str(error) == "Test error"
+        assert error.path == Path("/test")
+        assert error.locked_files == []
+
+    def test_cleanup_error_with_locked_files(self):
+        """Test CleanupError with locked files list."""
+        locked = ["/path/file1.txt", "/path/file2.txt"]
+        error = CleanupError("Test error", Path("/test"), locked)
+        assert error.locked_files == locked
+
+
+class TestFindLockedFiles:
+    """Tests for _find_locked_files function."""
+
+    def test_find_locked_files_nonexistent_path(self, tmp_path):
+        """Test with non-existent path."""
+        result = _find_locked_files(tmp_path / "nonexistent")
+        assert result == []
+
+    def test_find_locked_files_empty_dir(self, tmp_path):
+        """Test with empty directory."""
+        result = _find_locked_files(tmp_path)
+        assert result == []
+
+    def test_find_locked_files_unlocked_files(self, tmp_path):
+        """Test with unlocked files."""
+        (tmp_path / "file1.txt").write_text("content1")
+        (tmp_path / "file2.txt").write_text("content2")
+
+        # Should return empty list on non-Windows (files not locked)
+        result = _find_locked_files(tmp_path)
+        assert result == []
+
+
+class TestGetLockSuggestions:
+    """Tests for _get_lock_suggestions function."""
+
+    def test_onedrive_detection(self, tmp_path):
+        """Test OneDrive suggestion generation."""
+        onedrive_path = tmp_path / "OneDrive" / "Documents"
+        locked_files = [str(onedrive_path / "file.txt")]
+
+        suggestions = _get_lock_suggestions(onedrive_path, locked_files)
+
+        # Should suggest pausing OneDrive
+        assert any('OneDrive' in s for s in suggestions)
+        assert any('Pause' in s or 'pause' in s for s in suggestions)
+
+    def test_dropbox_detection(self, tmp_path):
+        """Test Dropbox suggestion generation."""
+        dropbox_path = tmp_path / "Dropbox" / "Documents"
+        locked_files = [str(dropbox_path / "file.txt")]
+
+        suggestions = _get_lock_suggestions(dropbox_path, locked_files)
+
+        # Should suggest pausing Dropbox
+        assert any('Dropbox' in s for s in suggestions)
+
+    def test_pdf_file_suggestion(self, tmp_path):
+        """Test PDF file lock suggestions."""
+        locked_files = [
+            str(tmp_path / "document.pdf"),
+            str(tmp_path / "cv.pdf"),
+        ]
+
+        suggestions = _get_lock_suggestions(tmp_path, locked_files)
+
+        # Should suggest closing PDF readers
+        assert any('PDF' in s or 'pdf' in s for s in suggestions)
+
+    def test_latex_file_suggestion(self, tmp_path):
+        """Test LaTeX file lock suggestions."""
+        locked_files = [
+            str(tmp_path / "main.tex"),
+            str(tmp_path / "main.log"),
+        ]
+
+        suggestions = _get_lock_suggestions(tmp_path, locked_files)
+
+        # Should suggest closing LaTeX editors
+        assert any('LaTeX' in s for s in suggestions)
+
+    def test_always_includes_generic_suggestions(self, tmp_path):
+        """Test that generic suggestions are always included."""
+        suggestions = _get_lock_suggestions(tmp_path, [])
+
+        # Should include generic suggestions
+        assert any('Explorer' in s or 'explorer' in s for s in suggestions)
+        assert any('retry' in s.lower() for s in suggestions)
+
+
+class TestRemoveDirectory:
+    """Tests for remove_directory function."""
+
+    def test_remove_nonexistent_directory(self, tmp_path):
+        """Test removing non-existent directory (should succeed)."""
+        test_dir = tmp_path / "nonexistent"
+
+        result = remove_directory(test_dir)
+
+        assert result is True
+
+    def test_remove_empty_directory(self, tmp_path):
+        """Test removing empty directory."""
+        test_dir = tmp_path / "empty"
+        test_dir.mkdir()
+
+        result = remove_directory(test_dir)
+
+        assert result is True
+        assert not test_dir.exists()
+
+    def test_remove_directory_with_files(self, tmp_path):
+        """Test removing directory with files."""
+        test_dir = tmp_path / "with_files"
+        test_dir.mkdir()
+
+        (test_dir / "file1.txt").write_text("content1")
+        (test_dir / "file2.txt").write_text("content2")
+
+        result = remove_directory(test_dir)
+
+        assert result is True
+        assert not test_dir.exists()
+
+    def test_remove_directory_with_subdirectories(self, tmp_path):
+        """Test removing nested directory structure."""
+        test_dir = tmp_path / "nested"
+        (test_dir / "sub1" / "sub2").mkdir(parents=True)
+        (test_dir / "sub1" / "file1.txt").write_text("content")
+        (test_dir / "sub1" / "sub2" / "file2.txt").write_text("content")
+
+        result = remove_directory(test_dir)
+
+        assert result is True
+        assert not test_dir.exists()
+
+    def test_remove_directory_raises_cleanup_error_on_persistent_failure(
+        self, tmp_path, monkeypatch
+    ):
+        """Test that CleanupError is raised after all retries fail."""
+        test_dir = tmp_path / "persistent_failure"
+        test_dir.mkdir()
+
+        def mock_rmtree(path, onerror=None):
+            raise PermissionError("Mocked persistent lock")
+
+        monkeypatch.setattr('shutil.rmtree', mock_rmtree)
+
+        with pytest.raises(CleanupError) as exc_info:
+            remove_directory(test_dir, max_attempts=3, initial_delay=0.01)
+
+        error = exc_info.value
+        assert error.path == test_dir
+        assert "Cannot remove directory" in str(error)
+
+    def test_retry_with_exponential_backoff(self, tmp_path, monkeypatch):
+        """Test exponential backoff timing."""
+        test_dir = tmp_path / "retry_test"
+        test_dir.mkdir()
+        (test_dir / "file.txt").write_text("content")
+
+        attempts = []
+        real_rmtree = shutil.rmtree
+
+        def mock_rmtree(path, onerror=None):
+            attempts.append(time.time())
+            if len(attempts) < 3:
+                raise PermissionError("Mocked lock")
+            # Third attempt succeeds - use real rmtree
+            real_rmtree(path, onerror=onerror)
+
+        monkeypatch.setattr('cv_generator.cleanup.shutil.rmtree', mock_rmtree)
+
+        result = remove_directory(
+            test_dir,
+            max_attempts=5,
+            initial_delay=0.05,
+            max_delay=1.0
+        )
+
+        assert result is True
+        assert len(attempts) == 3
+
+        # Check delays are increasing
+        if len(attempts) >= 3:
+            delay1 = attempts[1] - attempts[0]
+            delay2 = attempts[2] - attempts[1]
+            # Second delay should be greater than first due to exponential backoff
+            # Use small tolerance for timing variations
+            assert delay2 > delay1 * 0.8
+
+
+class TestRemoveDirectoryInteractive:
+    """Tests for remove_directory_interactive function (non-interactive scenarios)."""
+
+    def test_successful_removal(self, tmp_path):
+        """Test successful removal in non-interactive mode."""
+        from cv_generator.cleanup import remove_directory_interactive
+
+        test_dir = tmp_path / "test_dir"
+        test_dir.mkdir()
+        (test_dir / "file.txt").write_text("content")
+
+        result = remove_directory_interactive(test_dir)
+
+        assert result is True
+        assert not test_dir.exists()
+
+
+class TestCleanupCrossplatform:
+    """Cross-platform cleanup tests that run on all platforms."""
+
+    def test_remove_nonexistent_directory(self, tmp_path):
+        """Test removing non-existent directory."""
+        test_dir = tmp_path / "nonexistent"
+
+        result = remove_directory(test_dir)
+
+        assert result is True
+
+    def test_safe_cleanup_handles_cleanup_error(self, tmp_path, monkeypatch):
+        """Test that safe_cleanup handles CleanupError gracefully."""
+        test_dir = tmp_path / "error_test"
+        test_dir.mkdir()
+        (test_dir / "file.txt").write_text("content")
+
+        def mock_rmtree_reliable(*args, **kwargs):
+            raise CleanupError("Mocked error", test_dir, [])
+
+        monkeypatch.setattr('cv_generator.cleanup.rmtree_reliable', mock_rmtree_reliable)
+
+        with patch("cv_generator.cleanup.is_data_path", return_value=False):
+            result = safe_cleanup(test_dir, backup=False, yes=True, verbose=True)
+
+        # Should return False but not crash
+        assert result is False

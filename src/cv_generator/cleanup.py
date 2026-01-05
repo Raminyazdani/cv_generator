@@ -1,11 +1,20 @@
 """
 Cleanup utilities for CV Generator.
 
+Enhanced Windows-safe directory cleanup with comprehensive diagnostics.
+
 Provides functions for:
 - Reliably removing result directories (Windows-friendly)
 - Handling file locks and permission issues
 - Safe cleanup with backup functionality
 - Confirmation prompts for destructive operations
+
+Handles common Windows file locking issues:
+- OneDrive sync locks
+- Dropbox sync locks
+- Antivirus file scanning
+- Explorer.exe file handles
+- Running applications with open files
 """
 
 import logging
@@ -19,11 +28,43 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from .paths import get_repo_root
 
 logger = logging.getLogger(__name__)
+
+
+class CleanupError(Exception):
+    """
+    Exception raised when cleanup fails after all retries.
+
+    Provides detailed diagnostics about which files are locked
+    and actionable suggestions for resolving the issue.
+    """
+
+    def __init__(self, message: str, path: Path, locked_files: Optional[List[str]] = None):
+        """
+        Initialize the CleanupError.
+
+        Args:
+            message: Human-readable error message with diagnostics.
+            path: Path that could not be cleaned up.
+            locked_files: List of file paths that appear to be locked.
+        """
+        self.path = path
+        self.locked_files = locked_files or []
+        super().__init__(message)
+
+
+def is_windows() -> bool:
+    """
+    Check if running on Windows.
+
+    Returns:
+        True if running on Windows, False otherwise.
+    """
+    return sys.platform.startswith('win')
 
 # Characters that could enable shell injection if passed to subprocess with shell=True
 DANGEROUS_PATH_CHARS = ['&', '|', ';', '$', '`', '<', '>', '(', ')', '\n', '\r']
@@ -93,7 +134,321 @@ def _make_writable(path: str) -> None:
         pass
 
 
-def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
+def _find_locked_files(path: Path) -> List[str]:
+    """
+    Attempt to identify which files are locked (Windows).
+
+    Scans through files in the directory and attempts to open each
+    for writing to detect which files have locks held by other processes.
+
+    Args:
+        path: Directory to check for locked files.
+
+    Returns:
+        List of file paths that appear to be locked.
+    """
+    if not is_windows():
+        return []
+
+    locked = []
+
+    try:
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                file_path = Path(root) / file
+                try:
+                    # Try to open in read binary mode (detects locks without side effects)
+                    with open(file_path, 'rb'):
+                        pass
+                except PermissionError:
+                    locked.append(str(file_path))
+                except Exception:
+                    pass  # Other errors don't indicate locks
+    except Exception as e:
+        logger.debug(f"Error scanning for locked files: {e}")
+
+    return locked
+
+
+def _get_lock_suggestions(path: Path, locked_files: List[str]) -> List[str]:
+    """
+    Generate helpful suggestions based on locked files.
+
+    Analyzes the path and locked file list to provide context-specific
+    suggestions for resolving file lock issues on Windows.
+
+    Args:
+        path: Base directory path.
+        locked_files: List of locked file paths.
+
+    Returns:
+        List of actionable suggestions for the user.
+    """
+    suggestions = []
+
+    # Check for common lock sources
+    path_str = str(path).lower()
+
+    # OneDrive detection
+    if 'onedrive' in path_str or any('onedrive' in f.lower() for f in locked_files):
+        suggestions.append(
+            "OneDrive detected: Pause OneDrive sync (right-click OneDrive icon → Pause syncing)"
+        )
+
+    # Dropbox detection
+    if 'dropbox' in path_str or any('dropbox' in f.lower() for f in locked_files):
+        suggestions.append(
+            "Dropbox detected: Pause Dropbox sync (Dropbox icon → Preferences → Pause syncing)"
+        )
+
+    # Common file extensions that get locked
+    locked_extensions = set()
+    for f in locked_files:
+        ext = Path(f).suffix.lower()
+        if ext:
+            locked_extensions.add(ext)
+
+    if '.pdf' in locked_extensions:
+        suggestions.append(
+            "PDF files locked: Close PDF readers (Adobe, Chrome, Edge, etc.)"
+        )
+
+    if '.tex' in locked_extensions or '.log' in locked_extensions:
+        suggestions.append(
+            "LaTeX files locked: Close LaTeX editors (TeXstudio, Overleaf Desktop, etc.)"
+        )
+
+    if '.db' in locked_extensions or '.sqlite' in locked_extensions:
+        suggestions.append(
+            "Database files locked: Close database browsers or stop web UI"
+        )
+
+    # Generic suggestions
+    suggestions.extend([
+        "Close Windows Explorer windows showing this directory",
+        "Close any applications with open files from this directory",
+        "Wait 30 seconds for file handles to release, then retry",
+        "Restart your computer if the issue persists",
+    ])
+
+    return suggestions
+
+
+def _onerror_handler(func: Callable, path: str, exc_info: tuple) -> None:
+    """
+    Error handler for shutil.rmtree that logs detailed information.
+
+    On Windows, attempts to clear read-only attributes and retry
+    the operation once before giving up.
+
+    Args:
+        func: Function that raised the error.
+        path: Path that caused the error.
+        exc_info: Exception information tuple (type, value, traceback).
+    """
+    exc_type, exc_value, exc_traceback = exc_info
+
+    logger.debug(
+        f"Error in {func.__name__} for {path}: "
+        f"{exc_type.__name__}: {exc_value}"
+    )
+
+    # On Windows, try to clear read-only and retry once
+    if is_windows() and isinstance(exc_value, PermissionError):
+        try:
+            os.chmod(path, 0o777)
+            func(path)
+            logger.debug(f"Successfully deleted {path} after chmod")
+        except Exception as e:
+            logger.debug(f"Retry failed for {path}: {e}")
+
+
+def remove_directory(
+    path: Path,
+    *,
+    max_attempts: int = 30,
+    initial_delay: float = 0.1,
+    max_delay: float = 5.0,
+    show_progress: bool = False,
+) -> bool:
+    """
+    Remove directory with robust Windows file lock handling.
+
+    Uses exponential backoff retry logic to handle transient file locks
+    from OneDrive, Dropbox, antivirus software, and other applications.
+
+    Args:
+        path: Directory to remove.
+        max_attempts: Maximum retry attempts (default: 30, ~2 minutes total).
+        initial_delay: Initial retry delay in seconds (default: 0.1).
+        max_delay: Maximum retry delay in seconds (default: 5.0).
+        show_progress: Show progress messages to user.
+
+    Returns:
+        True if successful, False if failed.
+
+    Raises:
+        CleanupError: If cleanup fails after all retries (with diagnostics).
+    """
+    if not path.exists():
+        logger.debug(f"Path does not exist, nothing to remove: {path}")
+        return True
+
+    logger.info(f"Removing directory: {path}")
+
+    # On Windows, clear read-only attributes first
+    if is_windows():
+        logger.debug("Clearing read-only attributes (Windows)")
+        try:
+            _clear_readonly_windows(path)
+        except ValueError:
+            pass  # Path validation error - continue anyway
+
+    # Retry loop with exponential backoff
+    for attempt in range(1, max_attempts + 1):
+        try:
+            logger.debug(f"Cleanup attempt {attempt}/{max_attempts}")
+
+            shutil.rmtree(path, onerror=_onerror_handler)
+
+            # Verify removal
+            if not path.exists():
+                logger.info(f"Successfully removed: {path}")
+                return True
+            else:
+                logger.warning(f"Path still exists after rmtree: {path}")
+                # Continue to next attempt
+
+        except PermissionError:
+            if show_progress and attempt % 5 == 0:
+                logger.info(
+                    f"Waiting for file locks to release... (attempt {attempt}/{max_attempts})"
+                )
+
+            if attempt < max_attempts:
+                # Exponential backoff with cap (start at initial_delay for first retry)
+                delay = min(max_delay, initial_delay * (1.5 ** (attempt - 1)))
+                logger.debug(f"Waiting {delay:.2f}s before retry")
+                time.sleep(delay)
+
+        except Exception as e:
+            logger.error(f"Unexpected error during cleanup: {e}")
+            break
+
+    # All retries failed - provide diagnostics
+    logger.error(f"Failed to remove directory after {max_attempts} attempts: {path}")
+
+    # Find locked files
+    locked_files = _find_locked_files(path) if is_windows() else []
+
+    if locked_files:
+        logger.error(f"Found {len(locked_files)} locked file(s):")
+        for i, locked_file in enumerate(locked_files[:10], 1):  # Show max 10
+            logger.error(f"  {i}. {locked_file}")
+        if len(locked_files) > 10:
+            logger.error(f"  ... and {len(locked_files) - 10} more")
+
+    # Generate suggestions
+    suggestions = _get_lock_suggestions(path, locked_files)
+
+    logger.error("Suggestions to resolve:")
+    for i, suggestion in enumerate(suggestions, 1):
+        logger.error(f"  {i}. {suggestion}")
+
+    # Calculate approximate total time (matches the exponential backoff formula)
+    total_time = sum(
+        min(max_delay, initial_delay * (1.5 ** i)) for i in range(max_attempts - 1)
+    )
+
+    # Build detailed error message
+    error_message = (
+        f"Cannot remove directory (file locks): {path}\n"
+        f"Attempted {max_attempts} times over ~{total_time:.0f} seconds.\n"
+    )
+
+    if locked_files:
+        error_message += f"\nLocked files ({len(locked_files)}):\n"
+        for locked_file in locked_files[:5]:
+            error_message += f"  • {locked_file}\n"
+        if len(locked_files) > 5:
+            error_message += f"  ... and {len(locked_files) - 5} more\n"
+
+    error_message += "\nPlease:\n"
+    for suggestion in suggestions[:3]:
+        error_message += f"  • {suggestion}\n"
+
+    raise CleanupError(error_message, path, locked_files)
+
+
+def remove_directory_interactive(path: Path, force: bool = False) -> bool:
+    """
+    Remove directory with user interaction on failure.
+
+    Provides an interactive retry flow for when automatic cleanup fails.
+    Allows users to close applications and retry, or skip/abort.
+
+    Args:
+        path: Directory to remove.
+        force: If True, skip confirmation prompts.
+
+    Returns:
+        True if successful, False if user cancelled or failed.
+
+    Raises:
+        KeyboardInterrupt: If user chooses to abort the operation.
+    """
+    try:
+        return remove_directory(path, show_progress=True)
+
+    except CleanupError as e:
+        logger.error(str(e))
+
+        if force:
+            logger.error("Cleanup failed even with --force")
+            return False
+
+        # Ask user if they want to retry
+        if sys.stdin.isatty():
+            print("\n" + "=" * 60)
+            print("Cleanup Failed")
+            print("=" * 60)
+            print(str(e))
+            print("\nOptions:")
+            print("  1. Retry now (after closing applications)")
+            print("  2. Skip cleanup (leave directory)")
+            print("  3. Abort operation")
+
+            while True:
+                try:
+                    choice = input("\nChoose [1/2/3]: ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    choice = '3'
+
+                if choice == '1':
+                    print("\nRetrying cleanup...")
+                    try:
+                        return remove_directory(path, show_progress=True)
+                    except CleanupError:
+                        print("Retry failed. Skipping cleanup.")
+                        return False
+
+                elif choice == '2':
+                    logger.warning(f"Skipping cleanup of {path}")
+                    return False
+
+                elif choice == '3':
+                    logger.error("Operation aborted by user")
+                    raise KeyboardInterrupt("User aborted due to cleanup failure")
+
+                else:
+                    print("Invalid choice. Please enter 1, 2, or 3.")
+        else:
+            # Non-interactive mode
+            logger.error("Cannot prompt user in non-interactive mode")
+            return False
+
+
+def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 30) -> None:
     """
     Reliably remove a directory tree, handling Windows-specific issues.
 
@@ -105,6 +460,9 @@ def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
     Args:
         path: Path to the directory to remove.
         attempts: Maximum number of attempts before giving up.
+
+    Raises:
+        CleanupError: If cleanup fails after all retries (with diagnostics).
     """
     p = Path(path)
 
@@ -139,13 +497,38 @@ def rmtree_reliable(path: str | os.PathLike, *, attempts: int = 25) -> None:
         except FileNotFoundError:
             return
         except PermissionError:
-            time.sleep(min(2.0, 0.05 * (2 ** i)))
+            # Exponential backoff with cap
+            delay = min(2.0, 0.05 * (2 ** i))
+            time.sleep(delay)
         except OSError:
-            time.sleep(min(2.0, 0.05 * (2 ** i)))
+            delay = min(2.0, 0.05 * (2 ** i))
+            time.sleep(delay)
 
-    # Final attempt
-    _clear_readonly_windows(p)
-    shutil.rmtree(p, onerror=onerror)
+    # Final attempt with better error handling
+    try:
+        _clear_readonly_windows(p)
+        shutil.rmtree(p, onerror=onerror)
+    except (PermissionError, OSError) as e:
+        # Provide diagnostics on final failure
+        locked_files = _find_locked_files(p) if is_windows() else []
+        suggestions = _get_lock_suggestions(p, locked_files)
+
+        error_message = (
+            f"Cannot remove directory after {attempts} attempts: {p}\n"
+        )
+
+        if locked_files:
+            error_message += f"\nLocked files ({len(locked_files)}):\n"
+            for locked_file in locked_files[:5]:
+                error_message += f"  • {locked_file}\n"
+            if len(locked_files) > 5:
+                error_message += f"  ... and {len(locked_files) - 5} more\n"
+
+        error_message += "\nPlease:\n"
+        for suggestion in suggestions[:3]:
+            error_message += f"  • {suggestion}\n"
+
+        raise CleanupError(error_message, p, locked_files) from e
 
 
 def cleanup_result_dir(result_dir: Path) -> None:
@@ -336,6 +719,11 @@ def safe_cleanup(
         if verbose:
             print(f"🗑️ Deleted: {path}")
         return True
+    except CleanupError as e:
+        if verbose:
+            print(f"❌ Error deleting {path}: {e}")
+        # Return False but don't re-raise - allow caller to continue
+        return False
     except Exception as e:
         if verbose:
             print(f"❌ Error deleting {path}: {e}")

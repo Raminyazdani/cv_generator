@@ -1421,6 +1421,11 @@ OPTIONS
     --no-incremental    Force full rebuild, ignoring cache
     --watch, -w         Watch for file changes and rebuild automatically
 
+CLEANUP OPTIONS (Windows)
+    --no-cleanup        Skip cleanup of intermediate files
+    --force-cleanup     Force cleanup even if files are locked (may fail)
+    --cleanup-timeout N Maximum time to wait for file locks (default: 120s)
+
 INCREMENTAL BUILDS
     Use --incremental to enable incremental builds. This hashes the CV JSON,
     template files, and assets. If nothing has changed, the build is skipped.
@@ -1451,6 +1456,12 @@ EXAMPLES
 
     # Watch mode for development
     cvgen build --watch
+
+    # Skip cleanup (Windows file lock issues)
+    cvgen build --no-cleanup
+
+    # Force cleanup with extended timeout
+    cvgen build --force-cleanup --cleanup-timeout 300
 
 OUTPUT STRUCTURE
     output/
@@ -2299,6 +2310,29 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="report",
         help="Generate a build report in output/reports/"
+    )
+
+    # Cleanup options
+    cleanup_group = build_parser.add_argument_group('Cleanup Options')
+    cleanup_group.add_argument(
+        '--no-cleanup',
+        action='store_true',
+        dest='no_cleanup',
+        help='Skip cleanup of intermediate files'
+    )
+    cleanup_group.add_argument(
+        '--force-cleanup',
+        action='store_true',
+        dest='force_cleanup',
+        help='Force cleanup even if files are locked (may fail)'
+    )
+    cleanup_group.add_argument(
+        '--cleanup-timeout',
+        type=int,
+        default=120,
+        metavar='SECONDS',
+        dest='cleanup_timeout',
+        help='Maximum time to wait for file locks (default: 120s)'
     )
 
     build_parser.set_defaults(func=build_command)

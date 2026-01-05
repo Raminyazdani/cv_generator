@@ -5,8 +5,19 @@
 {% block content %}
 <h2>Tags</h2>
 
-<div style="margin-bottom: 1rem;">
+<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
     <a href="{{ url_for('create_tag_route') }}" class="btn btn-primary">+ Create Tag</a>
+    
+    <div class="language-selector">
+        <span style="color: var(--gray-500); font-size: 0.9rem;">Display language: </span>
+        {% for lang in supported_languages %}
+        <a href="{{ url_for('set_language', lang=lang) }}" 
+           class="btn btn-sm {% if current_language == lang %}btn-primary{% else %}btn-secondary{% endif %}"
+           style="margin-left: 0.25rem;">
+            {{ lang | upper }}
+        </a>
+        {% endfor %}
+    </div>
 </div>
 
 {% if tags %}
@@ -18,9 +29,15 @@
     
     <div id="tags-list">
     {% for tag in tags %}
-    <div class="list-item tag-item" data-search="{{ tag.name | lower }} {{ tag.description | default('') | lower }}">
+    <div class="list-item tag-item" data-search="{{ tag.name | lower }} {{ tag.display_label | lower }} {{ tag.description | default('') | lower }}">
         <div style="flex: 1;">
-            <strong>{{ tag.name }}</strong>
+            <strong>{{ tag.display_label }}</strong>
+            {% if tag.display_label != tag.name and current_language != 'en' %}
+            <span style="color: var(--gray-400); font-size: 0.85rem;">({{ tag.name }})</span>
+            {% endif %}
+            {% if not tag.has_translation and current_language != 'en' %}
+            <span class="tag" style="background: var(--warning); font-size: 0.7rem;">no translation</span>
+            {% endif %}
             {% if tag.description %}
             <p style="color: var(--gray-500); font-size: 0.9rem;">{{ tag.description }}</p>
             {% endif %}

@@ -609,7 +609,8 @@ def export_cv(
     db_path: Optional[Path] = None,
     pretty: bool = True,
     apply_tags: bool = False,
-    apply_tags_to_all: bool = False
+    apply_tags_to_all: bool = False,
+    tag_language: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Export a person's CV from the database to a dict.
@@ -620,6 +621,8 @@ def export_cv(
         pretty: If True, format JSON with indentation.
         apply_tags: If True, rebuild type_key from entry_tag for entries that originally had it.
         apply_tags_to_all: If True, add type_key to ALL entries (even those that didn't have it).
+        tag_language: If provided, export tags in this language (e.g., "de", "fa").
+                     Uses canonical (English) IDs if None.
 
     Returns:
         CV data dictionary.
@@ -628,6 +631,7 @@ def export_cv(
         ConfigurationError: If database doesn't exist or person not found.
     """
     from .entry_path import parse_skill_entry_path
+    from .tags import export_tags as translate_tags_to_language
 
     db_path = get_db_path(db_path)
 
@@ -670,6 +674,10 @@ def export_cv(
             if apply_tags or apply_tags_to_all:
                 # Get tags from entry_tag table
                 db_tags = _rebuild_type_keys(cursor, entry_id)
+
+                # Translate tags to target language if specified
+                if tag_language and db_tags:
+                    db_tags = translate_tags_to_language(db_tags, tag_language)
 
                 if apply_tags_to_all:
                     # Always add type_key, even if empty
@@ -757,7 +765,8 @@ def export_cv_to_file(
     pretty: bool = True,
     apply_tags: bool = False,
     apply_tags_to_all: bool = False,
-    force: bool = False
+    force: bool = False,
+    tag_language: Optional[str] = None
 ) -> Path:
     """
     Export a person's CV from the database to a JSON file.
@@ -770,6 +779,7 @@ def export_cv_to_file(
         apply_tags: If True, rebuild type_key from entry_tag for entries that originally had it.
         apply_tags_to_all: If True, add type_key to ALL entries.
         force: If True, overwrite existing files.
+        tag_language: If provided, export tags in this language. Uses canonical IDs if None.
 
     Returns:
         Path to the created file.
@@ -783,7 +793,9 @@ def export_cv_to_file(
             f"Output file already exists: {output_path}. Use --force to overwrite."
         )
 
-    cv_data = export_cv(person_slug, db_path, pretty, apply_tags, apply_tags_to_all)
+    cv_data = export_cv(
+        person_slug, db_path, pretty, apply_tags, apply_tags_to_all, tag_language
+    )
 
     # Ensure parent directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)

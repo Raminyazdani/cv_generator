@@ -103,6 +103,9 @@ def resolve_path(path: str | os.PathLike, base: Optional[Path] = None) -> Path:
 
     if base is None:
         base = get_repo_root()
+        if base is None:
+            # Fallback to current directory if repo root not found
+            base = Path.cwd()
 
     return (base / p).resolve()
 

@@ -12,8 +12,18 @@ Provides flexible path resolution with the following precedence:
 
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+# Python 3.11+ has tomllib in stdlib, earlier versions need tomli
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        tomllib = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +76,14 @@ class PathConfig:
 
     def _load_config(self, config_file: Path):
         """Load paths from configuration file."""
-        try:
-            # Python 3.11+ has tomllib built-in
-            try:
-                import tomllib
-            except ImportError:
-                import tomli as tomllib
+        if tomllib is None:
+            logger.warning("tomli/tomllib not available, skipping config file")
+            return
 
+        try:
             with open(config_file, "rb") as f:
                 self._config_data = tomllib.load(f)
             logger.info(f"Loaded configuration from {config_file}")
-        except ImportError:
-            logger.warning("tomli/tomllib not available, skipping config file")
         except Exception as e:
             logger.error(f"Failed to load config file {config_file}: {e}")
 
@@ -260,13 +266,17 @@ class PathConfig:
             return Path(self._config_data["paths"]["templates_dir"]).expanduser()
 
         # 4. Package templates (installed with package)
+        # Look for templates in the package installation directory
+        # Expected structure: site-packages/cv_generator/ with templates/ at repo root
         try:
             import cv_generator
-
-            pkg_templates = Path(cv_generator.__file__).parent.parent.parent / "templates"
-            if pkg_templates.exists():
-                return pkg_templates
-        except (ImportError, AttributeError):
+            pkg_path = Path(cv_generator.__file__).parent
+            # Try parent directories to find templates/
+            for parent_level in range(3):  # Check up to 3 levels up
+                potential_templates = pkg_path.parents[parent_level] / "templates"
+                if potential_templates.exists():
+                    return potential_templates
+        except (ImportError, AttributeError, IndexError):
             pass
 
         # 5. Legacy templates/ directory
@@ -339,13 +349,16 @@ class PathConfig:
             return Path(self._config_data["paths"]["assets_dir"]).expanduser()
 
         # 5. Package assets (installed with package)
+        # Look for assets in the package installation directory
         try:
             import cv_generator
-
-            pkg_assets = Path(cv_generator.__file__).parent.parent.parent / "assets"
-            if pkg_assets.exists():
-                return pkg_assets
-        except (ImportError, AttributeError):
+            pkg_path = Path(cv_generator.__file__).parent
+            # Try parent directories to find assets/
+            for parent_level in range(3):  # Check up to 3 levels up
+                potential_assets = pkg_path.parents[parent_level] / "assets"
+                if potential_assets.exists():
+                    return potential_assets
+        except (ImportError, AttributeError, IndexError):
             pass
 
         # 6. Legacy assets/ directory

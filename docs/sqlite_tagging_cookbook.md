@@ -102,8 +102,126 @@ Each entry gets an `identity_key` computed from its content. This allows:
 | languages | `language` |
 | basics | `fname` + `lname` |
 | workshop_and_certifications | `issuer` |
+| **skills** | Entry path: `skills/<parent>/<sub>/<skill_key>` |
 
 Example identity key: `projects:url=https://github.com/user/repo`
+
+### Skills Section: Nested Structure and Tagging
+
+The `skills` section uses a **nested dictionary structure** unlike other flat list sections. This requires special handling for tagging individual skill items.
+
+#### Skills JSON Structure
+
+```json
+{
+  "skills": {
+    "Programming & Scripting": {
+      "Programming Languages": [
+        {
+          "long_name": "Python",
+          "short_name": "Python",
+          "type_key": ["Full CV", "Programming"]
+        },
+        {
+          "long_name": "JavaScript",
+          "short_name": "JS",
+          "type_key": ["Full CV", "Web"]
+        }
+      ],
+      "Machine Learning": [
+        {
+          "long_name": "TensorFlow",
+          "short_name": "TensorFlow",
+          "type_key": ["Full CV", "AI"]
+        }
+      ]
+    },
+    "Soft Skills": {
+      "Core": [
+        {
+          "long_name": "Problem-Solving",
+          "short_name": "Problem-Solving",
+          "type_key": ["Full CV"]
+        }
+      ]
+    }
+  }
+}
+```
+
+Structure:
+- **Parent categories**: Top-level keys (e.g., "Programming & Scripting")
+- **Sub-categories**: Second-level keys (e.g., "Programming Languages")
+- **Skill items**: List of objects with `short_name`, `long_name`, and optional `type_key`
+
+#### Entry Paths for Skills
+
+Each skill item gets a unique, stable **entry path** for identification:
+
+```
+skills/<parent_category>/<sub_category>/<skill_key>
+```
+
+Example paths:
+- `skills/Programming%20%26%20Scripting/Programming%20Languages/Python`
+- `skills/Soft%20Skills/Core/Problem-Solving`
+
+The `skill_key` is determined by:
+1. `short_name` (preferred, if unique within the sub-category)
+2. `short_name` with hash suffix (if duplicates exist)
+3. `long_name` fallback
+4. Index as last resort (`idx_0`)
+
+#### Collision Handling
+
+If two skills in the same sub-category share the same `short_name`, they are disambiguated:
+
+```json
+{
+  "Machine Learning": [
+    {"short_name": "ML", "long_name": "Supervised Learning"},
+    {"short_name": "ML", "long_name": "Unsupervised Learning"}
+  ]
+}
+```
+
+Results in paths:
+- `skills/.../Machine%20Learning/ML`
+- `skills/.../Machine%20Learning/ML_abc123` (suffix derived from `long_name` hash)
+
+#### Web UI: Skills Tree View
+
+When viewing the skills section in the Web UI, skills are displayed grouped by category:
+
+```
+📁 Programming & Scripting
+  📂 Programming Languages
+    🔹 Python - [Full CV] [Programming]
+    🔹 JS (JavaScript) - [Full CV] [Web]
+  📂 Machine Learning
+    🔹 TensorFlow - [Full CV] [AI]
+
+📁 Soft Skills
+  📂 Core
+    🔹 Problem-Solving - [Full CV]
+```
+
+You can:
+- Search across all skills (includes category names in search)
+- Click any skill to edit its tags
+- Changes apply to the specific skill item only
+
+#### Import/Export with Skills
+
+On **import**:
+- Each skill item is stored as a separate database entry
+- `identity_key` is set to the entry path
+- `type_key` values become tag associations
+
+On **export**:
+- Individual skill entries are reconstructed into nested structure
+- Order within sub-categories is preserved
+- Updated `type_key` values are applied if `--apply-tags` is used
 
 ### Generic Tagging Model
 

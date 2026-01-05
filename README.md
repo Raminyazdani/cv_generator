@@ -626,6 +626,9 @@ Structure:
 - Top level: **sections** (e.g. `"Technical Skills"`, `"Soft Skills"`).
 - Second level: **categories** (e.g. `"Programming"`, `"Data Science"`).
 - Items: each item must have a `short_name` field, used in the skills list.
+- Items may include a `type_key` array for variant filtering (see [SQLite Tagging Cookbook](docs/sqlite_tagging_cookbook.md)).
+
+**Skills Tagging**: Unlike flat sections, skills are stored as individual entries in the database. Each skill item can have its own `type_key` tags, enabling fine-grained filtering by skill. The Web UI displays skills grouped by category, and you can tag/untag individual skills.
 
 ### Other Sections
 

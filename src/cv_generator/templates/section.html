@@ -19,6 +19,45 @@
     </div>
     
     <div id="entries-list">
+    {% if section == 'skills' and skills_by_category %}
+    {# Skills section: show grouped by parent/sub category #}
+    {% for parent_category, sub_categories in skills_by_category.items() %}
+    <div class="skill-parent-category" style="margin-bottom: 1.5rem;">
+        <h3 style="margin: 0.5rem 0; padding: 0.5rem; background: var(--gray-100); border-radius: 4px;">
+            📁 {{ parent_category }}
+        </h3>
+        {% for sub_category, skill_entries in sub_categories.items() %}
+        <div class="skill-sub-category" style="margin-left: 1rem; margin-top: 0.5rem;">
+            <h4 style="margin: 0.25rem 0; color: var(--gray-600); font-size: 0.9rem;">
+                📂 {{ sub_category }}
+            </h4>
+            {% for entry in skill_entries %}
+            <div class="list-item entry-item skill-item" 
+                 data-search="{{ entry.summary | lower }} {{ entry.tags | default([]) | join(' ') | lower }} {{ parent_category | lower }} {{ sub_category | lower }}"
+                 style="margin-left: 1rem; padding: 0.5rem;">
+                <div style="flex: 1;">
+                    <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
+                        🔹 {{ entry.summary }}
+                    </a>
+                    <div class="entry-meta">
+                        {% if entry.tags %}
+                            {% for tag in entry.tags %}
+                            <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span style="color: var(--gray-500); font-style: italic;">No tags</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    {% else %}
+    {# Other sections: show flat list #}
     {% for entry in entries %}
     <div class="list-item entry-item" data-search="{{ entry.summary | lower }} {{ entry.tags | default([]) | join(' ') | lower }}">
         <div style="flex: 1;">
@@ -38,6 +77,7 @@
         <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
     </div>
     {% endfor %}
+    {% endif %}
     </div>
     
     <div id="no-results" style="display: none; text-align: center; padding: 1rem; color: var(--gray-500);">
@@ -54,12 +94,32 @@ document.getElementById('search-input').addEventListener('input', function() {
     
     entries.forEach(function(entry) {
         const searchText = entry.getAttribute('data-search');
-        if (query === '' || searchText.includes(query)) {
-            entry.style.display = 'flex';
-            visibleCount++;
-        } else {
-            entry.style.display = 'none';
-        }
+        const isVisible = query === '' || searchText.includes(query);
+        entry.style.display = isVisible ? 'flex' : 'none';
+        entry.dataset.visible = isVisible ? 'true' : 'false';
+        if (isVisible) visibleCount++;
+    });
+    
+    // Also hide empty category headers when searching skills
+    const parentCategories = document.querySelectorAll('.skill-parent-category');
+    parentCategories.forEach(function(cat) {
+        const items = cat.querySelectorAll('.entry-item');
+        let hasVisible = false;
+        items.forEach(function(item) {
+            if (item.dataset.visible === 'true') hasVisible = true;
+        });
+        cat.style.display = (query === '' || hasVisible) ? 'block' : 'none';
+    });
+    
+    const subCategories = document.querySelectorAll('.skill-sub-category');
+    subCategories.forEach(function(cat) {
+        const items = cat.querySelectorAll('.entry-item');
+        let hasVisible = false;
+        items.forEach(function(item) {
+            if (item.dataset.visible === 'true') hasVisible = true;
+        });
+        });
+        cat.style.display = (query === '' || hasVisible) ? 'block' : 'none';
     });
     
     noResults.style.display = visibleCount === 0 ? 'block' : 'none';

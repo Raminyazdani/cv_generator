@@ -256,8 +256,17 @@ def get_entry_summary(section: str, data: Dict[str, Any]) -> str:
         return f"{fname} {lname}".strip() or "Basic Info"
 
     elif section == "skills":
-        # Skills section is typically a dict of categories
-        return "Skills Overview"
+        # Skills entries are now individual skill items
+        short_name = data.get("short_name", "")
+        long_name = data.get("long_name", "")
+        if short_name and long_name and short_name != long_name:
+            return f"{short_name} ({long_name})"
+        elif short_name:
+            return short_name
+        elif long_name:
+            return long_name
+        else:
+            return "Unknown Skill"
 
     elif section == "workshop_and_certifications":
         issuer = data.get("issuer", "Unknown Issuer")
@@ -350,15 +359,33 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             flash(str(e), "error")
             return redirect(url_for("person_dashboard", person=person))
 
-        # Add summaries
+        # Add summaries and skill category info
+        skills_by_category = {}  # For skills section grouping
         for entry in entries:
             entry["summary"] = get_entry_summary(section, entry["data"])
+
+            # For skills, extract category info from identity_key
+            if section == "skills" and entry.get("identity_key", "").startswith("skills/"):
+                from .entry_path import parse_skill_entry_path
+                parsed = parse_skill_entry_path(entry["identity_key"])
+                if parsed:
+                    parent_cat, sub_cat, skill_key = parsed
+                    entry["parent_category"] = parent_cat
+                    entry["sub_category"] = sub_cat
+
+                    # Group for tree display
+                    if parent_cat not in skills_by_category:
+                        skills_by_category[parent_cat] = {}
+                    if sub_cat not in skills_by_category[parent_cat]:
+                        skills_by_category[parent_cat][sub_cat] = []
+                    skills_by_category[parent_cat][sub_cat].append(entry)
 
         return render_template(
             "section.html",
             person=person_info,
             section=section,
-            entries=entries
+            entries=entries,
+            skills_by_category=skills_by_category if section == "skills" else None
         )
 
     @app.route("/entry/<int:entry_id>")

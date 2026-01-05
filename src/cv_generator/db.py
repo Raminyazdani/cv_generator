@@ -440,20 +440,53 @@ def import_cv(
                 stats["sections"][section] = section_count
 
             elif isinstance(section_data, dict):
-                # Dict section (e.g., skills)
-                # Store entire section as one entry
-                data_json = json.dumps(section_data, ensure_ascii=False, sort_keys=True)
-                identity_key = f"{section}:full"
+                # Dict section - check if it's skills (needs special handling)
+                if section == "skills":
+                    # Import skills as individual entries for tagging
+                    from .entry_path import enumerate_skills
 
-                now = _utcnow()
-                cursor.execute(
-                    """INSERT INTO entry (person_id, section, order_idx, data_json, identity_key, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (person_id, section, 0, data_json, identity_key, now)
-                )
+                    section_count = 0
+                    for idx, (entry_path, parent_cat, sub_cat, skill_key, skill_item) in enumerate(
+                        enumerate_skills(section_data)
+                    ):
+                        # Store each skill item as a separate entry
+                        data_json = json.dumps(skill_item, ensure_ascii=False, sort_keys=True)
 
-                stats["entries_imported"] += 1
-                stats["sections"][section] = 1
+                        now = _utcnow()
+                        cursor.execute(
+                            """INSERT INTO entry (person_id, section, order_idx, data_json, identity_key, created_at)
+                               VALUES (?, ?, ?, ?, ?, ?)""",
+                            (person_id, section, idx, data_json, entry_path, now)
+                        )
+                        entry_id = cursor.lastrowid
+
+                        # Extract and link type_key tags from skill item
+                        type_keys = _extract_type_keys(skill_item)
+                        for tag_name in type_keys:
+                            tag_id = _get_or_create_tag(cursor, tag_name)
+                            cursor.execute(
+                                "INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
+                                (entry_id, tag_id)
+                            )
+
+                        section_count += 1
+                        stats["entries_imported"] += 1
+
+                    stats["sections"][section] = section_count
+                else:
+                    # Other dict sections - store as single entry
+                    data_json = json.dumps(section_data, ensure_ascii=False, sort_keys=True)
+                    identity_key = f"{section}:full"
+
+                    now = _utcnow()
+                    cursor.execute(
+                        """INSERT INTO entry (person_id, section, order_idx, data_json, identity_key, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        (person_id, section, 0, data_json, identity_key, now)
+                    )
+
+                    stats["entries_imported"] += 1
+                    stats["sections"][section] = 1
 
             else:
                 # Skip non-list, non-dict sections (e.g., scalar values)
@@ -594,6 +627,8 @@ def export_cv(
     Raises:
         ConfigurationError: If database doesn't exist or person not found.
     """
+    from .entry_path import parse_skill_entry_path
+
     db_path = get_db_path(db_path)
 
     if not db_path.exists():
@@ -613,7 +648,7 @@ def export_cv(
 
         # Get all entries for this person
         cursor.execute(
-            """SELECT id, section, order_idx, data_json
+            """SELECT id, section, order_idx, data_json, identity_key
                FROM entry
                WHERE person_id = ?
                ORDER BY section, order_idx""",
@@ -621,8 +656,9 @@ def export_cv(
         )
 
         cv_data: Dict[str, Any] = {}
+        skills_entries: List[Dict[str, Any]] = []  # Collect skills for reconstruction
 
-        for entry_id, section, order_idx, data_json in cursor.fetchall():
+        for entry_id, section, order_idx, data_json, identity_key in cursor.fetchall():
             # Check for empty list marker
             if order_idx == -1 and data_json == "[]":
                 cv_data[section] = []
@@ -649,6 +685,19 @@ def export_cv(
                     elif original_had_type_key and not db_tags:
                         del item["type_key"]
 
+            # Handle skills section specially - entries have paths like "skills/Category/SubCat/Key"
+            if section == "skills" and identity_key and identity_key.startswith("skills/"):
+                parsed = parse_skill_entry_path(identity_key)
+                if parsed:
+                    parent_category, sub_category, skill_key = parsed
+                    skills_entries.append({
+                        "parent_category": parent_category,
+                        "sub_category": sub_category,
+                        "data": item,
+                        "order_idx": order_idx
+                    })
+                    continue
+
             # Check if this is a dict section (stored as single entry with identity_key ending in :full)
             # We detect this by checking if the item is a dict with nested dicts (typical for skills)
             # or by the fact that order_idx is 0 and it's the only entry
@@ -674,6 +723,26 @@ def export_cv(
             else:
                 # Existing list section, append
                 cv_data[section].append(item)
+
+        # Reconstruct skills section from individual entries
+        if skills_entries:
+            # Sort by order_idx to preserve original order
+            skills_entries.sort(key=lambda x: x["order_idx"])
+
+            skills_data: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+            for entry in skills_entries:
+                parent_cat = entry["parent_category"]
+                sub_cat = entry["sub_category"]
+                data = entry["data"]
+
+                if parent_cat not in skills_data:
+                    skills_data[parent_cat] = {}
+                if sub_cat not in skills_data[parent_cat]:
+                    skills_data[parent_cat][sub_cat] = []
+
+                skills_data[parent_cat][sub_cat].append(data)
+
+            cv_data["skills"] = skills_data
 
         return cv_data
 

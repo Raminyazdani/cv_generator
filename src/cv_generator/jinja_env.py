@@ -4,10 +4,13 @@ Jinja2 environment configuration for CV Generator.
 Provides functions for:
 - Creating the Jinja2 environment with LaTeX-compatible settings
 - Custom filters for LaTeX escaping, translation, etc.
+- Template caching for improved build performance (enabled by default)
 """
 
+import hashlib
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -26,6 +29,154 @@ SHOW_COMMENTS = True
 # NOTE: This is deprecated. Use languages_config.is_rtl() instead.
 # Kept for any external code that might reference it directly.
 RTL_LANGUAGES = {"fa", "ar", "he", "ur", "ps", "yi", "ug", "sd", "ku", "dv"}
+
+
+def get_default_cache_dir() -> Path:
+    """
+    Get default cache directory for Jinja2 bytecode.
+
+    Returns:
+        Path to cache directory (creates if needed)
+    """
+    # Use user cache directory
+    cache_dir = Path.home() / '.cache' / 'cvgen' / 'jinja2'
+
+    # Create if doesn't exist
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    return cache_dir
+
+
+def get_templates_hash(templates_dir: Path) -> str:
+    """
+    Calculate hash of all templates for cache invalidation.
+
+    Args:
+        templates_dir: Directory containing templates
+
+    Returns:
+        SHA256 hash of template contents and mtimes
+    """
+    hasher = hashlib.sha256()
+
+    # Sort for consistent hashing
+    template_files = sorted(templates_dir.glob('**/*.tex'))
+
+    for template_file in template_files:
+        try:
+            # Include filename
+            hasher.update(str(template_file.name).encode('utf-8'))
+
+            # Include mtime (faster than content for change detection)
+            mtime = template_file.stat().st_mtime
+            hasher.update(str(mtime).encode('utf-8'))
+
+            # Optionally include size
+            size = template_file.stat().st_size
+            hasher.update(str(size).encode('utf-8'))
+
+        except Exception as e:
+            logger.debug(f"Error hashing template {template_file}: {e}")
+            continue
+
+    return hasher.hexdigest()[:16]  # Short hash for filename
+
+
+def validate_cache(cache_dir: Path, templates_dir: Path) -> bool:
+    """
+    Check if cache is still valid for current templates.
+
+    Args:
+        cache_dir: Cache directory
+        templates_dir: Templates directory
+
+    Returns:
+        True if cache is valid, False if needs refresh
+    """
+    cache_meta_file = cache_dir / '.cache_meta'
+
+    if not cache_meta_file.exists():
+        logger.debug("Cache meta file not found, cache invalid")
+        return False
+
+    try:
+        cache_meta = cache_meta_file.read_text().strip()
+        lines = cache_meta.split('\n')
+
+        if len(lines) < 2:
+            return False
+
+        cached_hash = lines[0]
+        cached_time = float(lines[1])
+
+        # Check if hash matches
+        current_hash = get_templates_hash(templates_dir)
+
+        if cached_hash != current_hash:
+            logger.debug("Template hash changed, cache invalid")
+            return False
+
+        # Check age (invalidate after 7 days as safety measure)
+        age_days = (time.time() - cached_time) / 86400
+        if age_days > 7:
+            logger.debug(f"Cache too old ({age_days:.1f} days), invalidating")
+            return False
+
+        logger.debug("Cache is valid")
+        return True
+
+    except Exception as e:
+        logger.debug(f"Error validating cache: {e}")
+        return False
+
+
+def update_cache_meta(cache_dir: Path, templates_dir: Path) -> None:
+    """
+    Update cache metadata file.
+
+    Args:
+        cache_dir: Cache directory
+        templates_dir: Templates directory
+    """
+    cache_meta_file = cache_dir / '.cache_meta'
+
+    try:
+        templates_hash = get_templates_hash(templates_dir)
+        current_time = time.time()
+
+        cache_meta_file.write_text(f"{templates_hash}\n{current_time}\n")
+        logger.debug("Updated cache metadata")
+
+    except Exception as e:
+        logger.warning(f"Failed to update cache metadata: {e}")
+
+
+def clear_cache(cache_dir: Optional[Path] = None) -> bool:
+    """
+    Clear the template cache.
+
+    Args:
+        cache_dir: Cache directory (uses default if None)
+
+    Returns:
+        True if cache was cleared successfully
+    """
+    import shutil
+
+    if cache_dir is None:
+        cache_dir = get_default_cache_dir()
+
+    if not cache_dir.exists():
+        logger.debug("Cache directory does not exist")
+        return True
+
+    try:
+        shutil.rmtree(cache_dir)
+        logger.info(f"Cache cleared: {cache_dir}")
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to clear cache: {e}")
+        return False
 
 
 def latex_escape(s: Any) -> str:
@@ -275,6 +426,7 @@ def create_jinja_env(
     lang: str = "en",
     cache_dir: Optional[Path] = None,
     pics_dir: Optional[Path] = None,
+    enable_cache: bool = True,
 ) -> Environment:
     """
     Create a Jinja2 environment configured for LaTeX template rendering.
@@ -284,8 +436,10 @@ def create_jinja_env(
         lang_map: Language translation mapping (optional).
         lang: Target language code (default: "en").
         cache_dir: Directory for template bytecode cache (optional).
-                   If provided, enables template caching for faster reloads.
+                   If None and enable_cache=True, uses default cache directory.
         pics_dir: Directory containing profile pictures (optional).
+        enable_cache: Whether to enable bytecode caching (default: True).
+                      Set to False to disable caching for debugging.
 
     Returns:
         Configured Jinja2 Environment.
@@ -293,13 +447,40 @@ def create_jinja_env(
     if template_dir is None:
         template_dir = get_default_templates_path()
 
-    # Set up bytecode cache if cache_dir is provided
+    # Set up bytecode cache (enabled by default for performance - F-021)
     bytecode_cache = None
-    if cache_dir is not None:
-        cache_path = Path(cache_dir) / "jinja2"
-        cache_path.mkdir(parents=True, exist_ok=True)
-        bytecode_cache = FileSystemBytecodeCache(str(cache_path))
-        logger.debug(f"Enabled Jinja2 bytecode cache at {cache_path}")
+    if enable_cache:
+        # Use provided cache_dir or default
+        if cache_dir is None:
+            cache_dir = get_default_cache_dir()
+
+        logger.debug(f"Cache directory: {cache_dir}")
+
+        # Validate cache against templates
+        cache_valid = validate_cache(cache_dir, template_dir)
+
+        if not cache_valid:
+            logger.debug("Template cache invalid or stale, will rebuild")
+            # Clear old cache
+            try:
+                import shutil
+                if cache_dir.exists():
+                    shutil.rmtree(cache_dir)
+                cache_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                logger.warning(f"Failed to clear cache: {e}")
+        else:
+            logger.debug("Using cached templates for faster builds")
+
+        # Enable bytecode caching
+        try:
+            bytecode_cache = FileSystemBytecodeCache(str(cache_dir))
+            logger.debug("Jinja2 bytecode caching enabled")
+        except Exception as e:
+            logger.warning(f"Failed to enable cache: {e}")
+            bytecode_cache = None
+    else:
+        logger.debug("Jinja2 caching disabled")
 
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
@@ -348,6 +529,10 @@ def create_jinja_env(
     env.globals["LANG"] = lang
     # Use configurable RTL detection (F-008 fix)
     env.globals["IS_RTL"] = language_is_rtl(lang)
+
+    # Update cache metadata after successful environment creation
+    if enable_cache and bytecode_cache is not None and cache_dir is not None:
+        update_cache_meta(cache_dir, template_dir)
 
     logger.debug(f"Created Jinja2 environment for templates in {template_dir}")
     return env

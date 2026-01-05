@@ -43,10 +43,28 @@ default_language = "en"
 keep_latex = false
 
 # LaTeX compilation timeout (seconds)
+# Increase this for complex CVs with many images
 latex_timeout = 120
 
 # Enable incremental builds by default
 incremental = false
+
+
+# Language Configuration
+# ======================
+[languages]
+# RTL (right-to-left) languages (ISO 639-1 codes)
+# These languages will have RTL layout applied in PDF generation
+# Default includes: ar, he, fa, ur, ps, yi, ug, sd, ku, dv
+rtl_languages = ["ar", "he", "fa", "ur", "ps", "yi", "ug", "sd", "ku", "dv"]
+
+# Custom language metadata (optional)
+# Add metadata for languages not in the built-in list
+# [languages.metadata.custom_lang]
+# name = "Custom Language"
+# name_native = "Native Name"
+# rtl = false
+# requires_special_fonts = false
 
 
 # Logging Configuration

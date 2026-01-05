@@ -15,14 +15,17 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from jinja2.bccache import FileSystemBytecodeCache
 
 from .paths import get_default_templates_path, get_repo_root
+from .languages_config import is_rtl as language_is_rtl
 
 logger = logging.getLogger(__name__)
 
 # Toggle whether template-inserted comments are emitted
 SHOW_COMMENTS = True
 
-# RTL languages
-RTL_LANGUAGES = {"fa", "ar", "he"}
+# Legacy RTL_LANGUAGES constant for backward compatibility
+# NOTE: This is deprecated. Use languages_config.is_rtl() instead.
+# Kept for any external code that might reference it directly.
+RTL_LANGUAGES = {"fa", "ar", "he", "ur", "ps", "yi", "ug", "sd", "ku", "dv"}
 
 
 def latex_escape(s: Any) -> str:
@@ -343,7 +346,8 @@ def create_jinja_env(
     # Add common globals
     env.globals["SHOW_COMMENTS"] = SHOW_COMMENTS
     env.globals["LANG"] = lang
-    env.globals["IS_RTL"] = lang in RTL_LANGUAGES
+    # Use configurable RTL detection (F-008 fix)
+    env.globals["IS_RTL"] = language_is_rtl(lang)
 
     logger.debug(f"Created Jinja2 environment for templates in {template_dir}")
     return env

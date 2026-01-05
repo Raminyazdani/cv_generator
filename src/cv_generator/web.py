@@ -20,6 +20,7 @@ Security Features (opt-in):
 - Basic auth: Set CVGEN_WEB_AUTH=user:pass or CVGEN_WEB_USER + CVGEN_WEB_PASSWORD
 - Host binding safety: Warns when binding to non-localhost
 - Rate limiting: Simple time-based throttle for export/write operations
+- CSRF protection: Automatic token validation for all POST requests
 """
 
 from __future__ import annotations
@@ -84,6 +85,47 @@ MAX_WARNING_ITEMS = 5
 
 # Rate limiting configuration
 THROTTLE_SECONDS = 5  # Minimum seconds between export/write operations
+
+# CSRF token configuration
+CSRF_TOKEN_LENGTH = 32  # Length of CSRF token in bytes (produces 43-character URL-safe string)
+CSRF_SESSION_KEY = "_csrf_token"
+CSRF_FORM_FIELD = "csrf_token"
+
+
+def generate_csrf_token() -> str:
+    """
+    Generate or retrieve a CSRF token from the session.
+
+    The token is generated once per session and reused for all requests
+    within that session. This provides CSRF protection while maintaining
+    a good user experience (no token expiration during a session).
+
+    Returns:
+        A URL-safe CSRF token string.
+    """
+    if CSRF_SESSION_KEY not in session:
+        session[CSRF_SESSION_KEY] = secrets.token_urlsafe(CSRF_TOKEN_LENGTH)
+    return session[CSRF_SESSION_KEY]
+
+
+def validate_csrf_token(token: Optional[str]) -> bool:
+    """
+    Validate a CSRF token against the one stored in the session.
+
+    Uses constant-time comparison to prevent timing attacks.
+
+    Args:
+        token: The CSRF token from the form submission.
+
+    Returns:
+        True if the token is valid, False otherwise.
+    """
+    if token is None:
+        return False
+    expected = session.get(CSRF_SESSION_KEY)
+    if expected is None:
+        return False
+    return secrets.compare_digest(token, expected)
 
 
 def get_auth_credentials() -> Optional[tuple[str, str]]:
@@ -427,7 +469,20 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             "current_language": current_lang,
             "supported_languages": SUPPORTED_LANGUAGES,
             "tag_catalog": catalog,
+            "csrf_token": generate_csrf_token,
         }
+
+    @app.before_request
+    def validate_csrf():
+        """Validate CSRF token on all POST requests."""
+        if request.method == "POST":
+            token = request.form.get(CSRF_FORM_FIELD)
+            if not validate_csrf_token(token):
+                logger.warning("CSRF token validation failed for %s", request.path)
+                return Response(
+                    "CSRF token validation failed. Please reload the page and try again.",
+                    400,
+                )
 
     @app.route("/")
     @requires_auth

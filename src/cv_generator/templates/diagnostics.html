@@ -132,6 +132,7 @@
 <div class="card" style="margin-top: 1rem;">
     <h3>🛠️ Actions</h3>
     <form id="cleanup-form" action="{{ url_for('cleanup_orphans') }}" method="post" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="button" class="btn btn-secondary"
                 onclick="return confirmAction('cleanup-form', 'This will remove orphan tag references from entries. Continue?')">
             Clean Up Orphan Tag References

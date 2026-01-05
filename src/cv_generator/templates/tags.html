@@ -48,6 +48,7 @@
             <form action="{{ url_for('delete_tag_route', name=tag.name) }}" method="post" 
                   onsubmit="return confirm('Delete tag &quot;{{ tag.name }}&quot;? It will be removed from all entries.');"
                   style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>
             </form>
         </div>

@@ -5,6 +5,7 @@ Tests the tag CRUD operations and the web Flask routes.
 """
 
 import json
+import re
 import tempfile
 from pathlib import Path
 
@@ -26,6 +27,25 @@ from cv_generator.db import (
     update_tag,
 )
 from cv_generator.errors import ConfigurationError, ValidationError
+
+
+def get_csrf_token(response) -> str:
+    """
+    Extract CSRF token from a response's HTML.
+
+    Args:
+        response: Flask test client response.
+
+    Returns:
+        The CSRF token string, or empty string if not found.
+    """
+    match = re.search(
+        rb'name="csrf_token"[^>]*value="([^"]*)"',
+        response.data
+    )
+    if match:
+        return match.group(1).decode("utf-8")
+    return ""
 
 
 class TestTagCRUD:
@@ -302,9 +322,17 @@ class TestWebApp:
 
     def test_create_tag_post(self, client):
         """Test creating a tag via POST."""
+        # First get the CSRF token from the form page
+        form_response = client.get("/tags/create")
+        csrf_token = get_csrf_token(form_response)
+
         response = client.post(
             "/tags/create",
-            data={"name": "New Test Tag", "description": "A description"},
+            data={
+                "name": "New Test Tag",
+                "description": "A description",
+                "csrf_token": csrf_token,
+            },
             follow_redirects=True
         )
         assert response.status_code == 200
@@ -318,11 +346,12 @@ class TestWebApp:
         # Entry detail page should work with entry ID 1 or 2 (depending on import order)
         response = client.get("/entry/2")  # Skip basics entry
         assert response.status_code == 200
+        csrf_token = get_csrf_token(response)
 
         # Post tag update
         response = client.post(
             "/entry/2/tags",
-            data={"tags": ["TestTag", "NewTag"]},
+            data={"tags": ["TestTag", "NewTag"], "csrf_token": csrf_token},
             follow_redirects=True
         )
         assert response.status_code == 200
@@ -412,6 +441,127 @@ class TestWebAuth:
         credentials = b64encode(b"admin:secret123").decode("utf-8")
         response = client.get("/", headers={"Authorization": f"Basic {credentials}"})
         assert response.status_code == 200
+
+
+class TestCSRFProtection:
+    """Tests for CSRF protection functionality."""
+
+    @pytest.fixture
+    def app(self, tmp_path):
+        """Create a test Flask app with a test database."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Import some test data
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Test Project", "type_key": ["TestTag"]}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app):
+        """Create a test client."""
+        return app.test_client()
+
+    def test_csrf_token_is_generated(self, client):
+        """Test that CSRF token is included in forms."""
+        response = client.get("/tags/create")
+        assert response.status_code == 200
+        # Check that the form contains a CSRF token field
+        assert b'name="csrf_token"' in response.data
+        assert b'value="' in response.data
+
+    def test_post_without_csrf_token_fails(self, client):
+        """Test that POST requests without CSRF token return 400."""
+        response = client.post(
+            "/tags/create",
+            data={"name": "Test Tag"},
+            follow_redirects=False
+        )
+        assert response.status_code == 400
+        assert b"CSRF token validation failed" in response.data
+
+    def test_post_with_invalid_csrf_token_fails(self, client):
+        """Test that POST requests with invalid CSRF token return 400."""
+        response = client.post(
+            "/tags/create",
+            data={"name": "Test Tag", "csrf_token": "invalid-token"},
+            follow_redirects=False
+        )
+        assert response.status_code == 400
+        assert b"CSRF token validation failed" in response.data
+
+    def test_post_with_valid_csrf_token_succeeds(self, client):
+        """Test that POST requests with valid CSRF token succeed."""
+        # Get the form to get a valid CSRF token
+        form_response = client.get("/tags/create")
+        csrf_token = get_csrf_token(form_response)
+        assert csrf_token  # Should not be empty
+
+        # Post with valid token
+        response = client.post(
+            "/tags/create",
+            data={"name": "CSRF Test Tag", "csrf_token": csrf_token},
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"CSRF Test Tag" in response.data
+
+    def test_csrf_token_is_consistent_within_session(self, client):
+        """Test that CSRF token remains consistent within the same session."""
+        # Get token from first page
+        response1 = client.get("/tags/create")
+        token1 = get_csrf_token(response1)
+
+        # Get token from second page (same session)
+        response2 = client.get("/entry/2")
+        token2 = get_csrf_token(response2)
+
+        # Tokens should be the same within the session
+        assert token1 == token2
+
+    def test_csrf_token_validation_function(self):
+        """Test the CSRF token generation and validation functions."""
+        from cv_generator.web import (
+            CSRF_SESSION_KEY,
+            generate_csrf_token,
+            validate_csrf_token,
+        )
+
+        # Mock the session
+        with pytest.raises(RuntimeError):
+            # Should fail outside of request context
+            generate_csrf_token()
+
+    def test_all_post_routes_require_csrf(self, client):
+        """Test that all POST routes require CSRF protection."""
+        post_routes = [
+            "/tags/create",
+            "/tags/TestTag/edit",
+            "/tags/TestTag/delete",
+            "/entry/2/tags",
+            "/entry/2/edit",
+            "/entry/2/delete",
+            "/export/testuser",
+            "/p/testuser/projects/create",
+            "/diagnostics/cleanup-orphans",
+        ]
+
+        for route in post_routes:
+            response = client.post(route, data={}, follow_redirects=False)
+            assert response.status_code == 400, f"Route {route} did not require CSRF"
 
 
 class TestHostBindingSafety:
@@ -991,13 +1141,18 @@ class TestWebCrudRoutes:
 
     def test_create_entry_post_with_sync(self, client):
         """Test creating an entry with multi-language sync."""
+        # First get the CSRF token from the form page
+        form_response = client.get("/p/testuser/projects/create")
+        csrf_token = get_csrf_token(form_response)
+
         response = client.post(
             "/p/testuser/projects/create",
             data={
                 "field_title": "New Project",
                 "field_description": "A new project",
                 "field_url": "https://new-project.com",
-                "sync_languages": "on"
+                "sync_languages": "on",
+                "csrf_token": csrf_token,
             },
             follow_redirects=True
         )
@@ -1006,10 +1161,15 @@ class TestWebCrudRoutes:
 
     def test_create_entry_post_without_sync(self, client):
         """Test creating an entry without multi-language sync."""
+        # First get the CSRF token from the form page
+        form_response = client.get("/p/testuser/projects/create")
+        csrf_token = get_csrf_token(form_response)
+
         response = client.post(
             "/p/testuser/projects/create",
             data={
-                "field_title": "Solo Project"
+                "field_title": "Solo Project",
+                "csrf_token": csrf_token,
             },
             follow_redirects=True
         )
@@ -1025,11 +1185,16 @@ class TestWebCrudRoutes:
 
     def test_edit_entry_post(self, client):
         """Test updating an entry."""
+        # First get the CSRF token from the form page
+        form_response = client.get("/entry/2/edit")
+        csrf_token = get_csrf_token(form_response)
+
         response = client.post(
             "/entry/2/edit",
             data={
                 "field_title": "Updated Project Title",
-                "field_url": "https://updated-url.com"
+                "field_url": "https://updated-url.com",
+                "csrf_token": csrf_token,
             },
             follow_redirects=True
         )

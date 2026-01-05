@@ -35,7 +35,7 @@ jobs:
         run: python -m pip check
 
       - name: Verify package import
-        run: python -c "import cv_generator; print(f'cv_generator version: {cv_generator.__version__}')"
+        run: python -c "import cv_generator; print('cv_generator version:', cv_generator.__version__)"
 
       - name: Verify CLI works
         run: cvgen --help

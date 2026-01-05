@@ -211,7 +211,7 @@ Run these commands to verify your installation is correct:
 ```bash
 # 1. Package imports correctly
 python -c "import cv_generator; print(cv_generator.__version__)"
-# Should print: 1.0.0
+# Should print the current version (e.g., 1.0.0)
 
 # 2. CLI works
 cvgen --help

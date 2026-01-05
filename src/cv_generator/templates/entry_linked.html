@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Linked Entries - {{ entry.section | replace('_', ' ') | title }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=entry.person_slug) }}">{{ entry.person_slug }}</a> &raquo;
+    <a href="{{ url_for('section_entries', person=entry.person_slug, section=entry.section) }}">{{ entry.section | replace('_', ' ') | title }}</a> &raquo;
+    <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">Entry</a> &raquo;
+    Linked Entries
+</nav>
+
+<h2>🌐 Linked Language Variants</h2>
+<p style="color: var(--gray-600);">{{ entry.summary }}</p>
+
+{% if linked_entries %}
+<div class="card">
+    <p style="margin-bottom: 1rem;">
+        These entries are linked together with stable ID: 
+        <code style="background: var(--gray-100); padding: 0.25rem 0.5rem; border-radius: 4px;">
+            {{ linked_entries.values() | first | attr('stable_id') | default('N/A') }}
+        </code>
+    </p>
+    
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--gray-100); border-bottom: 2px solid var(--gray-300);">
+                <th style="padding: 0.75rem; text-align: left;">Language</th>
+                <th style="padding: 0.75rem; text-align: left;">Summary</th>
+                <th style="padding: 0.75rem; text-align: center;">Status</th>
+                <th style="padding: 0.75rem; text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lang in supported_languages %}
+            {% if lang in linked_entries %}
+            {% set le = linked_entries[lang] %}
+            <tr style="border-bottom: 1px solid var(--gray-200);">
+                <td style="padding: 0.75rem;">
+                    <strong>{{ lang | upper }}</strong>
+                    {% if le.id == entry.id %}
+                    <span style="color: var(--primary); font-size: 0.75rem;">(current)</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 0.75rem;">
+                    {{ get_entry_summary(le.section, le.data) }}
+                </td>
+                <td style="padding: 0.75rem; text-align: center;">
+                    {% if le.needs_translation %}
+                    <span class="tag" style="background: var(--warning);">⚠️ Needs Translation</span>
+                    {% else %}
+                    <span class="tag" style="background: var(--success);">✓ Translated</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 0.75rem; text-align: right;">
+                    <a href="{{ url_for('entry_detail', entry_id=le.id) }}" class="btn btn-sm btn-secondary">View</a>
+                    <a href="{{ url_for('edit_entry_route', entry_id=le.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr style="border-bottom: 1px solid var(--gray-200); background: var(--gray-50);">
+                <td style="padding: 0.75rem;">
+                    <strong>{{ lang | upper }}</strong>
+                </td>
+                <td style="padding: 0.75rem; color: var(--gray-500); font-style: italic;">
+                    Not available in this language
+                </td>
+                <td style="padding: 0.75rem; text-align: center;">
+                    <span class="tag" style="background: var(--gray-300);">Missing</span>
+                </td>
+                <td style="padding: 0.75rem; text-align: right;">
+                    —
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3 style="margin-bottom: 1rem;">ℹ️ About Multi-Language Sync</h3>
+    <ul style="color: var(--gray-600); line-height: 1.8;">
+        <li>Entries with the same <strong>stable ID</strong> are linked across languages.</li>
+        <li>When you <strong>create</strong> an entry with sync enabled, placeholders are created in all languages.</li>
+        <li>When you <strong>delete</strong> an entry with sync enabled, all language variants are removed.</li>
+        <li>When you <strong>update</strong> shared fields (URL, dates, etc.) with sync enabled, they're updated in all languages.</li>
+        <li>Text fields (title, description) are updated only in the current language.</li>
+    </ul>
+</div>
+{% else %}
+<div class="card">
+    <p style="color: var(--gray-500); font-style: italic;">
+        This entry is not linked to any other language variants.
+    </p>
+    <p style="margin-top: 0.5rem;">
+        To create linked entries, edit this entry and enable multi-language sync.
+    </p>
+</div>
+{% endif %}
+
+<div class="actions" style="margin-top: 1rem;">
+    <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary">← Back to Entry</a>
+    <a href="{{ url_for('edit_entry_route', entry_id=entry.id) }}" class="btn btn-primary">✏️ Edit Entry</a>
+</div>
+{% endblock %}

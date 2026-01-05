@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Entry - {{ section | replace('_', ' ') | title }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &raquo;
+    <a href="{{ url_for('section_entries', person=person.slug, section=section) }}">{{ section | replace('_', ' ') | title }}</a> &raquo;
+    {{ action }} Entry
+</nav>
+
+<h2>{{ action }} {{ section | replace('_', ' ') | title }} Entry</h2>
+
+<div class="card">
+    <form method="post">
+        {# Dynamic fields based on section type #}
+        {% if section == 'projects' %}
+        <div class="form-group">
+            <label for="field_title">Title *</label>
+            <input type="text" id="field_title" name="field_title" 
+                   value="{{ entry.data.title if entry else '' }}" required
+                   placeholder="Project title">
+        </div>
+        <div class="form-group">
+            <label for="field_description">Description</label>
+            <textarea id="field_description" name="field_description" rows="4"
+                      placeholder="Project description">{{ entry.data.description if entry else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="field_url">URL</label>
+            <input type="url" id="field_url" name="field_url" 
+                   value="{{ entry.data.url if entry else '' }}"
+                   placeholder="https://github.com/...">
+            <small style="color: var(--gray-500);">🔗 Shared field - will sync across languages if enabled</small>
+        </div>
+        
+        {% elif section == 'experiences' %}
+        <div class="form-group">
+            <label for="field_role">Role *</label>
+            <input type="text" id="field_role" name="field_role" 
+                   value="{{ entry.data.role if entry else '' }}" required
+                   placeholder="Job title / Role">
+        </div>
+        <div class="form-group">
+            <label for="field_institution">Institution / Company *</label>
+            <input type="text" id="field_institution" name="field_institution" 
+                   value="{{ entry.data.institution if entry else '' }}" required
+                   placeholder="Company name">
+        </div>
+        <div class="form-group">
+            <label for="field_duration">Duration</label>
+            <input type="text" id="field_duration" name="field_duration" 
+                   value="{{ entry.data.duration if entry else '' }}"
+                   placeholder="2020-01 - present">
+        </div>
+        <div class="form-group">
+            <label for="field_description">Description</label>
+            <textarea id="field_description" name="field_description" rows="4"
+                      placeholder="Job responsibilities and achievements">{{ entry.data.description if entry else '' }}</textarea>
+        </div>
+        
+        {% elif section == 'publications' %}
+        <div class="form-group">
+            <label for="field_title">Title *</label>
+            <input type="text" id="field_title" name="field_title" 
+                   value="{{ entry.data.title if entry else '' }}" required
+                   placeholder="Publication title">
+        </div>
+        <div class="form-group">
+            <label for="field_authors">Authors</label>
+            <input type="text" id="field_authors" name="field_authors" 
+                   value="{{ entry.data.authors if entry else '' }}"
+                   placeholder="Author names">
+        </div>
+        <div class="form-group">
+            <label for="field_journal">Journal / Conference</label>
+            <input type="text" id="field_journal" name="field_journal" 
+                   value="{{ entry.data.journal if entry else '' }}"
+                   placeholder="Publication venue">
+        </div>
+        <div class="form-group">
+            <label for="field_year">Year</label>
+            <input type="text" id="field_year" name="field_year" 
+                   value="{{ entry.data.year if entry else '' }}"
+                   placeholder="2024">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_doi">DOI</label>
+            <input type="text" id="field_doi" name="field_doi" 
+                   value="{{ entry.data.doi if entry else '' }}"
+                   placeholder="10.1000/xyz123">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_status">Status</label>
+            <input type="text" id="field_status" name="field_status" 
+                   value="{{ entry.data.status if entry else '' }}"
+                   placeholder="Published / In Review / Submitted">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        
+        {% elif section == 'references' %}
+        <div class="form-group">
+            <label for="field_name">Name *</label>
+            <input type="text" id="field_name" name="field_name" 
+                   value="{{ entry.data.name if entry else '' }}" required
+                   placeholder="Reference name">
+        </div>
+        <div class="form-group">
+            <label for="field_institution">Institution</label>
+            <input type="text" id="field_institution" name="field_institution" 
+                   value="{{ entry.data.institution if entry else '' }}"
+                   placeholder="Institution / Company">
+        </div>
+        <div class="form-group">
+            <label for="field_email">Email</label>
+            <input type="email" id="field_email" name="field_email" 
+                   value="{{ entry.data.email if entry else '' }}"
+                   placeholder="email@example.com">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_phone">Phone</label>
+            <input type="text" id="field_phone" name="field_phone" 
+                   value="{{ entry.data.phone if entry else '' }}"
+                   placeholder="+49 123 456789">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        
+        {% elif section == 'education' %}
+        <div class="form-group">
+            <label for="field_institution">Institution *</label>
+            <input type="text" id="field_institution" name="field_institution" 
+                   value="{{ entry.data.institution if entry else '' }}" required
+                   placeholder="University name">
+        </div>
+        <div class="form-group">
+            <label for="field_area">Area / Major</label>
+            <input type="text" id="field_area" name="field_area" 
+                   value="{{ entry.data.area if entry else '' }}"
+                   placeholder="Computer Science">
+        </div>
+        <div class="form-group">
+            <label for="field_studyType">Degree Type</label>
+            <input type="text" id="field_studyType" name="field_studyType" 
+                   value="{{ entry.data.studyType if entry else '' }}"
+                   placeholder="Master's / Bachelor's / PhD">
+        </div>
+        <div class="form-group">
+            <label for="field_location">Location</label>
+            <input type="text" id="field_location" name="field_location" 
+                   value="{{ entry.data.location if entry else '' }}"
+                   placeholder="City, Country">
+        </div>
+        <div class="form-group">
+            <label for="field_startDate">Start Date</label>
+            <input type="text" id="field_startDate" name="field_startDate" 
+                   value="{{ entry.data.startDate if entry else '' }}"
+                   placeholder="2020-10-01">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_endDate">End Date</label>
+            <input type="text" id="field_endDate" name="field_endDate" 
+                   value="{{ entry.data.endDate if entry else '' }}"
+                   placeholder="2024-09-30 or 'present'">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_gpa">GPA</label>
+            <input type="text" id="field_gpa" name="field_gpa" 
+                   value="{{ entry.data.gpa if entry else '' }}"
+                   placeholder="3.5 / 4.0">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        
+        {% else %}
+        {# Generic fallback for other sections #}
+        <div class="form-group">
+            <label for="field_title">Title / Name</label>
+            <input type="text" id="field_title" name="field_title" 
+                   value="{{ entry.data.title or entry.data.name if entry else '' }}"
+                   placeholder="Entry title">
+        </div>
+        <div class="form-group">
+            <label for="field_description">Description</label>
+            <textarea id="field_description" name="field_description" rows="4"
+                      placeholder="Description">{{ entry.data.description if entry else '' }}</textarea>
+        </div>
+        {% endif %}
+        
+        {# Tags / type_key selection #}
+        <div class="form-group" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+            <label>Tags (type_key)</label>
+            <div class="checkbox-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 4px; padding: 0.5rem;">
+                {% if all_tags %}
+                    {% for tag in all_tags %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="type_key" value="{{ tag.name }}"
+                            {% if entry and tag.name in (entry.data.type_key or entry.tags or []) %}checked{% endif %}>
+                        {{ tag.display_label }}
+                        {% if tag.display_label != tag.name and current_language != 'en' %}
+                        <span style="color: var(--gray-400); font-size: 0.8rem;">({{ tag.name }})</span>
+                        {% endif %}
+                    </label>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--gray-500);">No tags defined. <a href="{{ url_for('create_tag_route') }}">Create one</a></p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# Multi-language sync options #}
+        <div class="form-group" style="margin-top: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: 4px;">
+            <h4 style="margin: 0 0 0.5rem 0;">🌐 Multi-Language Sync</h4>
+            {% if action == 'Create' %}
+            <label class="checkbox-item">
+                <input type="checkbox" name="sync_languages" checked>
+                Create placeholder entries in other languages (EN/DE/FA)
+            </label>
+            <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.5rem;">
+                When enabled, placeholder entries will be created in all available language variants.
+                These can be translated later.
+            </p>
+            {% else %}
+            <label class="checkbox-item">
+                <input type="checkbox" name="sync_shared_fields">
+                Sync shared fields (URL, dates, DOI, etc.) to other languages
+            </label>
+            <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.5rem;">
+                When enabled, fields marked with 🔗 will be updated in all language variants.
+                Text fields (title, description) will only update in the current language.
+            </p>
+            {% endif %}
+        </div>
+        
+        {# Show linked entries if editing #}
+        {% if action == 'Edit' and linked_entries %}
+        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 4px;">
+            <h4 style="margin: 0 0 0.5rem 0;">📚 Linked Language Variants</h4>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                {% for lang, linked_entry in linked_entries.items() %}
+                <a href="{{ url_for('entry_detail', entry_id=linked_entry.id) }}" 
+                   class="btn btn-sm {% if linked_entry.id == entry.id %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ lang | upper }}
+                    {% if linked_entry.needs_translation %}
+                    <span style="color: var(--warning);">⚠️</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+            <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.5rem;">
+                ⚠️ = Needs translation
+            </p>
+        </div>
+        {% endif %}
+        
+        <div class="actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">💾 {{ 'Create' if action == 'Create' else 'Save' }} Entry</button>
+            <a href="{{ url_for('section_entries', person=person.slug, section=section) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% if action == 'Edit' and entry %}
+<div class="card" style="margin-top: 1rem;">
+    <h3 style="margin-bottom: 1rem; color: var(--danger);">⚠️ Danger Zone</h3>
+    <form action="{{ url_for('delete_entry_route', entry_id=entry.id) }}" method="post"
+          onsubmit="return confirm('Are you sure you want to delete this entry? This action cannot be undone.');">
+        <label class="checkbox-item">
+            <input type="checkbox" name="sync_languages" checked>
+            Delete from all languages
+        </label>
+        <p style="font-size: 0.85rem; color: var(--gray-600); margin: 0.5rem 0;">
+            When enabled, this entry will be deleted from all language variants (EN, DE, FA).
+        </p>
+        <button type="submit" class="btn btn-danger" style="margin-top: 0.5rem;">🗑️ Delete Entry</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

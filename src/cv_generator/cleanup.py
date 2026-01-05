@@ -157,8 +157,8 @@ def _find_locked_files(path: Path) -> List[str]:
             for file in files:
                 file_path = Path(root) / file
                 try:
-                    # Try to open for write (detects locks)
-                    with open(file_path, 'a'):
+                    # Try to open in read binary mode (detects locks without side effects)
+                    with open(file_path, 'rb'):
                         pass
                 except PermissionError:
                     locked.append(str(file_path))
@@ -326,8 +326,8 @@ def remove_directory(
                 )
 
             if attempt < max_attempts:
-                # Exponential backoff with cap
-                delay = min(max_delay, initial_delay * (1.5 ** attempt))
+                # Exponential backoff with cap (start at initial_delay for first retry)
+                delay = min(max_delay, initial_delay * (1.5 ** (attempt - 1)))
                 logger.debug(f"Waiting {delay:.2f}s before retry")
                 time.sleep(delay)
 
@@ -355,8 +355,10 @@ def remove_directory(
     for i, suggestion in enumerate(suggestions, 1):
         logger.error(f"  {i}. {suggestion}")
 
-    # Calculate approximate total time
-    total_time = sum(min(max_delay, initial_delay * (1.5 ** i)) for i in range(max_attempts))
+    # Calculate approximate total time (matches the exponential backoff formula)
+    total_time = sum(
+        min(max_delay, initial_delay * (1.5 ** i)) for i in range(max_attempts - 1)
+    )
 
     # Build detailed error message
     error_message = (

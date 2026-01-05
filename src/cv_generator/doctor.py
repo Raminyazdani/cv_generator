@@ -593,28 +593,31 @@ def check_windows_environment() -> Optional[CheckResult]:
         )
 
     # Check Windows Defender real-time scanning
-    try:
-        result = subprocess.run(
-            [
-                'powershell',
-                '-Command',
-                'Get-MpPreference | Select-Object -ExpandProperty DisableRealtimeMonitoring'
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            shell=False,
-        )
-
-        if result.returncode == 0 and 'False' in result.stdout:
-            issues.append("Windows Defender real-time scanning active")
-            suggestions.append(
-                "Consider adding cv_generator output directory to Defender exclusions "
-                "for better performance."
+    # Use shutil.which to find PowerShell to avoid PATH manipulation attacks
+    powershell_path = shutil.which('powershell.exe') or shutil.which('powershell')
+    if powershell_path:
+        try:
+            result = subprocess.run(
+                [
+                    powershell_path,
+                    '-Command',
+                    'Get-MpPreference | Select-Object -ExpandProperty DisableRealtimeMonitoring'
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                shell=False,
             )
 
-    except Exception:
-        pass  # Can't check, that's OK
+            if result.returncode == 0 and 'False' in result.stdout:
+                issues.append("Windows Defender real-time scanning active")
+                suggestions.append(
+                    "Consider adding cv_generator output directory to Defender exclusions "
+                    "for better performance."
+                )
+
+        except Exception:
+            pass  # Can't check, that's OK
 
     if issues:
         detail = "Potential file lock sources: " + ", ".join(issues)

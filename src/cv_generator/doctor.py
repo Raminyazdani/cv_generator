@@ -11,6 +11,7 @@ Checks include:
 - Template sanity (Jinja2 parse check)
 - Output directory writability
 - Optional: DB health check
+- Optional: Windows environment check (OneDrive, Dropbox, Windows Defender)
 """
 
 import logging
@@ -559,6 +560,80 @@ def check_assets(cvs_dir: Optional[Path] = None) -> CheckResult:
     )
 
 
+def check_windows_environment() -> Optional[CheckResult]:
+    """
+    Check Windows-specific environment factors that may affect cleanup.
+
+    Detects potential file lock sources like OneDrive, Dropbox, and
+    Windows Defender real-time scanning.
+
+    Returns:
+        CheckResult with Windows environment status, or None if not on Windows.
+    """
+    if not sys.platform.startswith('win'):
+        return None
+
+    issues = []
+    suggestions = []
+
+    # Check for OneDrive
+    onedrive_path = Path.home() / 'OneDrive'
+    if onedrive_path.exists():
+        issues.append("OneDrive detected")
+        suggestions.append(
+            "OneDrive can cause file locks. Consider using output directory outside OneDrive."
+        )
+
+    # Check for Dropbox
+    dropbox_path = Path.home() / 'Dropbox'
+    if dropbox_path.exists():
+        issues.append("Dropbox detected")
+        suggestions.append(
+            "Dropbox can cause file locks. Consider using output directory outside Dropbox."
+        )
+
+    # Check Windows Defender real-time scanning
+    try:
+        result = subprocess.run(
+            [
+                'powershell',
+                '-Command',
+                'Get-MpPreference | Select-Object -ExpandProperty DisableRealtimeMonitoring'
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            shell=False,
+        )
+
+        if result.returncode == 0 and 'False' in result.stdout:
+            issues.append("Windows Defender real-time scanning active")
+            suggestions.append(
+                "Consider adding cv_generator output directory to Defender exclusions "
+                "for better performance."
+            )
+
+    except Exception:
+        pass  # Can't check, that's OK
+
+    if issues:
+        detail = "Potential file lock sources: " + ", ".join(issues)
+        fix_hint = " | ".join(suggestions) if suggestions else None
+
+        return CheckResult(
+            name="Windows Environment",
+            status=CheckStatus.WARNING,
+            detail=detail,
+            fix_hint=fix_hint,
+        )
+    else:
+        return CheckResult(
+            name="Windows Environment",
+            status=CheckStatus.OK,
+            detail="No common file lock sources detected",
+        )
+
+
 def run_checks(
     template_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
@@ -603,5 +678,10 @@ def run_checks(
     # Assets (optional)
     if check_assets_flag:
         report.checks.append(check_assets())
+
+    # Windows environment (only on Windows)
+    windows_check = check_windows_environment()
+    if windows_check is not None:
+        report.checks.append(windows_check)
 
     return report

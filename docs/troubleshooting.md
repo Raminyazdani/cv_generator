@@ -319,6 +319,97 @@ PermissionError: [WinError 5] Access is denied
 3. Exclude the output directory from antivirus real-time scanning
 4. The generator has retry logic; try running again
 
+## Windows File Cleanup Issues
+
+CV Generator includes enhanced Windows cleanup with retry logic and diagnostics.
+
+### Problem: "Cannot remove directory (file locks)"
+
+**Symptoms:**
+- Cleanup fails after many retries
+- Error mentions "file locks" or "PermissionError"
+- Build succeeds but cleanup fails
+
+**Common Causes:**
+
+1. **OneDrive/Dropbox Sync**
+   - Files being synced to cloud
+   - Fix: Pause sync temporarily
+     - OneDrive: Right-click OneDrive icon → Pause syncing
+     - Dropbox: Dropbox icon → Preferences → Pause syncing
+
+2. **PDF Viewer Has File Open**
+   - PDF generated but reader still has it open
+   - Fix: Close all PDF viewers (Adobe, Chrome, Edge, SumatraPDF)
+
+3. **LaTeX Editor**
+   - TeXstudio, Overleaf Desktop, etc. have files open
+   - Fix: Close LaTeX editors
+
+4. **Windows Explorer**
+   - Explorer window showing the directory
+   - Fix: Close Explorer windows for that folder
+
+5. **Antivirus Scanning**
+   - Windows Defender or third-party AV scanning files
+   - Fix: Wait 30 seconds and retry
+   - Better: Add output directory to AV exclusions
+
+6. **Background Indexing**
+   - Windows Search indexing new files
+   - Fix: Wait and retry
+   - Better: Exclude output directory from indexing
+
+### Solutions
+
+**Quick Fix:**
+```bash
+# Wait 30 seconds
+timeout /t 30
+
+# Try again
+cvgen build --name your_name
+```
+
+**Interactive Retry:** When cleanup fails, cv_generator will ask if you want to:
+1. Retry (after closing applications)
+2. Skip cleanup (leave files)
+3. Abort
+
+Choose option 1 after closing applications.
+
+**Skip Cleanup (Fastest):**
+```bash
+# Skip cleanup entirely
+cvgen build --name your_name --no-cleanup
+```
+
+**Permanent Fix:**
+
+1. Use output directory outside cloud sync folders:
+   ```bash
+   cvgen build --name your_name --output-dir C:\CV\output
+   ```
+
+2. Add to Windows Defender exclusions:
+   - Open Windows Security
+   - Virus & threat protection → Manage settings
+   - Exclusions → Add or remove exclusions
+   - Add folder: `C:\your\output\directory`
+
+3. Disable Windows Search indexing:
+   - Right-click output folder → Properties
+   - Advanced → Uncheck "Allow files in this folder to have contents indexed"
+
+### Check for Lock Sources
+
+```bash
+# Run doctor to detect potential issues
+cvgen doctor --verbose
+```
+
+This will check for OneDrive, Dropbox, and other common lock sources.
+
 ### Profile Picture Not Showing
 
 **Symptom:** CV generates without the photo.

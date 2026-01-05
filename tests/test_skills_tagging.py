@@ -470,3 +470,106 @@ class TestReconstructSkillsFromEntries:
 
         assert "Category" in result
         assert len(result) == 1  # Only skills category
+
+
+class TestSkillsTagDeletionCascade:
+    """Tests for tag deletion cascade in nested skills structure."""
+
+    @pytest.fixture
+    def populated_db(self, tmp_path):
+        """Create a database with imported skills having tags."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "skills": {
+                "Programming": {
+                    "Languages": [
+                        {
+                            "short_name": "Python",
+                            "long_name": "Python Programming",
+                            "type_key": ["SkillTagX", "Full CV"]
+                        },
+                        {
+                            "short_name": "JavaScript",
+                            "long_name": "JavaScript",
+                            "type_key": ["SkillTagX", "Web"]
+                        }
+                    ],
+                    "Frameworks": [
+                        {
+                            "short_name": "Django",
+                            "long_name": "Django Framework",
+                            "type_key": ["SkillTagX"]
+                        }
+                    ]
+                }
+            }
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        import_cv(cv_path, db_path)
+        return db_path
+
+    def test_delete_tag_removes_from_all_skill_entries(self, populated_db):
+        """Test that deleting a tag removes it from all skill entries."""
+        from cv_generator.db import delete_tag, get_tag_by_name
+
+        # Delete SkillTagX which appears in all skills
+        delete_tag("SkillTagX", populated_db)
+
+        # Verify SkillTagX is not in any skill entry
+        entries = get_section_entries("testuser", "skills", populated_db)
+        for entry in entries:
+            assert "SkillTagX" not in entry["tags"]
+            data = entry["data"]
+            if "type_key" in data:
+                assert "SkillTagX" not in data["type_key"]
+
+    def test_delete_tag_preserves_other_skill_tags(self, populated_db):
+        """Test that deleting one tag preserves other tags in skill entries."""
+        from cv_generator.db import delete_tag
+
+        delete_tag("SkillTagX", populated_db)
+
+        entries = get_section_entries("testuser", "skills", populated_db)
+
+        # Find Python entry - should still have "Full CV"
+        python_entry = next((e for e in entries if e["data"]["short_name"] == "Python"), None)
+        assert "Full CV" in python_entry["tags"]
+
+        # Find JavaScript entry - should still have "Web"
+        js_entry = next((e for e in entries if e["data"]["short_name"] == "JavaScript"), None)
+        assert "Web" in js_entry["tags"]
+
+    def test_delete_tag_removes_empty_type_key_from_skills(self, populated_db):
+        """Test that type_key is removed if it becomes empty after tag deletion."""
+        from cv_generator.db import delete_tag
+
+        delete_tag("SkillTagX", populated_db)
+
+        entries = get_section_entries("testuser", "skills", populated_db)
+
+        # Django only had SkillTagX, so type_key should be removed entirely
+        django_entry = next((e for e in entries if e["data"]["short_name"] == "Django"), None)
+        assert "type_key" not in django_entry["data"]
+
+    def test_delete_tag_reflects_in_exported_skills_json(self, populated_db):
+        """Test that export JSON for skills doesn't contain deleted tags."""
+        from cv_generator.db import delete_tag
+
+        delete_tag("SkillTagX", populated_db)
+
+        # Export and verify
+        exported = export_cv("testuser", populated_db)
+        skills = exported["skills"]
+
+        # Check all skill items
+        for parent_cat, sub_cats in skills.items():
+            for sub_cat, skill_list in sub_cats.items():
+                for skill in skill_list:
+                    type_key = skill.get("type_key", [])
+                    assert "SkillTagX" not in type_key

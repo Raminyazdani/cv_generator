@@ -361,11 +361,49 @@ cvgen web tags
 
 #### Delete Tags
 
+Deleting a tag performs a **hard delete with cascade cleanup**:
+
+1. Removes the tag from the tag catalog
+2. Removes all `entry_tag` relationships
+3. Updates `data_json` `type_key` arrays in all affected entries
+4. If `type_key` becomes empty, it is removed entirely
+
 ```bash
 # Via Web UI
 cvgen web tags
 # Click delete on /tags page
 ```
+
+**Important:** Tag deletion is atomic - all changes occur in a single database transaction. If anything fails, the entire operation is rolled back.
+
+#### Remove Tag from Single Entry
+
+To remove a tag from a specific entry (without deleting the tag from the catalog):
+
+1. Navigate to the entry in the Web UI
+2. Uncheck the tag in the tag selection
+3. Save changes
+
+This updates both:
+- The `entry_tag` relationship table
+- The `type_key` field in `data_json`
+
+#### Cleanup Orphan Tag References
+
+If you suspect stale tag references in `data_json` (from manual edits or older versions), you can run cleanup:
+
+```python
+from cv_generator.db import cleanup_orphan_tag_references
+
+result = cleanup_orphan_tag_references(db_path)
+print(f"Cleaned {result['entries_cleaned']} entries")
+print(f"Removed orphan tags: {result['orphan_tags_found']}")
+```
+
+This function:
+- Scans all entries for `type_key` values
+- Removes any tags that don't exist in the catalog
+- Updates `data_json` accordingly
 
 #### Assign Tags to Entries
 
@@ -374,6 +412,29 @@ cvgen web tags
 3. Click on an entry
 4. Select/deselect tags
 5. Save changes
+
+### Tag Data Integrity
+
+The tagging system maintains referential integrity between:
+
+1. **Tag Catalog** (`tag` table) - the list of available tags
+2. **Entry-Tag Relationships** (`entry_tag` table) - which entries have which tags
+3. **Data JSON** (`entry.data_json` `type_key`) - the stored JSON representation
+
+**Invariant:** After any tag mutation (create, delete, assign, remove), all three representations must agree.
+
+This is enforced by:
+- `delete_tag()` - updates all three when deleting
+- `update_entry_tags()` - updates entry_tag and data_json atomically
+- `remove_tag_from_entry()` - removes single tag from one entry
+- `cleanup_orphan_tag_references()` - fixes any stale data_json references
+
+### Export Consistency
+
+Exports from the Web UI always use `apply_tags=True`, which:
+- Rebuilds `type_key` from the `entry_tag` relationships
+- Ensures the latest database state is exported
+- Never reintroduces deleted tags
 
 ### Tagging from CLI vs UI
 

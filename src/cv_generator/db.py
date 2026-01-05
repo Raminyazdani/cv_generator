@@ -1408,7 +1408,14 @@ def update_tag(
 
 def delete_tag(name: str, db_path: Optional[Path] = None) -> bool:
     """
-    Delete a tag and remove it from all entries.
+    Delete a tag and remove it from all entries (hard delete with cascade).
+
+    This function performs a complete cleanup:
+    1. Removes the tag from the tag catalog
+    2. Removes the tag from entry_tag relationships
+    3. Updates data_json type_key arrays in all affected entries
+
+    All operations occur in a single transaction for atomicity.
 
     Args:
         name: Tag name.
@@ -1416,6 +1423,9 @@ def delete_tag(name: str, db_path: Optional[Path] = None) -> bool:
 
     Returns:
         True if deleted, False if not found.
+
+    Raises:
+        ConfigurationError: If database doesn't exist.
     """
     db_path = get_db_path(db_path)
 
@@ -1433,12 +1443,40 @@ def delete_tag(name: str, db_path: Optional[Path] = None) -> bool:
 
         tag_id = row[0]
 
+        # Find all entries that have this tag and update their data_json
+        cursor.execute(
+            """SELECT e.id, e.data_json FROM entry e
+               JOIN entry_tag et ON e.id = et.entry_id
+               WHERE et.tag_id = ?""",
+            (tag_id,)
+        )
+        affected_entries = cursor.fetchall()
+
+        for entry_id, data_json in affected_entries:
+            data = json.loads(data_json)
+            if "type_key" in data and isinstance(data["type_key"], list):
+                # Remove the tag from type_key
+                data["type_key"] = [t for t in data["type_key"] if t != name]
+                # If type_key is now empty, remove it entirely
+                if not data["type_key"]:
+                    del data["type_key"]
+                # Update the entry
+                new_data_json = json.dumps(data, ensure_ascii=False, sort_keys=True)
+                cursor.execute(
+                    "UPDATE entry SET data_json = ? WHERE id = ?",
+                    (new_data_json, entry_id)
+                )
+
         # Delete from entry_tag (cascade should handle this but be explicit)
         cursor.execute("DELETE FROM entry_tag WHERE tag_id = ?", (tag_id,))
         cursor.execute("DELETE FROM tag WHERE id = ?", (tag_id,))
         conn.commit()
 
+        logger.info(f"Deleted tag '{name}' and updated {len(affected_entries)} entries")
         return True
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -1518,6 +1556,181 @@ def update_entry_tags(
             "data": data,
             "tags": tags
         }
+    finally:
+        conn.close()
+
+
+def remove_tag_from_entry(
+    entry_id: int,
+    tag_name: str,
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Remove a specific tag from an entry.
+
+    This function:
+    1. Removes the entry_tag relationship
+    2. Updates the type_key field in data_json
+
+    Args:
+        entry_id: The entry ID.
+        tag_name: Name of the tag to remove.
+        db_path: Path to the database file. Uses default if None.
+
+    Returns:
+        Updated entry record.
+
+    Raises:
+        ConfigurationError: If entry not found.
+    """
+    db_path = get_db_path(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Verify entry exists and get current data
+        cursor.execute(
+            "SELECT data_json, section FROM entry WHERE id = ?",
+            (entry_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Entry not found: {entry_id}")
+
+        data_json, section = row
+        data = json.loads(data_json)
+
+        # Find the tag
+        cursor.execute("SELECT id FROM tag WHERE name = ?", (tag_name,))
+        tag_row = cursor.fetchone()
+        if tag_row:
+            tag_id = tag_row[0]
+            # Remove from entry_tag
+            cursor.execute(
+                "DELETE FROM entry_tag WHERE entry_id = ? AND tag_id = ?",
+                (entry_id, tag_id)
+            )
+
+        # Update type_key in data_json
+        if "type_key" in data and isinstance(data["type_key"], list):
+            data["type_key"] = [t for t in data["type_key"] if t != tag_name]
+            if not data["type_key"]:
+                del data["type_key"]
+
+        new_data_json = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        cursor.execute(
+            "UPDATE entry SET data_json = ? WHERE id = ?",
+            (new_data_json, entry_id)
+        )
+
+        conn.commit()
+
+        # Get current tags for response
+        cursor.execute(
+            """SELECT t.name FROM tag t
+               JOIN entry_tag et ON t.id = et.tag_id
+               WHERE et.entry_id = ?
+               ORDER BY t.name""",
+            (entry_id,)
+        )
+        current_tags = [r[0] for r in cursor.fetchall()]
+
+        return {
+            "id": entry_id,
+            "section": section,
+            "data": data,
+            "tags": current_tags
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def cleanup_orphan_tag_references(db_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Clean up orphaned tag references in data_json type_key arrays.
+
+    This function finds entries where data_json type_key contains tag names
+    that do not exist in the tag catalog, and removes those references.
+
+    This ensures data_json is consistent with the tag catalog.
+
+    Args:
+        db_path: Path to the database file. Uses default if None.
+
+    Returns:
+        Dict with cleanup statistics:
+        - entries_cleaned: Number of entries that were updated
+        - orphan_tags_found: List of orphan tag names that were removed
+
+    Raises:
+        ConfigurationError: If database doesn't exist.
+    """
+    db_path = get_db_path(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Get all valid tag names
+        cursor.execute("SELECT name FROM tag")
+        valid_tags = {row[0] for row in cursor.fetchall()}
+
+        # Get all entries with type_key
+        cursor.execute("SELECT id, data_json FROM entry")
+        entries_cleaned = 0
+        orphan_tags_found = set()
+
+        for entry_id, data_json in cursor.fetchall():
+            data = json.loads(data_json)
+            if "type_key" not in data or not isinstance(data["type_key"], list):
+                continue
+
+            original_type_key = data["type_key"]
+            # Filter to only valid tags
+            filtered_type_key = [t for t in original_type_key if t in valid_tags]
+
+            if filtered_type_key != original_type_key:
+                # Found orphan references
+                orphans = set(original_type_key) - set(filtered_type_key)
+                orphan_tags_found.update(orphans)
+
+                if filtered_type_key:
+                    data["type_key"] = filtered_type_key
+                else:
+                    del data["type_key"]
+
+                new_data_json = json.dumps(data, ensure_ascii=False, sort_keys=True)
+                cursor.execute(
+                    "UPDATE entry SET data_json = ? WHERE id = ?",
+                    (new_data_json, entry_id)
+                )
+                entries_cleaned += 1
+
+        conn.commit()
+
+        if entries_cleaned > 0:
+            logger.info(
+                f"Cleaned up {entries_cleaned} entries with orphan tag references: "
+                f"{', '.join(sorted(orphan_tags_found))}"
+            )
+
+        return {
+            "entries_cleaned": entries_cleaned,
+            "orphan_tags_found": sorted(orphan_tags_found)
+        }
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

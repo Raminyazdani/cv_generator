@@ -80,6 +80,8 @@ def build_command(args: argparse.Namespace) -> int:
     if output_dir is None and config.paths.output:
         output_dir = Path(config.paths.output)
 
+    pics_dir = Path(args.pics_dir) if hasattr(args, "pics_dir") and args.pics_dir else None
+
     # Determine profile name: CLI --name > current profile from state
     name_filter = args.name
     if name_filter is None:
@@ -156,6 +158,7 @@ def build_command(args: argparse.Namespace) -> int:
             cvs_dir=cvs_dir,
             templates_dir=templates_dir,
             output_dir=output_dir,
+            pics_dir=pics_dir,
             name_filter=name_filter,
             dry_run=args.dry_run,
             keep_latex=args.keep_latex,
@@ -269,6 +272,7 @@ def _run_watch_mode(
                 cvs_dir=cvs_dir,
                 templates_dir=templates_dir,
                 output_dir=output_dir,
+                pics_dir=pics_dir,
                 name_filter=name_filter,
                 dry_run=dry_run,
                 keep_latex=keep_latex,
@@ -2250,6 +2254,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--templates-dir", "-t",
         type=str,
         help="Templates directory (default: templates)"
+    )
+    build_parser.add_argument(
+        "--pics-dir",
+        type=str,
+        help="Profile pictures directory (default: data/pics or ~/.cvgen/pics)"
     )
     build_parser.add_argument(
         "--keep-latex", "-k",

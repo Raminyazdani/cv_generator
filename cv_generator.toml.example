@@ -1,0 +1,70 @@
+# CV Generator Configuration File
+# ================================
+# Place this file in your project root or specify with --config
+
+# Path Configuration
+# ==================
+# All paths support ~ expansion for home directory
+# Paths can be absolute or relative to the config file location
+
+[paths]
+# Directory containing CV JSON files
+# Default: data/cvs (if exists) or ~/.cvgen/cvs
+cvs_dir = "~/.cvgen/cvs"
+
+# Directory containing profile pictures  
+# Default: data/pics (if exists) or ~/.cvgen/pics
+pics_dir = "~/.cvgen/pics"
+
+# SQLite database path
+# Default: data/db/cv.db (if exists) or ~/.cvgen/db/cv.db
+db_path = "~/.cvgen/db/cv.db"
+
+# LaTeX templates directory
+# Default: templates/ (in repository) or ~/.cvgen/templates
+templates_dir = "~/.cvgen/templates"
+
+# Output directory for generated files
+# Default: ./output
+output_dir = "./output"
+
+# Assets directory (logos, etc.)
+# Default: assets/ (in repository) or ~/.cvgen/assets
+assets_dir = "~/.cvgen/assets"
+
+
+# Build Configuration
+# ===================
+[build]
+# Default language for CVs
+default_language = "en"
+
+# Keep LaTeX files after build
+keep_latex = false
+
+# LaTeX compilation timeout (seconds)
+latex_timeout = 120
+
+# Enable incremental builds by default
+incremental = false
+
+
+# Logging Configuration
+# =====================
+[logging]
+# Log level: DEBUG, INFO, WARNING, ERROR
+level = "INFO"
+
+# Optional: Log file path
+# If not specified, logs only go to console
+# log_file = "~/.cvgen/logs/cvgen.log"
+
+
+# Project Configuration
+# =====================
+[project]
+# Project name (optional, for documentation)
+name = "My CV Project"
+
+# Default CV variants
+# variants = ["academic", "industry", "full"]

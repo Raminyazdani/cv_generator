@@ -403,6 +403,7 @@ def generate_cv(
     variant: Optional[str] = None,
     incremental: bool = False,
     cache: Optional[BuildCache] = None,
+    latex_timeout: Optional[int] = None,
 ) -> CVGenerationResult:
     """
     Generate a PDF CV from a JSON file.
@@ -418,6 +419,7 @@ def generate_cv(
         variant: If provided, filter entries by type_key matching this variant.
         incremental: If True, skip rebuild if inputs haven't changed.
         cache: BuildCache instance for incremental builds.
+        latex_timeout: Timeout in seconds for LaTeX compilation (default: 120).
 
     Returns:
         CVGenerationResult with status and paths.
@@ -589,7 +591,7 @@ def generate_cv(
     logger.info(f"➡️  Compile with: xelatex {rendered_tex_path}")
 
     try:
-        pdf_path = compile_latex(rendered_tex_path, artifact_paths.pdf_dir)
+        pdf_path = compile_latex(rendered_tex_path, artifact_paths.pdf_dir, timeout=latex_timeout)
     except Exception as e:
         logger.error(f"LaTeX compilation failed: {e}")
         pdf_path = None
@@ -656,6 +658,7 @@ def generate_all_cvs(
     keep_latex: bool = False,
     variant: Optional[str] = None,
     incremental: bool = False,
+    latex_timeout: Optional[int] = None,
 ) -> List[CVGenerationResult]:
     """
     Generate PDFs for all CV files in a directory.
@@ -670,6 +673,7 @@ def generate_all_cvs(
         keep_latex: If True, keep LaTeX source files in output/latex/.
         variant: If provided, filter entries by type_key matching this variant.
         incremental: If True, skip rebuild if inputs haven't changed.
+        latex_timeout: Timeout in seconds for LaTeX compilation (default: 120).
 
     Returns:
         List of CVGenerationResult objects.
@@ -735,6 +739,7 @@ def generate_all_cvs(
             variant=variant,
             incremental=incremental,
             cache=cache,
+            latex_timeout=latex_timeout,
         )
         results.append(result)
 

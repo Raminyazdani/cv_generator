@@ -76,11 +76,15 @@ def _read_log_file(log_path: Path) -> str:
         return ""
 
 
+# Default LaTeX compilation timeout (can be overridden via --latex-timeout)
+DEFAULT_LATEX_TIMEOUT = 120
+
+
 def compile_latex(
     tex_file: Path,
     output_dir: Path,
     *,
-    timeout: int = 120
+    timeout: Optional[int] = None
 ) -> Optional[Path]:
     """
     Compile a LaTeX file to PDF using xelatex.
@@ -88,7 +92,8 @@ def compile_latex(
     Args:
         tex_file: Path to the .tex file to compile.
         output_dir: Directory for output files.
-        timeout: Maximum time in seconds to wait for compilation.
+        timeout: Maximum time in seconds to wait for compilation (default: 120).
+                 Can be overridden via CLI --latex-timeout option.
 
     Returns:
         Path to the generated PDF, or None if compilation fails.
@@ -96,6 +101,10 @@ def compile_latex(
     Raises:
         LatexError: If xelatex is not found.
     """
+    # Use default if not specified (F-009 enhancement)
+    if timeout is None:
+        timeout = DEFAULT_LATEX_TIMEOUT
+
     if not tex_file.exists():
         raise LatexError(f"LaTeX source file not found: {tex_file}")
 
@@ -177,7 +186,16 @@ def compile_latex(
             "xelatex not found. Please install MiKTeX (Windows) or TeX Live (Linux/Mac)."
         )
     except subprocess.TimeoutExpired:
-        logger.error(f"xelatex timed out after {timeout} seconds")
+        # Enhanced timeout error with helpful message (F-009)
+        suggestions = (
+            f"xelatex timed out after {timeout} seconds\n"
+            f"Suggestions:\n"
+            f"  1. Try increasing timeout: --latex-timeout {timeout * 2}\n"
+            f"  2. Check for infinite loops or very large documents\n"
+            f"  3. Complex CVs with many images may need more time\n"
+            f"  4. Manual compilation: xelatex {tex_file}"
+        )
+        logger.error(suggestions)
         return None
     except Exception as e:
         logger.error(f"Error running xelatex: {e}")

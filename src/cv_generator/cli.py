@@ -164,6 +164,7 @@ def build_command(args: argparse.Namespace) -> int:
             keep_latex=args.keep_latex,
             variant=variant,
             incremental=incremental,
+            latex_timeout=getattr(args, 'latex_timeout', None),
         )
     except CVGeneratorError as e:
         logger.error(str(e))
@@ -2310,6 +2311,17 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         dest="report",
         help="Generate a build report in output/reports/"
+    )
+
+    # LaTeX options (F-009 enhancement)
+    latex_group = build_parser.add_argument_group('LaTeX Options')
+    latex_group.add_argument(
+        '--latex-timeout',
+        type=int,
+        default=120,
+        metavar='SECONDS',
+        dest='latex_timeout',
+        help='LaTeX compilation timeout in seconds (default: 120)'
     )
 
     # Cleanup options

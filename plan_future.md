@@ -39,7 +39,7 @@ CV Generator is a Python-based tool that transforms structured JSON CV data into
 - Robust CLI (`cvgen`) with build, ensure, db, and web commands
 - SQLite tagging system for flexible entry categorization
 - ArtifactPaths class for predictable output structure
-- 203 tests covering core functionality
+- 929 tests covering core functionality
 
 ### What "Excellent" Looks Like in 6–12 Months
 

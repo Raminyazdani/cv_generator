@@ -299,25 +299,26 @@ python generate_cv.py --name ramin     # Same as cvgen build --name ramin
 What this does:
 
 1. Loops over every JSON file in `data/cvs/` (e.g. `mahsa.json`, `ramin.json`).
-2. For each person:
-   - Creates `result/<name>/sections/`.
-   - Renders each template in `templates/` with that person’s data into `result/<name>/sections/*.tex`.
-   - Embeds all section content into `templates/layout.tex` and produces a combined LaTeX file `rendered.tex` in the same sections folder.
-   - Runs `xelatex` to compile the LaTeX to a PDF in `output/`.
-   - Cleans up non-PDF files in `output/`.
-   - Renames the compiled `rendered.pdf` to `<name>.pdf` (e.g. `ramin.pdf`).
-3. After processing all people, removes the `result/` directory using a Windows‑friendly cleanup helper.
+2. For each person and language:
+   - Creates directories under `output/latex/<name>/<lang>/sections/`.
+   - Renders each template in `templates/` with that person's data into section `.tex` files.
+   - Embeds all section content into `templates/layout.tex` and produces `main.tex`.
+   - Runs `xelatex` to compile the LaTeX to PDF.
+   - Cleans up LaTeX artifacts unless `--keep-latex` is specified.
+   - Renames the compiled PDF to `<name>_<lang>.pdf`.
+3. Cleans up intermediate files using a cross-platform cleanup helper.
 
 Final PDFs are written to:
 
 ```text
-output/<name>.pdf
+output/pdf/<name>/<lang>/<name>_<lang>.pdf
 ```
 
 For example:
 
-- `output/mahsa.pdf`
-- `output/ramin.pdf`
+- `output/pdf/mahsa/en/mahsa_en.pdf`
+- `output/pdf/ramin/en/ramin_en.pdf`
+- `output/pdf/ramin/de/ramin_de.pdf`
 
 ---
 

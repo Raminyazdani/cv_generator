@@ -619,7 +619,6 @@ except CompilationError as e:
 ## Complete Example
 
 ```python
-#!/usr/bin/env python3
 """Generate academic CVs for all team members."""
 
 from cv_generator import (

@@ -81,17 +81,17 @@ from .person import (
     link_variant_to_person,
     list_person_entities,
 )
+from .sync_engine import SyncEngine
 from .tags import (
     DEFAULT_LANGUAGE,
     SUPPORTED_LANGUAGES,
     get_tag_catalog,
     validate_tags,
 )
+from .variant_manager import VariantManager
 from .vocabulary import (
     get_vocabulary,
 )
-from .sync_engine import SyncEngine, VariantStatus
-from .variant_manager import VariantManager
 
 logger = logging.getLogger(__name__)
 
@@ -2162,7 +2162,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                 if result.conflicts:
                     msg += f" {len(result.conflicts)} conflict(s) skipped."
                 if result.source_deleted:
-                    msg += f" Source resume_set deleted."
+                    msg += " Source resume_set deleted."
                 flash(msg, "success")
             else:
                 flash(f"Failed to merge: {result.error}", "error")
@@ -2247,8 +2247,9 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         """
         Resolve a conflict for a specific field.
         """
-        from .sync_engine import FieldConflict
         from datetime import datetime, timezone
+
+        from .sync_engine import FieldConflict
 
         entity_type = request.form.get("entity_type")
         entity_id = request.form.get("entity_id")

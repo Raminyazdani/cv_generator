@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}{{ action }} Entry - {{ section | replace('_', ' ') | title }}{% endblock %}
+{% block title %}{{ action }} Entry - {{ get_section_label(section) }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &raquo;
     <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &raquo;
-    <a href="{{ url_for('section_entries', person=person.slug, section=section) }}">{{ section | replace('_', ' ') | title }}</a> &raquo;
+    <a href="{{ url_for('section_entries', person=person.slug, section=section) }}">{{ get_section_label(section) }}</a> &raquo;
     {{ action }} Entry
 </nav>
 
-<h2>{{ action }} {{ section | replace('_', ' ') | title }} Entry</h2>
+<h2>{{ action }} {{ get_section_label(section) }} Entry</h2>
 
 <div class="card">
     <form method="post">
@@ -18,18 +18,18 @@
         {# Dynamic fields based on section type #}
         {% if section == 'projects' %}
         <div class="form-group">
-            <label for="field_title">Title *</label>
+            <label for="field_title">{{ get_field_label('title') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(title)</small>{% endif %}</label>
             <input type="text" id="field_title" name="field_title" 
                    value="{{ entry.data.title if entry else '' }}" required
                    placeholder="Project title">
         </div>
         <div class="form-group">
-            <label for="field_description">Description</label>
+            <label for="field_description">{{ get_field_label('description') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(description)</small>{% endif %}</label>
             <textarea id="field_description" name="field_description" rows="4"
                       placeholder="Project description">{{ entry.data.description if entry else '' }}</textarea>
         </div>
         <div class="form-group">
-            <label for="field_url">URL</label>
+            <label for="field_url">{{ get_field_label('url') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(url)</small>{% endif %}</label>
             <input type="url" id="field_url" name="field_url" 
                    value="{{ entry.data.url if entry else '' }}"
                    placeholder="https://github.com/...">
@@ -38,64 +38,64 @@
         
         {% elif section == 'experiences' %}
         <div class="form-group">
-            <label for="field_role">Role *</label>
+            <label for="field_role">{{ get_field_label('role') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(role)</small>{% endif %}</label>
             <input type="text" id="field_role" name="field_role" 
                    value="{{ entry.data.role if entry else '' }}" required
                    placeholder="Job title / Role">
         </div>
         <div class="form-group">
-            <label for="field_institution">Institution / Company *</label>
+            <label for="field_institution">{{ get_field_label('institution') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(institution)</small>{% endif %}</label>
             <input type="text" id="field_institution" name="field_institution" 
                    value="{{ entry.data.institution if entry else '' }}" required
                    placeholder="Company name">
         </div>
         <div class="form-group">
-            <label for="field_duration">Duration</label>
+            <label for="field_duration">{{ get_field_label('duration') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(duration)</small>{% endif %}</label>
             <input type="text" id="field_duration" name="field_duration" 
                    value="{{ entry.data.duration if entry else '' }}"
                    placeholder="2020-01 - present">
         </div>
         <div class="form-group">
-            <label for="field_description">Description</label>
+            <label for="field_description">{{ get_field_label('description') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(description)</small>{% endif %}</label>
             <textarea id="field_description" name="field_description" rows="4"
                       placeholder="Job responsibilities and achievements">{{ entry.data.description if entry else '' }}</textarea>
         </div>
         
         {% elif section == 'publications' %}
         <div class="form-group">
-            <label for="field_title">Title *</label>
+            <label for="field_title">{{ get_field_label('title') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(title)</small>{% endif %}</label>
             <input type="text" id="field_title" name="field_title" 
                    value="{{ entry.data.title if entry else '' }}" required
                    placeholder="Publication title">
         </div>
         <div class="form-group">
-            <label for="field_authors">Authors</label>
+            <label for="field_authors">{{ get_field_label('authors') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(authors)</small>{% endif %}</label>
             <input type="text" id="field_authors" name="field_authors" 
                    value="{{ entry.data.authors if entry else '' }}"
                    placeholder="Author names">
         </div>
         <div class="form-group">
-            <label for="field_journal">Journal / Conference</label>
+            <label for="field_journal">{{ get_field_label('journal') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(journal)</small>{% endif %}</label>
             <input type="text" id="field_journal" name="field_journal" 
                    value="{{ entry.data.journal if entry else '' }}"
                    placeholder="Publication venue">
         </div>
         <div class="form-group">
-            <label for="field_year">Year</label>
+            <label for="field_year">{{ get_field_label('year') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(year)</small>{% endif %}</label>
             <input type="text" id="field_year" name="field_year" 
                    value="{{ entry.data.year if entry else '' }}"
                    placeholder="2024">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_doi">DOI</label>
+            <label for="field_doi">{{ get_field_label('doi') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(doi)</small>{% endif %}</label>
             <input type="text" id="field_doi" name="field_doi" 
                    value="{{ entry.data.doi if entry else '' }}"
                    placeholder="10.1000/xyz123">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_status">Status</label>
+            <label for="field_status">{{ get_field_label('status') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(status)</small>{% endif %}</label>
             <input type="text" id="field_status" name="field_status" 
                    value="{{ entry.data.status if entry else '' }}"
                    placeholder="Published / In Review / Submitted">
@@ -104,26 +104,26 @@
         
         {% elif section == 'references' %}
         <div class="form-group">
-            <label for="field_name">Name *</label>
+            <label for="field_name">{{ get_field_label('name') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(name)</small>{% endif %}</label>
             <input type="text" id="field_name" name="field_name" 
                    value="{{ entry.data.name if entry else '' }}" required
                    placeholder="Reference name">
         </div>
         <div class="form-group">
-            <label for="field_institution">Institution</label>
+            <label for="field_institution">{{ get_field_label('institution') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(institution)</small>{% endif %}</label>
             <input type="text" id="field_institution" name="field_institution" 
                    value="{{ entry.data.institution if entry else '' }}"
                    placeholder="Institution / Company">
         </div>
         <div class="form-group">
-            <label for="field_email">Email</label>
+            <label for="field_email">{{ get_field_label('email') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(email)</small>{% endif %}</label>
             <input type="email" id="field_email" name="field_email" 
                    value="{{ entry.data.email if entry else '' }}"
                    placeholder="email@example.com">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_phone">Phone</label>
+            <label for="field_phone">{{ get_field_label('phone') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(phone)</small>{% endif %}</label>
             <input type="text" id="field_phone" name="field_phone" 
                    value="{{ entry.data.phone if entry else '' }}"
                    placeholder="+49 123 456789">
@@ -132,45 +132,45 @@
         
         {% elif section == 'education' %}
         <div class="form-group">
-            <label for="field_institution">Institution *</label>
+            <label for="field_institution">{{ get_field_label('institution') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(institution)</small>{% endif %}</label>
             <input type="text" id="field_institution" name="field_institution" 
                    value="{{ entry.data.institution if entry else '' }}" required
                    placeholder="University name">
         </div>
         <div class="form-group">
-            <label for="field_area">Area / Major</label>
+            <label for="field_area">{{ get_field_label('area') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(area)</small>{% endif %}</label>
             <input type="text" id="field_area" name="field_area" 
                    value="{{ entry.data.area if entry else '' }}"
                    placeholder="Computer Science">
         </div>
         <div class="form-group">
-            <label for="field_studyType">Degree Type</label>
+            <label for="field_studyType">{{ get_field_label('studyType') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(studyType)</small>{% endif %}</label>
             <input type="text" id="field_studyType" name="field_studyType" 
                    value="{{ entry.data.studyType if entry else '' }}"
                    placeholder="Master's / Bachelor's / PhD">
         </div>
         <div class="form-group">
-            <label for="field_location">Location</label>
+            <label for="field_location">{{ get_field_label('location') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(location)</small>{% endif %}</label>
             <input type="text" id="field_location" name="field_location" 
                    value="{{ entry.data.location if entry else '' }}"
                    placeholder="City, Country">
         </div>
         <div class="form-group">
-            <label for="field_startDate">Start Date</label>
+            <label for="field_startDate">{{ get_field_label('startDate') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(startDate)</small>{% endif %}</label>
             <input type="text" id="field_startDate" name="field_startDate" 
                    value="{{ entry.data.startDate if entry else '' }}"
                    placeholder="2020-10-01">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_endDate">End Date</label>
+            <label for="field_endDate">{{ get_field_label('endDate') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(endDate)</small>{% endif %}</label>
             <input type="text" id="field_endDate" name="field_endDate" 
                    value="{{ entry.data.endDate if entry else '' }}"
                    placeholder="2024-09-30 or 'present'">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_gpa">GPA</label>
+            <label for="field_gpa">{{ get_field_label('gpa') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(gpa)</small>{% endif %}</label>
             <input type="text" id="field_gpa" name="field_gpa" 
                    value="{{ entry.data.gpa if entry else '' }}"
                    placeholder="3.5 / 4.0">
@@ -179,66 +179,66 @@
         
         {% elif section == 'basics' %}
         <div class="form-group">
-            <label for="field_fname">First Name *</label>
+            <label for="field_fname">{{ get_field_label('fname') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(fname)</small>{% endif %}</label>
             <input type="text" id="field_fname" name="field_fname" 
                    value="{{ entry.data.fname if entry else '' }}" required
                    placeholder="First name">
         </div>
         <div class="form-group">
-            <label for="field_lname">Last Name *</label>
+            <label for="field_lname">{{ get_field_label('lname') }} *{% if show_canonical_keys %} <small style="color: var(--gray-400);">(lname)</small>{% endif %}</label>
             <input type="text" id="field_lname" name="field_lname" 
                    value="{{ entry.data.lname if entry else '' }}" required
                    placeholder="Last name">
         </div>
         <div class="form-group">
-            <label for="field_headline">Headline / Title</label>
+            <label for="field_headline">{{ get_field_label('headline') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(headline)</small>{% endif %}</label>
             <input type="text" id="field_headline" name="field_headline" 
                    value="{{ entry.data.headline if entry else '' }}"
                    placeholder="Software Engineer, Data Scientist, etc.">
         </div>
         <div class="form-group">
-            <label for="field_location">Location</label>
+            <label for="field_location">{{ get_field_label('location') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(location)</small>{% endif %}</label>
             <input type="text" id="field_location" name="field_location" 
                    value="{{ entry.data.location if entry else '' }}"
                    placeholder="City, Country">
         </div>
         <div class="form-group">
-            <label for="field_email">Email</label>
+            <label for="field_email">{{ get_field_label('email') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(email)</small>{% endif %}</label>
             <input type="email" id="field_email" name="field_email" 
                    value="{{ entry.data.email if entry else '' }}"
                    placeholder="email@example.com">
             <small style="color: var(--gray-500);">🔗 Shared field - will sync across languages</small>
         </div>
         <div class="form-group">
-            <label for="field_phone">Phone</label>
+            <label for="field_phone">{{ get_field_label('phone') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(phone)</small>{% endif %}</label>
             <input type="text" id="field_phone" name="field_phone" 
                    value="{{ entry.data.phone if entry else '' }}"
                    placeholder="+49 123 456 7890">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_website">Website</label>
+            <label for="field_website">{{ get_field_label('website') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(website)</small>{% endif %}</label>
             <input type="url" id="field_website" name="field_website" 
                    value="{{ entry.data.website if entry else '' }}"
                    placeholder="https://example.com">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_linkedin">LinkedIn URL</label>
+            <label for="field_linkedin">LinkedIn{% if show_canonical_keys %} <small style="color: var(--gray-400);">(linkedin)</small>{% endif %}</label>
             <input type="url" id="field_linkedin" name="field_linkedin" 
                    value="{{ entry.data.linkedin if entry else '' }}"
                    placeholder="https://linkedin.com/in/...">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_github">GitHub URL</label>
+            <label for="field_github">GitHub{% if show_canonical_keys %} <small style="color: var(--gray-400);">(github)</small>{% endif %}</label>
             <input type="url" id="field_github" name="field_github" 
                    value="{{ entry.data.github if entry else '' }}"
                    placeholder="https://github.com/...">
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         <div class="form-group">
-            <label for="field_summary">Summary / Bio</label>
+            <label for="field_summary">{{ get_field_label('summary') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(summary)</small>{% endif %}</label>
             <textarea id="field_summary" name="field_summary" rows="4"
                       placeholder="A brief professional summary">{{ entry.data.summary if entry else '' }}</textarea>
         </div>
@@ -246,13 +246,13 @@
         {% else %}
         {# Generic fallback for other sections #}
         <div class="form-group">
-            <label for="field_title">Title / Name</label>
+            <label for="field_title">{{ get_field_label('title') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(title)</small>{% endif %}</label>
             <input type="text" id="field_title" name="field_title" 
                    value="{{ entry.data.title or entry.data.name if entry else '' }}"
                    placeholder="Entry title">
         </div>
         <div class="form-group">
-            <label for="field_description">Description</label>
+            <label for="field_description">{{ get_field_label('description') }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">(description)</small>{% endif %}</label>
             <textarea id="field_description" name="field_description" rows="4"
                       placeholder="Description">{{ entry.data.description if entry else '' }}</textarea>
         </div>

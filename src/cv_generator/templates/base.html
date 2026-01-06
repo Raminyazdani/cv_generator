@@ -434,6 +434,9 @@
                 <a href="{{ url_for('index') }}">Home</a>
                 <a href="{{ url_for('tags_list') }}">Tags</a>
                 <a href="{{ url_for('diagnostics') }}">Diagnostics</a>
+                <a href="{{ url_for('toggle_canonical_keys') }}" title="Toggle developer mode to show/hide canonical keys under labels" style="font-size: 0.9em; opacity: 0.8;">
+                    {% if show_canonical_keys %}🔧 Dev{% else %}🔧{% endif %}
+                </a>
                 <span class="lang-selector">
                     {% for lang in supported_languages %}
                         {% if lang == current_language %}

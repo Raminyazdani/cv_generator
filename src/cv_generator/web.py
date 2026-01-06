@@ -87,6 +87,11 @@ from .tags import (
     get_tag_catalog,
     validate_tags,
 )
+from .vocabulary import (
+    get_field_label,
+    get_section_label,
+    get_vocabulary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -517,15 +522,31 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     def inject_helpers():
         """Inject helper functions into templates."""
         catalog = get_tag_catalog()
+        vocab = get_vocabulary()
         current_lang = get_current_language()
+        # Debug mode shows canonical keys under labels (controlled via session)
+        show_canonical = session.get("show_canonical_keys", False)
+
+        def get_localized_field_label(field_key: str, lang: Optional[str] = None) -> str:
+            """Get localized label for a field key."""
+            return vocab.get_label(field_key, lang or current_lang)
+
+        def get_localized_section_label(section_key: str, lang: Optional[str] = None) -> str:
+            """Get localized label for a section name."""
+            return vocab.get_section_label(section_key, lang or current_lang)
+
         return {
             "get_entry_summary": get_entry_summary,
             "get_tag_label": get_tag_label,
             "get_tag_display": get_tag_display,
+            "get_field_label": get_localized_field_label,
+            "get_section_label": get_localized_section_label,
             "current_language": current_lang,
             "supported_languages": SUPPORTED_LANGUAGES,
             "tag_catalog": catalog,
+            "vocabulary": vocab,
             "csrf_token": generate_csrf_token,
+            "show_canonical_keys": show_canonical,
         }
 
     @app.before_request
@@ -823,6 +844,18 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         else:
             session["language"] = lang
             flash(f"Language set to: {lang}", "success")
+        return redirect(request.referrer or url_for("index"))
+
+    @app.route("/debug/toggle-canonical-keys")
+    @requires_auth
+    def toggle_canonical_keys():
+        """Toggle debug mode to show/hide canonical keys under labels."""
+        current = session.get("show_canonical_keys", False)
+        session["show_canonical_keys"] = not current
+        if session["show_canonical_keys"]:
+            flash("Developer mode: Showing canonical keys under labels", "success")
+        else:
+            flash("Developer mode: Hiding canonical keys", "success")
         return redirect(request.referrer or url_for("index"))
 
     @app.route("/tags/create", methods=["GET", "POST"])
@@ -1164,8 +1197,14 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             # Get stable_id
             stable_id = entry.get("stable_id")
 
-            # Define field info for the section
-            fields = _get_section_fields(section)
+            # Define field info for the section - we need per-language fields for labels
+            # Pass fields for each language so the template can show localized labels
+            fields_by_lang = {}
+            for lang in SUPPORTED_LANGUAGES:
+                fields_by_lang[lang] = _get_section_fields(section, lang)
+
+            # Also get the default (English) fields for backward compatibility
+            fields = _get_section_fields(section, DEFAULT_LANGUAGE)
 
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")
@@ -1222,6 +1261,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             entry=entry,
             linked_entries=linked_entries,
             fields=fields,
+            fields_by_lang=fields_by_lang,
             stable_id=stable_id,
             supported_languages=SUPPORTED_LANGUAGES
         )
@@ -1469,19 +1509,25 @@ def _get_missing_counterparts(db_path: Path) -> list[dict[str, Any]]:
     return missing
 
 
-def _get_section_fields(section: str) -> dict[str, dict[str, Any]]:
+def _get_section_fields(section: str, language: str = DEFAULT_LANGUAGE) -> dict[str, dict[str, Any]]:
     """
     Get field definitions for a section for the cross-language editor.
 
     Returns a dict mapping field names to field info:
-    - label: Display label
+    - label: Display label (English default for cross-language editor pane headers)
+    - localized_label: Localized label for the given language (from vocabulary)
+    - canonical_key: The canonical field key
     - shared: Whether this is a shared field (not translated)
     - multiline: Whether this is a multiline field
     - input_type: HTML input type
     - placeholder: Placeholder text
     """
+    from .vocabulary import get_vocabulary
+    vocab = get_vocabulary()
+
+    # Define base field structures (with English labels as default)
     if section == "basics":
-        return {
+        fields = {
             "fname": {"label": "First Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "First name"},
             "lname": {"label": "Last Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Last name"},
             "headline": {"label": "Headline", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Professional title"},
@@ -1494,20 +1540,20 @@ def _get_section_fields(section: str) -> dict[str, dict[str, Any]]:
             "summary": {"label": "Summary / Bio", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Professional summary"},
         }
     elif section == "projects":
-        return {
+        fields = {
             "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Project title"},
             "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Project description"},
             "url": {"label": "URL", "shared": True, "multiline": False, "input_type": "url", "placeholder": "https://github.com/..."},
         }
     elif section == "experiences":
-        return {
+        fields = {
             "role": {"label": "Role", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Job title"},
             "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Company name"},
             "duration": {"label": "Duration", "shared": False, "multiline": False, "input_type": "text", "placeholder": "2020 - present"},
             "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Responsibilities"},
         }
     elif section == "publications":
-        return {
+        fields = {
             "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Publication title"},
             "authors": {"label": "Authors", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Author names"},
             "journal": {"label": "Journal", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Journal name"},
@@ -1516,14 +1562,14 @@ def _get_section_fields(section: str) -> dict[str, dict[str, Any]]:
             "status": {"label": "Status", "shared": True, "multiline": False, "input_type": "text", "placeholder": "Published"},
         }
     elif section == "references":
-        return {
+        fields = {
             "name": {"label": "Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Reference name"},
             "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Company"},
             "email": {"label": "Email", "shared": True, "multiline": False, "input_type": "email", "placeholder": "email@example.com"},
             "phone": {"label": "Phone", "shared": True, "multiline": False, "input_type": "text", "placeholder": "+49 123 456"},
         }
     elif section == "education":
-        return {
+        fields = {
             "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "University name"},
             "area": {"label": "Area / Major", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Computer Science"},
             "studyType": {"label": "Degree Type", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Master's"},
@@ -1534,10 +1580,18 @@ def _get_section_fields(section: str) -> dict[str, dict[str, Any]]:
         }
     else:
         # Generic fields
-        return {
+        fields = {
             "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Title"},
             "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Description"},
         }
+
+    # Add localized labels from vocabulary for each field
+    for field_name, field_info in fields.items():
+        field_info["canonical_key"] = field_name
+        field_info["localized_label"] = vocab.get_label(field_name, language)
+        field_info["has_translation"] = vocab.has_translation(field_name, language)
+
+    return fields
 
 
 def _clear_needs_translation(entry_id: int, db_path: Path) -> None:

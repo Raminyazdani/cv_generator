@@ -305,21 +305,46 @@
         
         {# Show linked entries if editing #}
         {% if action == 'Edit' and linked_entries %}
-        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 4px;">
-            <h4 style="margin: 0 0 0.5rem 0;">📚 Linked Language Variants</h4>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, var(--gray-50), #e8f4ff); border-radius: 8px; border: 1px solid var(--gray-200);">
+            <h4 style="margin: 0 0 0.75rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                🌍 Multilingual Variants
+                <span style="font-size: 0.8rem; color: var(--gray-500); font-weight: normal;">
+                    ({{ linked_entries|length }} language{{ 's' if linked_entries|length > 1 else '' }})
+                </span>
+            </h4>
+            
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
                 {% for lang, linked_entry in linked_entries.items() %}
-                <a href="{{ url_for('entry_detail', entry_id=linked_entry.id) }}" 
-                   class="btn btn-sm {% if linked_entry.id == entry.id %}btn-primary{% else %}btn-secondary{% endif %}">
+                <a href="{{ url_for('edit_entry_route', entry_id=linked_entry.id) }}" 
+                   class="btn btn-sm {% if linked_entry.id == entry.id %}btn-primary{% else %}btn-secondary{% endif %}"
+                   style="min-width: 50px; text-align: center;">
                     {{ lang | upper }}
                     {% if linked_entry.needs_translation %}
-                    <span style="color: var(--warning);">⚠️</span>
+                    <span title="Needs translation" style="color: var(--warning);">⚠️</span>
                     {% endif %}
                 </a>
                 {% endfor %}
             </div>
-            <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.5rem;">
-                ⚠️ = Needs translation
+            
+            {% if linked_entries|length > 1 %}
+            <div style="padding-top: 0.75rem; border-top: 1px solid var(--gray-200);">
+                <a href="{{ url_for('cross_language_editor_route', entry_id=entry.id) }}" 
+                   class="btn btn-success" style="width: 100%;">
+                    🌐 Edit All Languages Side-by-Side
+                </a>
+                <p style="font-size: 0.8rem; color: var(--gray-600); margin: 0.5rem 0 0 0; text-align: center;">
+                    Edit EN, DE, FA versions together on one page
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        {% elif action == 'Edit' %}
+        {# No linked entries found - show info #}
+        <div class="form-group" style="margin-top: 1rem; padding: 1rem; background: var(--gray-50); border-radius: 4px; border: 1px dashed var(--gray-300);">
+            <h4 style="margin: 0 0 0.5rem 0; color: var(--gray-500);">🌍 Multilingual Variants</h4>
+            <p style="font-size: 0.85rem; color: var(--gray-500); margin: 0;">
+                No other language variants detected. To link this entry with other languages, 
+                use the <a href="{{ url_for('cross_language_editor_route', entry_id=entry.id) }}">Cross-Language Editor</a>.
             </p>
         </div>
         {% endif %}

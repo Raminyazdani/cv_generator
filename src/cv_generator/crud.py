@@ -1034,6 +1034,14 @@ class ListSectionAdapter(SectionAdapter):
         """
         Get all language variants of an entry.
 
+        Uses two strategies:
+        1. Primary: Find entries linked via stable_id in entry_lang_link table
+        2. Fallback: Find corresponding entries via person_entity (config.ID grouping)
+           by matching order_idx (position) and section across language variants
+
+        This ensures multilingual entries are shown together even when they were
+        imported separately without explicit stable_id linking.
+
         Args:
             entry_id: Entry ID
             db_path: Path to database
@@ -1053,36 +1061,96 @@ class ListSectionAdapter(SectionAdapter):
         try:
             cursor = conn.cursor()
 
-            # Get stable_id
+            # Get stable_id first (primary linking mechanism)
             cursor.execute(
                 "SELECT stable_id FROM entry_lang_link WHERE entry_id = ?",
                 (entry_id,)
             )
             row = cursor.fetchone()
-            if not row:
-                # Entry not linked, return just this entry
-                entry = self.get_entry(entry_id, db_path)
-                if entry:
-                    lang = entry.get("language") or DEFAULT_LANGUAGE
-                    return {lang: entry}
+
+            if row and row[0]:
+                # Entry has stable_id - use existing linking
+                stable_id = row[0]
+                cursor.execute(
+                    """SELECT ell.entry_id, ell.language, ell.needs_translation
+                       FROM entry_lang_link ell
+                       WHERE ell.stable_id = ?""",
+                    (stable_id,)
+                )
+
+                result = {}
+                for eid, lang, needs_trans in cursor.fetchall():
+                    entry = self.get_entry(eid, db_path)
+                    if entry:
+                        entry["needs_translation"] = bool(needs_trans)
+                        result[lang] = entry
+
+                return result
+
+            # Fallback: Find corresponding entries via person_entity (config.ID grouping)
+            entry = self.get_entry(entry_id, db_path)
+            if not entry:
                 return {}
 
-            stable_id = row[0]
+            order_idx = entry.get("order_idx")
+            person_id = entry.get("person_id")
 
-            # Get all linked entries
+            # Detect language from person slug
+            person_slug = entry.get("person_slug", "")
+            current_lang = DEFAULT_LANGUAGE
+            for lang in SUPPORTED_LANGUAGES:
+                if lang != DEFAULT_LANGUAGE and person_slug.endswith(f"_{lang}"):
+                    current_lang = lang
+                    break
+
+            # Always include the current entry
+            result = {current_lang: entry}
+
+            if order_idx is None or not person_id:
+                return result
+
+            # Find person_entity_id for this person via person_entity_variant table
+            # This table links person records to person_entity by config.ID grouping
             cursor.execute(
-                """SELECT ell.entry_id, ell.language, ell.needs_translation
-                   FROM entry_lang_link ell
-                   WHERE ell.stable_id = ?""",
-                (stable_id,)
+                """SELECT person_entity_id FROM person_entity_variant
+                   WHERE person_id = ?""",
+                (person_id,)
             )
+            pe_row = cursor.fetchone()
 
-            result = {}
-            for eid, lang, needs_trans in cursor.fetchall():
-                entry = self.get_entry(eid, db_path)
-                if entry:
-                    entry["needs_translation"] = bool(needs_trans)
-                    result[lang] = entry
+            if not pe_row:
+                # Person is not linked to a person_entity - return just current entry
+                return result
+
+            person_entity_id = pe_row[0]
+
+            # Find all person variants linked to this person_entity
+            cursor.execute(
+                """SELECT person_id, language FROM person_entity_variant
+                   WHERE person_entity_id = ?""",
+                (person_entity_id,)
+            )
+            person_variants = cursor.fetchall()
+
+            # Find entries in other person variants with matching order_idx (position)
+            # This works because imported CVs maintain the same entry order across languages
+            for variant_person_id, variant_lang in person_variants:
+                if variant_person_id == person_id:
+                    continue  # Skip the current person
+
+                cursor.execute(
+                    """SELECT id FROM entry
+                       WHERE person_id = ? AND section = ? AND order_idx = ?""",
+                    (variant_person_id, self.section, order_idx)
+                )
+                variant_entry_row = cursor.fetchone()
+
+                if variant_entry_row:
+                    variant_entry = self.get_entry(variant_entry_row[0], db_path)
+                    if variant_entry:
+                        # Mark as potentially needing translation since it's not explicitly linked
+                        variant_entry["needs_translation"] = False
+                        result[variant_lang] = variant_entry
 
             return result
         finally:

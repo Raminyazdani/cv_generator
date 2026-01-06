@@ -432,8 +432,9 @@ class CVImporter:
             "reference_i18n", "tag_i18n",
         ]
 
+        # Safe: table names come from hardcoded whitelist above, not user input
         for table in i18n_tables:
-            cursor.execute(f"DELETE FROM {table} WHERE resume_version_id = ?", (version_id,))
+            cursor.execute(f"DELETE FROM {table} WHERE resume_version_id = ?", (version_id,))  # noqa: S608
 
         cursor.execute("DELETE FROM publication_authors WHERE resume_version_id = ?", (version_id,))
         cursor.execute("DELETE FROM publication_editors WHERE resume_version_id = ?", (version_id,))
@@ -568,11 +569,13 @@ class CVImporter:
             if row:
                 profile_id = row[0]
             else:
+                network_name = profile.get("network", "")
+                network_code = _slugify(network_name) if network_name else "unknown"
                 cursor.execute(
                     """INSERT INTO profile_accounts
                        (resume_key, sort_order, network_code, username, url, uuid)
                        VALUES (?, ?, ?, ?, ?, ?)""",
-                    (resume_key, idx, _slugify(profile.get("network", "")),
+                    (resume_key, idx, network_code,
                      profile.get("username"), profile.get("url"), profile.get("uuid")),
                 )
                 profile_id = cursor.lastrowid
@@ -1116,7 +1119,19 @@ class CVImporter:
         self, cursor: sqlite3.Cursor, pub_id: int, version_id: int, pub: Dict[str, Any],
         structured_key: Optional[str], fallback_key: str, table_name: str, column_name: str
     ) -> None:
-        """Import authors/editors/supervisors for a publication."""
+        """Import authors/editors/supervisors for a publication.
+
+        Note: table_name and column_name are validated against a whitelist to prevent SQL injection.
+        """
+        # Validate table_name against whitelist
+        valid_tables = {
+            "publication_authors": "author_literal",
+            "publication_editors": "editor_literal",
+            "publication_supervisors": "supervisor_literal",
+        }
+        if table_name not in valid_tables or valid_tables[table_name] != column_name:
+            raise ValueError(f"Invalid table/column combination: {table_name}/{column_name}")
+
         people = []
         if structured_key and pub.get(structured_key):
             for person in pub[structured_key]:
@@ -1132,14 +1147,15 @@ class CVImporter:
         if not people:
             return
 
+        # Safe: table_name and column_name validated against whitelist above
         cursor.execute(
-            f"DELETE FROM {table_name} WHERE publication_id = ? AND resume_version_id = ?",
+            f"DELETE FROM {table_name} WHERE publication_id = ? AND resume_version_id = ?",  # noqa: S608
             (pub_id, version_id),
         )
 
         for idx, person in enumerate(people):
             cursor.execute(
-                f"INSERT INTO {table_name} (publication_id, resume_version_id, sort_order, {column_name}) VALUES (?, ?, ?, ?)",
+                f"INSERT INTO {table_name} (publication_id, resume_version_id, sort_order, {column_name}) VALUES (?, ?, ?, ?)",  # noqa: S608
                 (pub_id, version_id, idx, person),
             )
 

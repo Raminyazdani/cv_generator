@@ -847,9 +847,23 @@ class TestIntegrationWithRealFiles:
         init_db_v2(db_path)
         return db_path
 
-    def test_import_ramin_en(self, db):
+    @pytest.fixture
+    def cvs_dir(self):
+        """Get the CVs directory relative to the repository root."""
+        # Try to find the data/cvs directory relative to the test file
+        test_file = Path(__file__).resolve()
+        repo_root = test_file.parent.parent  # Go up from tests/ to repo root
+        cvs_path = repo_root / "data" / "cvs"
+        if cvs_path.exists():
+            return cvs_path
+        return None
+
+    def test_import_ramin_en(self, db, cvs_dir):
         """Test importing real ramin.json file."""
-        json_path = Path("/home/runner/work/cv_generator/cv_generator/data/cvs/ramin.json")
+        if cvs_dir is None:
+            pytest.skip("CVs directory not found")
+
+        json_path = cvs_dir / "ramin.json"
         if not json_path.exists():
             pytest.skip("Real CV file not found")
 
@@ -865,10 +879,9 @@ class TestIntegrationWithRealFiles:
         assert result.stats.get("education", 0) > 0
         assert result.stats.get("skill_items", 0) > 0
 
-    def test_import_all_three_variants(self, db):
+    def test_import_all_three_variants(self, db, cvs_dir):
         """Test importing EN, DE, FA variants of the same CV."""
-        cvs_dir = Path("/home/runner/work/cv_generator/cv_generator/data/cvs")
-        if not cvs_dir.exists():
+        if cvs_dir is None:
             pytest.skip("CVs directory not found")
 
         importer = CVImporter(db)

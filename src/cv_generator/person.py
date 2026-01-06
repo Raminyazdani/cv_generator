@@ -672,14 +672,19 @@ def auto_group_variants(
     dry_run: bool = False
 ) -> Dict[str, Any]:
     """
-    Automatically group existing CV variants into person entities based on basics names.
+    Automatically group existing CV variants into person entities based on config.ID.
 
     This migration function:
     1. Finds all unlinked CV variants
-    2. Groups them by normalized firstName + lastName from basics
-    3. Creates person entities for each unique name
-    4. Links variants to their corresponding person entities
-    5. Flags potential collisions (same name, different people) for manual review
+    2. Groups them by config.ID from the config section (primary grouping key)
+    3. Falls back to normalized firstName + lastName from basics if config.ID is not available
+    4. Creates person entities for each unique group
+    5. Links variants to their corresponding person entities
+    6. Flags potential collisions for manual review
+
+    The config.ID grouping ensures that multilingual CVs with the same config.ID
+    are grouped together regardless of the script used in name fields (e.g., "Ramin"
+    in English vs "رامین" in Persian are grouped if they share the same config.ID).
 
     Args:
         db_path: Path to database
@@ -707,22 +712,39 @@ def auto_group_variants(
     try:
         cursor = conn.cursor()
 
-        # Get all unlinked variants with their basics info
+        # Get all unlinked variants with their basics and config info
+        # We join with both basics and config sections to get all needed data
         cursor.execute(
-            """SELECT p.id, p.slug, p.display_name, e.data_json
+            """SELECT p.id, p.slug, p.display_name, 
+                      e_basics.data_json as basics_json,
+                      e_config.data_json as config_json
                FROM person p
                LEFT JOIN person_entity_variant pev ON p.id = pev.person_id
-               LEFT JOIN entry e ON p.id = e.person_id AND e.section = 'basics' AND e.order_idx = 0
+               LEFT JOIN entry e_basics ON p.id = e_basics.person_id 
+                   AND e_basics.section = 'basics' AND e_basics.order_idx = 0
+               LEFT JOIN entry e_config ON p.id = e_config.person_id 
+                   AND e_config.section = 'config' AND e_config.order_idx = 0
                WHERE pev.person_id IS NULL
                ORDER BY p.slug"""
         )
 
-        # Group by name_key
+        # Group by config.ID (primary) or name_key (fallback)
         groups: Dict[str, List[Dict[str, Any]]] = {}
 
         for row in cursor.fetchall():
-            pid, slug, disp_name, basics_json = row
+            pid, slug, disp_name, basics_json, config_json = row
             stats["variants_found"] += 1
+
+            # Parse config to get config.ID (primary grouping key)
+            config_id = None
+            config_lang = None
+            if config_json:
+                try:
+                    config = json.loads(config_json)
+                    config_id = config.get("ID")
+                    config_lang = config.get("lang")
+                except (json.JSONDecodeError, TypeError):
+                    pass
 
             # Parse basics to get name
             first_name = ""
@@ -735,14 +757,20 @@ def auto_group_variants(
                 except (json.JSONDecodeError, TypeError):
                     pass
 
-            name_key = compute_name_key(first_name, last_name)
+            # Use config.ID as the primary grouping key, fall back to name_key
+            if config_id:
+                group_key = f"config_id:{config_id}"
+            else:
+                name_key = compute_name_key(first_name, last_name)
+                group_key = f"name:{name_key}" if name_key else ""
 
-            # Detect language
-            lang = DEFAULT_LANGUAGE
-            for supported_lang in SUPPORTED_LANGUAGES:
-                if supported_lang != DEFAULT_LANGUAGE and slug.endswith(f"_{supported_lang}"):
-                    lang = supported_lang
-                    break
+            # Detect language from config.lang first, then from slug
+            lang = config_lang or DEFAULT_LANGUAGE
+            if not config_lang:
+                for supported_lang in SUPPORTED_LANGUAGES:
+                    if supported_lang != DEFAULT_LANGUAGE and slug.endswith(f"_{supported_lang}"):
+                        lang = supported_lang
+                        break
 
             variant = {
                 "person_id": pid,
@@ -750,26 +778,44 @@ def auto_group_variants(
                 "display_name": disp_name,
                 "first_name": first_name,
                 "last_name": last_name,
-                "language": lang
+                "language": lang,
+                "config_id": config_id
             }
 
-            if name_key not in groups:
-                groups[name_key] = []
-            groups[name_key].append(variant)
+            if group_key not in groups:
+                groups[group_key] = []
+            groups[group_key].append(variant)
 
         # Process each group
-        for name_key, variants in groups.items():
-            if not name_key:
-                # No name info - skip for now, these are "Unlinked" variants
-                logger.warning(f"Skipping {len(variants)} variants with no name info")
+        for group_key, variants in groups.items():
+            if not group_key:
+                # No grouping info - skip for now, these are "Unlinked" variants
+                logger.warning(f"Skipping {len(variants)} variants with no grouping info")
                 continue
 
-            # Get first/last from first variant
-            first_name = variants[0]["first_name"]
-            last_name = variants[0]["last_name"]
+            # Determine the best first_name/last_name for display
+            # Prefer the English variant's name, or the first available non-empty name
+            first_name = ""
+            last_name = ""
+            for variant in variants:
+                if variant["language"] == DEFAULT_LANGUAGE and (variant["first_name"] or variant["last_name"]):
+                    first_name = variant["first_name"]
+                    last_name = variant["last_name"]
+                    break
+            # Fallback: use the first variant with any name
+            if not first_name and not last_name:
+                for variant in variants:
+                    if variant["first_name"] or variant["last_name"]:
+                        first_name = variant["first_name"]
+                        last_name = variant["last_name"]
+                        break
+
+            # Extract config_id if available (for logging/debugging)
+            config_id = variants[0].get("config_id")
 
             group_info = {
-                "name_key": name_key,
+                "group_key": group_key,
+                "config_id": config_id,
                 "first_name": first_name,
                 "last_name": last_name,
                 "variants": variants
@@ -779,10 +825,10 @@ def auto_group_variants(
             if dry_run:
                 continue
 
-            # Check if person entity already exists with this name
+            # Check if person entity already exists with this group_key
             cursor.execute(
                 "SELECT id FROM person_entity WHERE name_key = ?",
-                (name_key,)
+                (group_key,)
             )
             existing = cursor.fetchone()
 
@@ -790,20 +836,27 @@ def auto_group_variants(
                 person_entity_id = existing[0]
                 stats["collisions_detected"] += 1
                 logger.warning(
-                    f"Person entity already exists for '{first_name} {last_name}', "
+                    f"Person entity already exists for group '{group_key}', "
                     f"linking variants to existing entity"
                 )
             else:
                 # Create new person entity
                 person_entity_id = generate_person_entity_id()
                 now = _utcnow()
-                display_name = f"{first_name} {last_name}".strip()
+                # Create display name: prefer actual names, then convert config_id to readable format
+                if first_name or last_name:
+                    display_name = f"{first_name} {last_name}".strip()
+                elif config_id:
+                    # Convert snake_case/dash-case to Title Case (e.g., "ramin_yazdani" -> "Ramin Yazdani")
+                    display_name = config_id.replace("_", " ").replace("-", " ").title()
+                else:
+                    display_name = "Unknown"
 
                 cursor.execute(
                     """INSERT INTO person_entity
                        (id, name_key, first_name, last_name, display_name, notes, created_at, updated_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (person_entity_id, name_key, first_name, last_name, display_name, None, now, now)
+                    (person_entity_id, group_key, first_name, last_name, display_name, None, now, now)
                 )
                 stats["persons_created"] += 1
 

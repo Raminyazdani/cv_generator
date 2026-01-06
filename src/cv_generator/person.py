@@ -23,7 +23,7 @@ import sqlite3
 import unicodedata
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from .db import _utcnow, get_db_path
 from .errors import ConfigurationError, ValidationError
@@ -258,7 +258,7 @@ def create_person_entity(
             display_name = f"{first_name} {last_name}".strip()
 
         cursor.execute(
-            """INSERT INTO person_entity 
+            """INSERT INTO person_entity
                (id, name_key, first_name, last_name, display_name, notes, created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (person_id, name_key, first_name, last_name, display_name, notes, now, now)
@@ -333,7 +333,7 @@ def get_person_entity(
 
         # Get linked variants
         cursor.execute(
-            """SELECT pev.language, pev.is_primary, p.id, p.slug, p.display_name, 
+            """SELECT pev.language, pev.is_primary, p.id, p.slug, p.display_name,
                       (SELECT COUNT(*) FROM entry WHERE person_id = p.id) as entry_count
                FROM person_entity_variant pev
                JOIN person p ON pev.person_id = p.id
@@ -385,7 +385,7 @@ def list_person_entities(
             search_norm = normalize_name(search)
             cursor.execute(
                 """SELECT id, name_key, first_name, last_name, display_name, notes, created_at, updated_at
-                   FROM person_entity 
+                   FROM person_entity
                    WHERE name_key LIKE ? OR display_name LIKE ?
                    ORDER BY display_name""",
                 (f"%{search_norm}%", f"%{search}%")
@@ -393,7 +393,7 @@ def list_person_entities(
         else:
             cursor.execute(
                 """SELECT id, name_key, first_name, last_name, display_name, notes, created_at, updated_at
-                   FROM person_entity 
+                   FROM person_entity
                    ORDER BY display_name"""
             )
 
@@ -477,7 +477,7 @@ def get_unlinked_variants(db_path: Optional[Path] = None) -> List[Dict[str, Any]
 
             # Try to get basics info for grouping hints
             cursor.execute(
-                """SELECT data_json FROM entry 
+                """SELECT data_json FROM entry
                    WHERE person_id = ? AND section = 'basics' AND order_idx = 0""",
                 (pid,)
             )
@@ -577,7 +577,7 @@ def link_variant_to_person(
 
         # Insert or update link
         cursor.execute(
-            """INSERT OR REPLACE INTO person_entity_variant 
+            """INSERT OR REPLACE INTO person_entity_variant
                (person_entity_id, person_id, language, is_primary, created_at)
                VALUES (?, ?, ?, ?, ?)""",
             (person_entity_id, person_id, language, 1 if is_primary else 0, now)
@@ -625,7 +625,7 @@ def unlink_variant_from_person(
         cursor = conn.cursor()
 
         cursor.execute(
-            """DELETE FROM person_entity_variant 
+            """DELETE FROM person_entity_variant
                WHERE person_entity_id = ? AND person_id = ?""",
             (person_entity_id, person_id)
         )
@@ -790,7 +790,7 @@ def auto_group_variants(
                 display_name = f"{first_name} {last_name}".strip()
 
                 cursor.execute(
-                    """INSERT INTO person_entity 
+                    """INSERT INTO person_entity
                        (id, name_key, first_name, last_name, display_name, notes, created_at, updated_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                     (person_entity_id, name_key, first_name, last_name, display_name, None, now, now)
@@ -803,7 +803,7 @@ def auto_group_variants(
                 is_primary = (variant["language"] == DEFAULT_LANGUAGE or i == 0)
 
                 cursor.execute(
-                    """INSERT OR REPLACE INTO person_entity_variant 
+                    """INSERT OR REPLACE INTO person_entity_variant
                        (person_entity_id, person_id, language, is_primary, created_at)
                        VALUES (?, ?, ?, ?, ?)""",
                     (person_entity_id, variant["person_id"], variant["language"],
@@ -896,7 +896,7 @@ def update_person_entity(
 
         # Get current values
         cursor.execute(
-            """SELECT first_name, last_name, display_name, notes 
+            """SELECT first_name, last_name, display_name, notes
                FROM person_entity WHERE id = ?""",
             (person_entity_id,)
         )
@@ -917,7 +917,7 @@ def update_person_entity(
 
         now = _utcnow()
         cursor.execute(
-            """UPDATE person_entity 
+            """UPDATE person_entity
                SET name_key = ?, first_name = ?, last_name = ?, display_name = ?, notes = ?, updated_at = ?
                WHERE id = ?""",
             (new_name_key, new_first, new_last, new_display, new_notes, now, person_entity_id)

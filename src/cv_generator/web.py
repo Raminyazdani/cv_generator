@@ -76,7 +76,6 @@ from .person import (
     create_person_entity,
     ensure_person_entity_schema,
     get_person_entity,
-    get_person_entity_by_variant,
     get_unlinked_variants,
     link_variant_to_person,
     list_person_entities,
@@ -556,7 +555,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         try:
             person = get_person_entity(person_entity_id, app.config["DB_PATH"])
             if not person:
-                flash(f"Person not found", "error")
+                flash("Person not found", "error")
                 return redirect(url_for("index"))
 
             # Get missing languages

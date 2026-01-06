@@ -317,7 +317,8 @@ class TestDeleteEntry:
 
         # Delete from EN
         result = delete_entry(en_entry_id, "projects", db_path, sync_languages=True)
-        assert result is True
+        assert result["success"] is True
+        assert result["deleted_count"] >= 1
 
         # Verify all language variants are deleted
         for lang, entry_id in create_result["entries"].items():
@@ -332,7 +333,7 @@ class TestDeleteEntry:
 
         # Delete only EN variant
         result = delete_entry(en_entry_id, "projects", db_path, sync_languages=False)
-        assert result is True
+        assert result["success"] is True
 
         # EN should be deleted
         en_entry = get_entry(en_entry_id, "projects", db_path)
@@ -513,3 +514,227 @@ class TestExportConsistency:
         de_stable_ids = {e["stable_id"] for e in de_entries if e["stable_id"]}
 
         assert en_stable_ids == de_stable_ids
+
+
+class TestSyncResult:
+    """Tests for sync result tracking and observability."""
+
+    @pytest.fixture
+    def populated_db(self, tmp_path):
+        """Create a database with EN/DE person variants."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": []
+        }
+        cv_en_path = tmp_path / "cvs" / "testuser.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        # Create DE CV
+        cv_de = {
+            "basics": [{"fname": "Test", "lname": "Benutzer"}],
+            "projects": []
+        }
+        cv_de_path = tmp_path / "cvs" / "testuser_de.json"
+        cv_de_path.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_de_path, db_path)
+
+        return db_path
+
+    def test_create_entry_returns_sync_result(self, populated_db):
+        """Test that create_entry returns sync_result with observability info."""
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Test Project"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+
+        # Check sync_result is present
+        assert "sync_result" in result
+        sync_result = result["sync_result"]
+
+        # Check required fields
+        assert sync_result["operation"] == "create"
+        assert sync_result["success"] is True
+        assert "synced_languages" in sync_result
+        assert "skipped_languages" in sync_result
+        assert "duration_ms" in sync_result
+
+    def test_sync_result_tracks_synced_languages(self, populated_db):
+        """Test that sync_result tracks which languages were synced."""
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Test Project"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+
+        sync_result = result["sync_result"]
+        synced = sync_result["synced_languages"]
+
+        # EN and DE should be synced
+        assert "en" in synced
+        assert "de" in synced
+
+    def test_sync_result_tracks_skipped_languages(self, populated_db):
+        """Test that sync_result tracks skipped languages with reasons."""
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Test Project"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+
+        sync_result = result["sync_result"]
+
+        # FA should be skipped (no testuser_fa in database)
+        assert "fa" in sync_result["skipped_languages"]
+        # Reason should mention "not found"
+        assert "not found" in sync_result["skipped_languages"]["fa"]
+
+    def test_sync_result_includes_duration(self, populated_db):
+        """Test that sync_result includes timing information."""
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Test Project"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+
+        sync_result = result["sync_result"]
+
+        # Duration should be a positive number (in ms)
+        assert sync_result["duration_ms"] > 0
+        assert sync_result["duration_ms"] < 5000  # Should complete in < 5s
+
+    def test_update_entry_returns_sync_result(self, populated_db):
+        """Test that update_entry returns sync_result."""
+        # First create an entry
+        create_result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Original", "url": "https://original.com"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+        entry_id = create_result["entries"]["en"]
+
+        # Update with sync
+        result = update_entry(
+            entry_id=entry_id,
+            data={"title": "Updated", "url": "https://updated.com"},
+            section="projects",
+            db_path=populated_db,
+            sync_shared_fields=True
+        )
+
+        # Check sync_result
+        assert "sync_result" in result
+        assert result["sync_result"]["operation"] == "update"
+        assert result["sync_result"]["success"] is True
+
+    def test_delete_entry_returns_sync_result(self, populated_db):
+        """Test that delete_entry returns sync_result."""
+        # First create an entry
+        create_result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "To Delete"},
+            db_path=populated_db,
+            sync_languages=True
+        )
+        entry_id = create_result["entries"]["en"]
+
+        # Delete with sync
+        result = delete_entry(
+            entry_id=entry_id,
+            section="projects",
+            db_path=populated_db,
+            sync_languages=True
+        )
+
+        # Check sync_result
+        assert "sync_result" in result
+        assert result["sync_result"]["operation"] == "delete"
+        assert result["sync_result"]["success"] is True
+
+
+class TestSyncIntegration:
+    """Integration tests for sync workflow EN→DE."""
+
+    @pytest.fixture
+    def full_db(self, tmp_path):
+        """Create a database with all language variants."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        for lang_suffix, name in [("", "User"), ("_de", "Benutzer"), ("_fa", "کاربر")]:
+            cv = {
+                "basics": [{"fname": "Test", "lname": name}],
+                "projects": []
+            }
+            filename = f"testuser{lang_suffix}.json"
+            cv_path = tmp_path / "cvs" / filename
+            cv_path.parent.mkdir(parents=True, exist_ok=True)
+            cv_path.write_text(json.dumps(cv, ensure_ascii=False))
+            import_cv(cv_path, db_path)
+
+        return db_path
+
+    def test_sync_en_to_de_creates_linked_entry(self, full_db):
+        """Test that creating in EN creates linked entry in DE."""
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "My Project", "url": "https://example.com"},
+            db_path=full_db,
+            sync_languages=True
+        )
+
+        # Both EN and DE should have entries
+        assert "en" in result["entries"]
+        assert "de" in result["entries"]
+
+        # Get DE entry
+        de_entry_id = result["entries"]["de"]
+        de_entry = get_entry(de_entry_id, "projects", full_db)
+
+        # DE entry should have same URL (shared field)
+        assert de_entry["data"]["url"] == "https://example.com"
+
+        # DE entry should be marked as needing translation
+        assert de_entry["needs_translation"] is True
+
+    def test_sync_persists_after_refresh(self, full_db):
+        """Test that linked state persists (simulating page refresh)."""
+        # Create entry
+        result = create_entry(
+            person_slug="testuser",
+            section="projects",
+            data={"title": "Persistent Project"},
+            db_path=full_db,
+            sync_languages=True
+        )
+
+        stable_id = result["stable_id"]
+        en_entry_id = result["entries"]["en"]
+        de_entry_id = result["entries"]["de"]
+
+        # "Refresh" by getting linked entries again
+        linked = get_linked_entries(en_entry_id, "projects", full_db)
+
+        # Should still show both languages linked
+        assert "en" in linked
+        assert "de" in linked
+        assert linked["en"]["id"] == en_entry_id
+        assert linked["de"]["id"] == de_entry_id

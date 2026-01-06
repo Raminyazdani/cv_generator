@@ -135,6 +135,7 @@ def generate_csrf_token() -> str:
     return session[CSRF_SESSION_KEY]
 
 
+
 def validate_csrf_token(token: Optional[str]) -> bool:
     """
     Validate a CSRF token against the one stored in the session.
@@ -568,6 +569,10 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         tag_copy["display_label"] = catalog.get_tag_label(tag["name"], lang)
         tag_copy["has_translation"] = catalog.has_translation(tag["name"], lang)
         return tag_copy
+
+    @app.template_filter('basename')
+    def basename_filter(path):
+        return os.path.basename(path) if path else ''
 
     @app.context_processor
     def inject_helpers():

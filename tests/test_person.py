@@ -389,13 +389,16 @@ class TestAutoGrouping:
         init_db(db_path)
         ensure_person_entity_schema(db_path)
 
-        # Create Ramin's CVs (should be grouped together)
+        # Create Ramin's CVs (should ALL be grouped together by config.ID)
         for lang, fname, lname in [
             ("en", "Ramin", "Yazdani"),
             ("de", "Ramin", "Yazdani"),
-            ("fa", "رامین", "یزدانی"),  # Different script, won't auto-group
+            ("fa", "رامین", "یزدانی"),  # Different script but same config.ID -> auto-groups!
         ]:
-            cv_data = {"basics": [{"fname": fname, "lname": lname}]}
+            cv_data = {
+                "config": {"ID": "ramin_yazdani", "lang": lang},
+                "basics": [{"fname": fname, "lname": lname}]
+            }
             suffix = "" if lang == "en" else f"_{lang}"
             cv_path = tmp_path / "cvs" / f"ramin{suffix}.json"
             cv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -403,7 +406,10 @@ class TestAutoGrouping:
             import_cv(cv_path, db_path)
 
         # Create Mahsa's CV
-        cv_mahsa = {"basics": [{"fname": "Mahsa", "lname": "Amini"}]}
+        cv_mahsa = {
+            "config": {"ID": "mahsa_amini", "lang": "en"},
+            "basics": [{"fname": "Mahsa", "lname": "Amini"}]
+        }
         cv_mahsa_path = tmp_path / "cvs" / "mahsa.json"
         cv_mahsa_path.write_text(json.dumps(cv_mahsa))
         import_cv(cv_mahsa_path, db_path)
@@ -424,34 +430,31 @@ class TestAutoGrouping:
         """Test auto-grouping creates person entities."""
         stats = auto_group_variants(db_path=db_with_variants, dry_run=False)
 
-        # Should create separate entities for:
-        # - Ramin Yazdani (en/de) - same name key
-        # - رامین یزدانی (fa) - different name key (Persian script)
+        # Should create 2 entities:
+        # - Ramin Yazdani (en/de/fa) - all same config.ID
         # - Mahsa Amini
-        assert stats["persons_created"] >= 2  # At least Ramin EN/DE and Mahsa
+        assert stats["persons_created"] == 2
 
         # Verify entities were created
         persons = list_person_entities(db_path=db_with_variants)
-        assert len(persons) >= 2
+        assert len(persons) == 2
 
-    def test_auto_group_links_variants(self, db_with_variants):
-        """Test auto-grouping links variants correctly."""
+    def test_auto_group_links_variants_by_config_id(self, db_with_variants):
+        """Test auto-grouping links all variants with same config.ID together."""
         auto_group_variants(db_path=db_with_variants, dry_run=False)
 
         # Get Ramin's person entity
         persons = list_person_entities(db_path=db_with_variants, search="ramin")
 
-        # Should find at least one Ramin
-        assert len(persons) >= 1
+        # Should find exactly one Ramin (all variants grouped by config.ID)
+        assert len(persons) == 1
 
-        # EN and DE variants should be grouped (same name key)
-        ramin_latin = next(
-            (p for p in persons if "en" in p["variants"] or "de" in p["variants"]),
-            None
-        )
-        if ramin_latin:
-            # Check that en and de are in same entity
-            assert len(ramin_latin["variants"]) >= 1
+        ramin = persons[0]
+        # All three variants (en, de, fa) should be in the same entity
+        assert len(ramin["variants"]) == 3
+        assert "en" in ramin["variants"]
+        assert "de" in ramin["variants"]
+        assert "fa" in ramin["variants"]
 
     def test_auto_group_no_unlinked_after(self, db_with_variants):
         """Test that all variants are linked after auto-grouping."""
@@ -459,10 +462,36 @@ class TestAutoGrouping:
 
         unlinked = get_unlinked_variants(db_path=db_with_variants)
 
-        # All variants with valid names should be linked
-        # Only variants with completely empty names would remain unlinked
-        for v in unlinked:
-            assert not v.get("first_name") or not v.get("last_name")
+        # All variants with config.ID or valid names should be linked
+        assert len(unlinked) == 0
+
+    def test_auto_group_fallback_to_name_without_config(self, tmp_path):
+        """Test that auto-grouping falls back to name-based grouping without config."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+        ensure_person_entity_schema(db_path)
+
+        # Create CVs WITHOUT config section (legacy format)
+        for lang, fname, lname in [
+            ("en", "John", "Doe"),
+            ("de", "John", "Doe"),  # Same Latin name -> should group
+        ]:
+            cv_data = {"basics": [{"fname": fname, "lname": lname}]}
+            suffix = "" if lang == "en" else f"_{lang}"
+            cv_path = tmp_path / "cvs" / f"john{suffix}.json"
+            cv_path.parent.mkdir(parents=True, exist_ok=True)
+            cv_path.write_text(json.dumps(cv_data))
+            import_cv(cv_path, db_path)
+
+        stats = auto_group_variants(db_path=db_path, dry_run=False)
+
+        # Should create 1 entity (both variants grouped by name)
+        assert stats["persons_created"] == 1
+        assert stats["variants_linked"] == 2
+
+        persons = list_person_entities(db_path=db_path)
+        assert len(persons) == 1
+        assert len(persons[0]["variants"]) == 2
 
 
 class TestCollisionDetection:

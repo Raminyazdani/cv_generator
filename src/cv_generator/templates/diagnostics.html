@@ -61,7 +61,15 @@
 </div>
 
 <!-- Reference Integrity -->
-{% if integrity %}
+{% if integrity_error %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>🔗 Reference Integrity</h3>
+    <div class="health-check-item">
+        <span>Status:</span>
+        <span class="status-error">✗ Check failed: {{ integrity_error }}</span>
+    </div>
+</div>
+{% elif integrity %}
 <div class="card" style="margin-top: 1rem;">
     <h3>🔗 Reference Integrity</h3>
     <div class="health-check-item">

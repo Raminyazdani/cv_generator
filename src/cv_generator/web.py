@@ -1110,10 +1110,12 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
             # Run integrity check
             integrity_report = None
+            integrity_error = None
             try:
                 integrity_report = run_integrity_check(app.config["DB_PATH"])
             except Exception as e:
                 logger.warning(f"Integrity check failed: {e}")
+                integrity_error = str(e)
 
             # Get missing translations for current language
             current_lang = get_current_language()
@@ -1136,6 +1138,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             "diagnostics.html",
             health=health,
             integrity=integrity_report,
+            integrity_error=integrity_error,
             missing_translations=missing_translations,
             entries_needing_translation=entries_needing_translation,
             missing_counterparts=missing_counterparts,

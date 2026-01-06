@@ -180,8 +180,10 @@ class IntegrityReport:
 # ID FORMAT VALIDATION
 # =============================================================================
 
-# UUID4 format regex (8-4-4-4-12 hexadecimal pattern)
-UUID4_PATTERN = re.compile(
+# UUID format regex (8-4-4-4-12 hexadecimal pattern)
+# Note: This validates the general UUID format. While we generate UUID4,
+# we accept any valid UUID format for backwards compatibility.
+UUID_PATTERN = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
@@ -189,17 +191,21 @@ UUID4_PATTERN = re.compile(
 
 def is_valid_uuid4(id_str: str) -> bool:
     """
-    Check if a string is a valid UUID4 format.
+    Check if a string is a valid UUID format.
+
+    This validates the general UUID format (8-4-4-4-12 hex digits).
+    While we generate UUID4 for new IDs, we accept any valid UUID format
+    for backwards compatibility.
 
     Args:
         id_str: String to validate
 
     Returns:
-        True if valid UUID4 format, False otherwise
+        True if valid UUID format, False otherwise
     """
     if not id_str:
         return False
-    return bool(UUID4_PATTERN.match(id_str))
+    return bool(UUID_PATTERN.match(id_str))
 
 
 # =============================================================================

@@ -86,9 +86,9 @@
             <td style="padding: 0.5rem; font-weight: 500;">Stable ID:</td>
             <td style="padding: 0.5rem;">
                 {% if entry.stable_id %}
-                <code style="background: var(--success-light); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ entry.stable_id }}</code>
+                <code style="background: var(--success-light); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 4px;">✓ {{ entry.stable_id }}</code>
                 {% else %}
-                <span style="color: var(--warning);">⚠️ No stable ID assigned</span>
+                <span style="color: var(--warning);">⚠️ No stable ID assigned (entry may have been imported before CRUD schema)</span>
                 {% endif %}
             </td>
         </tr>

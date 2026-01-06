@@ -210,6 +210,9 @@
             Clean Up Orphan Tag References
         </button>
     </form>
+    <a href="{{ url_for('variant_diagnostics_route') }}" class="btn btn-primary" style="margin-left: 0.5rem;">
+        🌐 Variant Diagnostics
+    </a>
 </div>
 
 {% if not health.issues and not missing_translations and not entries_needing_translation and not missing_counterparts %}

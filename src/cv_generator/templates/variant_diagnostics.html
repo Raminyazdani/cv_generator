@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Variant Diagnostics{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo; 
+    <a href="{{ url_for('diagnostics') }}">Diagnostics</a> &raquo;
+    Variant Diagnostics
+</div>
+
+<h2>🔍 Variant Diagnostics</h2>
+
+<!-- Orphaned Variants -->
+<div class="card">
+    <h3>👻 Orphaned Variants</h3>
+    <p>Resume sets with only one language variant (may need to be linked to another person):</p>
+    
+    {% if orphans %}
+    <table style="width: 100%; margin-top: 1rem;">
+        <thead>
+            <tr>
+                <th>Resume Key</th>
+                <th>Language</th>
+                <th>Person Name</th>
+                <th>Possible Matches</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for orphan in orphans %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('variant_status_route', resume_key=orphan.resume_key) }}">{{ orphan.resume_key }}</a>
+                </td>
+                <td>{{ orphan.lang_code|upper }}</td>
+                <td>{{ orphan.person_name or 'Unknown' }}</td>
+                <td>
+                    {% if orphan.possible_matches %}
+                        {% for match in orphan.possible_matches %}
+                            <span class="tag">{{ match }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="entry-meta">No matches found</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if orphan.possible_matches %}
+                    <form method="post" action="{{ url_for('link_variant_route_v2') }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="version_id" value="{{ orphan.version_id }}">
+                        <select name="target_resume_key" class="btn btn-secondary btn-sm" style="max-width: 150px;">
+                            {% for match in orphan.possible_matches %}
+                                <option value="{{ match }}">{{ match }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Link</button>
+                    </form>
+                    {% else %}
+                        <span class="entry-meta">Manual action required</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>✅ No orphaned variants found!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Duplicate Candidates -->
+<div class="card">
+    <h3>👥 Potential Duplicates</h3>
+    <p>Resume sets that may represent the same person (consider merging):</p>
+    
+    {% if duplicates %}
+    <table style="width: 100%; margin-top: 1rem;">
+        <thead>
+            <tr>
+                <th>Resume Key 1</th>
+                <th>Resume Key 2</th>
+                <th>Similarity</th>
+                <th>Matching Fields</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for dup in duplicates %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('variant_status_route', resume_key=dup.resume_key_1) }}">{{ dup.resume_key_1 }}</a>
+                </td>
+                <td>
+                    <a href="{{ url_for('variant_status_route', resume_key=dup.resume_key_2) }}">{{ dup.resume_key_2 }}</a>
+                </td>
+                <td>
+                    <span class="tag {% if dup.similarity_score >= 0.9 %}status-error{% elif dup.similarity_score >= 0.7 %}status-warning{% else %}status-ok{% endif %}">
+                        {{ (dup.similarity_score * 100)|int }}%
+                    </span>
+                </td>
+                <td>
+                    {% for field in dup.matching_fields %}
+                        <span class="tag tag-count">{{ field }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <form method="post" action="{{ url_for('merge_variants_route') }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="source_resume_key" value="{{ dup.resume_key_1 }}">
+                        <input type="hidden" name="target_resume_key" value="{{ dup.resume_key_2 }}">
+                        <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Merge {{ dup.resume_key_1 }} into {{ dup.resume_key_2 }}?')">
+                            Merge →
+                        </button>
+                    </form>
+                    <form method="post" action="{{ url_for('merge_variants_route') }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="source_resume_key" value="{{ dup.resume_key_2 }}">
+                        <input type="hidden" name="target_resume_key" value="{{ dup.resume_key_1 }}">
+                        <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Merge {{ dup.resume_key_2 }} into {{ dup.resume_key_1 }}?')">
+                            ← Merge
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>✅ No potential duplicates found!</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="actions" style="margin-top: 2rem;">
+    <a href="{{ url_for('diagnostics') }}" class="btn btn-secondary">← Back to Diagnostics</a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+</div>
+
+{% endblock %}

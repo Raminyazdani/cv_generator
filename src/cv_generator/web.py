@@ -90,6 +90,8 @@ from .tags import (
 from .vocabulary import (
     get_vocabulary,
 )
+from .sync_engine import SyncEngine, VariantStatus
+from .variant_manager import VariantManager
 
 logger = logging.getLogger(__name__)
 
@@ -1974,6 +1976,317 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         except Exception as e:
             flash(f"Preview failed: {e}", "error")
             return redirect(url_for("export_page"))
+
+    # =========================================================================
+    # Variant Management Routes
+    # =========================================================================
+
+    @app.route("/variants/<resume_key>")
+    @requires_auth
+    def variant_status_route(resume_key: str):
+        """
+        View variant status for a person.
+
+        Shows which languages exist, which are missing, and any sync issues.
+        """
+        try:
+            sync_engine = SyncEngine(app.config["DB_PATH"])
+            status = sync_engine.get_variant_status(resume_key)
+
+            # Get variant manager for additional diagnostics
+            variant_manager = VariantManager(app.config["DB_PATH"])
+
+            # Get orphaned variants for context
+            orphaned = variant_manager.get_orphaned_variants()
+            related_orphans = [o for o in orphaned if resume_key in o.possible_matches]
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "variant_status.html",
+            status=status.to_dict(),
+            resume_key=resume_key,
+            related_orphans=[o.to_dict() for o in related_orphans],
+            supported_languages=SUPPORTED_LANGUAGES,
+        )
+
+    @app.route("/variants/<resume_key>/add", methods=["POST"])
+    @requires_auth
+    def add_variant_route(resume_key: str):
+        """
+        Add a new language variant for a person.
+        """
+        lang_code = request.form.get("lang_code")
+        copy_from = request.form.get("copy_from") or None
+
+        if not lang_code:
+            flash("Please select a language to add.", "error")
+            return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+        if lang_code not in SUPPORTED_LANGUAGES:
+            flash(f"Unsupported language: {lang_code}", "error")
+            return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+            result = variant_manager.add_variant(resume_key, lang_code, copy_from)
+
+            if result.success:
+                flash(
+                    f"✓ Added {lang_code.upper()} variant for {resume_key}. "
+                    f"Created {result.records_created} records.",
+                    "success"
+                )
+            else:
+                flash(f"Failed to add variant: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+    @app.route("/variants/<resume_key>/remove/<lang_code>", methods=["POST"])
+    @requires_auth
+    def remove_variant_route(resume_key: str, lang_code: str):
+        """
+        Remove a language variant for a person.
+        """
+        force = request.form.get("force") == "on"
+
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+            result = variant_manager.remove_variant(resume_key, lang_code, force)
+
+            if result.success:
+                msg = f"✓ Removed {lang_code.upper()} variant from {resume_key}."
+                if result.resume_set_deleted:
+                    msg += " Resume set was deleted."
+                flash(msg, "success")
+            else:
+                flash(f"Failed to remove variant: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        if result.resume_set_deleted if 'result' in dir() else False:
+            return redirect(url_for("index"))
+
+        return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+    @app.route("/variants/link", methods=["POST"])
+    @requires_auth
+    def link_variant_route_v2():
+        """
+        Link an orphaned variant to an existing resume_set.
+        """
+        version_id = request.form.get("version_id")
+        target_resume_key = request.form.get("target_resume_key")
+
+        if not version_id or not target_resume_key:
+            flash("Please provide version_id and target_resume_key.", "error")
+            return redirect(url_for("diagnostics"))
+
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+            result = variant_manager.link_orphan_variant(
+                int(version_id),
+                target_resume_key
+            )
+
+            if result.success:
+                flash(
+                    f"✓ Linked variant to {target_resume_key}. "
+                    f"Previous: {result.previous_resume_key}",
+                    "success"
+                )
+            else:
+                flash(f"Failed to link variant: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_status_route", resume_key=target_resume_key))
+
+    @app.route("/variants/<resume_key>/unlink/<lang_code>", methods=["POST"])
+    @requires_auth
+    def unlink_variant_route(resume_key: str, lang_code: str):
+        """
+        Unlink a variant from its resume_set.
+        """
+        create_new = request.form.get("create_new") != "0"
+
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+            result = variant_manager.unlink_variant(resume_key, lang_code, create_new)
+
+            if result.success:
+                if result.new_resume_key:
+                    flash(
+                        f"✓ Unlinked {lang_code.upper()} variant. "
+                        f"New resume_key: {result.new_resume_key}",
+                        "success"
+                    )
+                elif result.variant_deleted:
+                    flash(f"✓ Variant {lang_code.upper()} was deleted.", "success")
+            else:
+                flash(f"Failed to unlink variant: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+    @app.route("/variants/merge", methods=["POST"])
+    @requires_auth
+    def merge_variants_route():
+        """
+        Merge two resume_sets into one.
+        """
+        source_key = request.form.get("source_resume_key")
+        target_key = request.form.get("target_resume_key")
+
+        if not source_key or not target_key:
+            flash("Please provide source and target resume_keys.", "error")
+            return redirect(url_for("diagnostics"))
+
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+            result = variant_manager.merge_resume_sets(source_key, target_key)
+
+            if result.success:
+                msg = f"✓ Merged {source_key} into {target_key}. "
+                msg += f"Moved {result.variants_moved} variants."
+                if result.conflicts:
+                    msg += f" {len(result.conflicts)} conflict(s) skipped."
+                if result.source_deleted:
+                    msg += f" Source resume_set deleted."
+                flash(msg, "success")
+            else:
+                flash(f"Failed to merge: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_status_route", resume_key=target_key))
+
+    @app.route("/variants/diagnostics")
+    @requires_auth
+    def variant_diagnostics_route():
+        """
+        Variant diagnostics panel - orphans and duplicates.
+        """
+        try:
+            variant_manager = VariantManager(app.config["DB_PATH"])
+
+            orphans = variant_manager.get_orphaned_variants()
+            duplicates = variant_manager.get_duplicate_candidates()
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            orphans = []
+            duplicates = []
+
+        return render_template(
+            "variant_diagnostics.html",
+            orphans=[o.to_dict() for o in orphans],
+            duplicates=[d.to_dict() for d in duplicates],
+        )
+
+    @app.route("/variants/<resume_key>/sync", methods=["POST"])
+    @requires_auth
+    def sync_variant_route(resume_key: str):
+        """
+        Sync all invariant fields from source language to all variants.
+        """
+        source_lang = request.form.get("source_lang", DEFAULT_LANGUAGE)
+
+        try:
+            sync_engine = SyncEngine(app.config["DB_PATH"])
+            results = sync_engine.sync_all_invariant_fields(resume_key, source_lang)
+
+            success_count = sum(1 for r in results if r.success)
+            flash(
+                f"✓ Synced {success_count} invariant field(s) from {source_lang.upper()}.",
+                "success"
+            )
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_status_route", resume_key=resume_key))
+
+    @app.route("/variants/<resume_key>/conflicts")
+    @requires_auth
+    def variant_conflicts_route(resume_key: str):
+        """
+        View and resolve conflicts for a person.
+        """
+        try:
+            sync_engine = SyncEngine(app.config["DB_PATH"])
+            conflicts = sync_engine.detect_conflicts(resume_key)
+            status = sync_engine.get_variant_status(resume_key)
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "variant_conflicts.html",
+            conflicts=[c.to_dict() for c in conflicts],
+            status=status.to_dict(),
+            resume_key=resume_key,
+            supported_languages=SUPPORTED_LANGUAGES,
+        )
+
+    @app.route("/variants/<resume_key>/resolve", methods=["POST"])
+    @requires_auth
+    def resolve_conflict_route(resume_key: str):
+        """
+        Resolve a conflict for a specific field.
+        """
+        from .sync_engine import FieldConflict
+        from datetime import datetime, timezone
+
+        entity_type = request.form.get("entity_type")
+        entity_id = request.form.get("entity_id")
+        field_name = request.form.get("field_name")
+        resolution = request.form.get("resolution")
+        custom_value = request.form.get("custom_value")
+
+        if not all([entity_type, entity_id, field_name, resolution]):
+            flash("Missing required fields for conflict resolution.", "error")
+            return redirect(url_for("variant_conflicts_route", resume_key=resume_key))
+
+        try:
+            sync_engine = SyncEngine(app.config["DB_PATH"])
+
+            # Create a minimal conflict object for resolution
+            conflict = FieldConflict(
+                resume_key=resume_key,
+                entity_type=entity_type,
+                entity_id=int(entity_id),
+                field_name=field_name,
+                values_by_lang={},  # Not needed for resolution
+                detected_at=datetime.now(timezone.utc)
+            )
+
+            result = sync_engine.resolve_conflict(
+                conflict,
+                resolution,
+                custom_value if resolution == "use_custom" else None
+            )
+
+            if result.success:
+                flash(f"✓ Resolved conflict for {field_name}.", "success")
+            else:
+                flash(f"Failed to resolve: {result.error}", "error")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("variant_conflicts_route", resume_key=resume_key))
 
     return app
 

@@ -978,6 +978,36 @@ def db_doctor_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def db_integrity_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db integrity command (reference integrity check).
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .integrity import run_integrity_check
+
+    db_path = Path(args.db) if args.db else None
+
+    try:
+        report = run_integrity_check(db_path)
+
+        if args.format == "json":
+            print(json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+        else:
+            verbose = getattr(args, "verbose", False)
+            print(report.format_text(verbose=verbose))
+
+        return EXIT_SUCCESS if report.is_healthy else EXIT_ENSURE_ERROR
+    except Exception as e:
+        logger.error(f"Error running integrity check: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
 def doctor_command(args: argparse.Namespace) -> int:
     """
     Execute the doctor command for system health checks.
@@ -2757,6 +2787,27 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_doctor_parser.set_defaults(func=db_doctor_command)
+
+    # DB integrity command
+    db_integrity_parser = db_subparsers.add_parser(
+        "integrity",
+        help="Check reference integrity (stable IDs, tags, links)",
+        description="Run comprehensive reference integrity checks on stable IDs, "
+                    "person entities, tag references, and cross-language links."
+    )
+    db_integrity_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_integrity_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    db_integrity_parser.set_defaults(func=db_integrity_command)
 
     db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
 

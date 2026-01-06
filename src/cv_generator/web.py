@@ -70,6 +70,7 @@ from .db import (
     update_tag,
 )
 from .errors import ConfigurationError, ValidationError
+from .integrity import run_integrity_check
 from .paths import get_default_output_path
 from .person import (
     auto_group_variants,
@@ -1107,6 +1108,15 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             # Run doctor to get database health
             health = doctor(app.config["DB_PATH"])
 
+            # Run integrity check
+            integrity_report = None
+            integrity_error = None
+            try:
+                integrity_report = run_integrity_check(app.config["DB_PATH"])
+            except Exception as e:
+                logger.warning(f"Integrity check failed: {e}")
+                integrity_error = str(e)
+
             # Get missing translations for current language
             current_lang = get_current_language()
             catalog = get_tag_catalog()
@@ -1127,6 +1137,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         return render_template(
             "diagnostics.html",
             health=health,
+            integrity=integrity_report,
+            integrity_error=integrity_error,
             missing_translations=missing_translations,
             entries_needing_translation=entries_needing_translation,
             missing_counterparts=missing_counterparts,

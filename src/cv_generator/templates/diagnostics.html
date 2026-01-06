@@ -37,6 +37,12 @@
             <span>Tag Assignments:</span>
             <span>{{ health.stats.tag_assignments }}</span>
         </div>
+        {% if health.stats.stable_entries is defined %}
+        <div class="health-check-item">
+            <span>Stable Entries:</span>
+            <span>{{ health.stats.stable_entries }}</span>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Issues -->
@@ -53,6 +59,72 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Reference Integrity -->
+{% if integrity_error %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>🔗 Reference Integrity</h3>
+    <div class="health-check-item">
+        <span>Status:</span>
+        <span class="status-error">✗ Check failed: {{ integrity_error }}</span>
+    </div>
+</div>
+{% elif integrity %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>🔗 Reference Integrity</h3>
+    <div class="health-check-item">
+        <span>Status:</span>
+        {% if integrity.is_healthy %}
+            <span class="status-ok">✓ All references valid</span>
+        {% else %}
+            <span class="status-error">✗ Issues Found ({{ integrity.error_count }} errors, {{ integrity.warning_count }} warnings)</span>
+        {% endif %}
+    </div>
+    {% if integrity.stats %}
+    <div style="margin-top: 0.5rem;">
+        {% if integrity.stats.stable_entries is defined %}
+        <div class="health-check-item">
+            <span>Stable Entries:</span>
+            <span>{{ integrity.stats.stable_entries }}</span>
+        </div>
+        {% endif %}
+        {% if integrity.stats.entry_lang_links is defined %}
+        <div class="health-check-item">
+            <span>Entry-Language Links:</span>
+            <span>{{ integrity.stats.entry_lang_links }}</span>
+        </div>
+        {% endif %}
+        {% if integrity.stats.person_entities is defined %}
+        <div class="health-check-item">
+            <span>Person Entities:</span>
+            <span>{{ integrity.stats.person_entities }}</span>
+        </div>
+        {% endif %}
+        {% if integrity.stats.entries_without_stable_ids is defined and integrity.stats.entries_without_stable_ids > 0 %}
+        <div class="health-check-item">
+            <span>Entries Without Stable IDs:</span>
+            <span class="status-warning">{{ integrity.stats.entries_without_stable_ids }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if integrity.issues %}
+    <details style="margin-top: 1rem;">
+        <summary style="cursor: pointer; color: var(--primary);">Show {{ integrity.issues|length }} issue(s)</summary>
+        <ul class="issue-list" style="margin-top: 0.5rem;">
+            {% for issue in integrity.issues[:20] %}
+                <li class="{% if issue.severity.value == 'error' %}status-error{% elif issue.severity.value == 'warning' %}status-warning{% else %}status-ok{% endif %}">
+                    <strong>[{{ issue.category }}]</strong> {{ issue.message }}
+                </li>
+            {% endfor %}
+            {% if integrity.issues|length > 20 %}
+                <li>... and {{ integrity.issues|length - 20 }} more issues</li>
+            {% endif %}
+        </ul>
+    </details>
+    {% endif %}
+</div>
+{% endif %}
 
 <!-- Orphan Tags Section -->
 {% if health.checks.orphaned_tags and health.checks.orphaned_tags.count > 0 %}

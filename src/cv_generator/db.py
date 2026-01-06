@@ -1276,6 +1276,20 @@ def get_entry(entry_id: int, db_path: Optional[Path] = None) -> Optional[Dict[st
         )
         tags = [r[0] for r in cursor.fetchall()]
 
+        # Get stable_id if entry_lang_link table exists
+        stable_id = None
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='entry_lang_link'"
+        )
+        if cursor.fetchone():
+            cursor.execute(
+                "SELECT stable_id FROM entry_lang_link WHERE entry_id = ?",
+                (entry_id,)
+            )
+            stable_row = cursor.fetchone()
+            if stable_row:
+                stable_id = stable_row[0]
+
         return {
             "id": entry_id,
             "person_id": person_id,
@@ -1284,7 +1298,8 @@ def get_entry(entry_id: int, db_path: Optional[Path] = None) -> Optional[Dict[st
             "order_idx": order_idx,
             "data": data,
             "identity_key": identity_key,
-            "tags": tags
+            "tags": tags,
+            "stable_id": stable_id
         }
     finally:
         conn.close()
@@ -2007,6 +2022,51 @@ def doctor(db_path: Optional[Path] = None) -> Dict[str, Any]:
             {"slug": row[0], "sections": row[1]}
             for row in cursor.fetchall()
         ]
+
+        # Check 9: Stable entry IDs (if CRUD schema exists)
+        logger.debug("Checking stable entry IDs...")
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='stable_entry'"
+        )
+        if cursor.fetchone():
+            # Count stable entries
+            cursor.execute("SELECT COUNT(*) FROM stable_entry")
+            stable_count = cursor.fetchone()[0]
+            results["stats"]["stable_entries"] = stable_count
+
+            # Check for entries without stable IDs
+            cursor.execute(
+                """SELECT COUNT(*) FROM entry e
+                   LEFT JOIN entry_lang_link ell ON e.id = ell.entry_id
+                   WHERE ell.entry_id IS NULL AND e.order_idx >= 0"""
+            )
+            entries_without_ids = cursor.fetchone()[0]
+            results["checks"]["entries_without_stable_ids"] = {
+                "count": entries_without_ids,
+                "ok": True  # Informational, not critical
+            }
+            if entries_without_ids > 0:
+                results["issues"].append(
+                    f"Found {entries_without_ids} entries without stable IDs"
+                )
+
+            # Check for dangling stable entries (no linked entries)
+            cursor.execute(
+                """SELECT COUNT(*) FROM stable_entry se
+                   LEFT JOIN entry_lang_link ell ON se.id = ell.stable_id
+                   WHERE ell.stable_id IS NULL"""
+            )
+            dangling_stable = cursor.fetchone()[0]
+            results["checks"]["dangling_stable_entries"] = {
+                "count": dangling_stable,
+                "ok": dangling_stable == 0
+            }
+            if dangling_stable > 0:
+                results["issues"].append(
+                    f"Found {dangling_stable} dangling stable entries (no linked entries)"
+                )
+        else:
+            results["checks"]["stable_entry_schema"] = {"exists": False}
 
         logger.info(f"Health check complete. Healthy: {results['healthy']}")
 

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Cross-Language Editor - {{ entry.section | replace('_', ' ') | title }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=entry.person_slug) }}">{{ entry.person_slug }}</a> &raquo;
+    <a href="{{ url_for('section_entries', person=entry.person_slug, section=entry.section) }}">{{ entry.section | replace('_', ' ') | title }}</a> &raquo;
+    <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">Entry</a> &raquo;
+    Cross-Language Editor
+</nav>
+
+<h2>🌍 Cross-Language Entry Editor</h2>
+<p style="color: var(--gray-600); margin-bottom: 1rem;">{{ entry.summary }}</p>
+
+<style>
+.cross-lang-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.lang-pane {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.lang-pane-header {
+    background: var(--primary);
+    color: white;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lang-pane-header.en { background: #2563eb; }
+.lang-pane-header.de { background: #dc2626; }
+.lang-pane-header.fa { background: #16a34a; }
+
+.lang-pane-header .lang-code {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.lang-pane-body {
+    padding: 1rem;
+}
+
+.lang-pane-body.missing {
+    background: var(--gray-100);
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.field-row {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.field-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.field-label {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-bottom: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.field-label .field-type {
+    font-size: 0.7rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+}
+
+.field-type.shared {
+    background: var(--primary);
+    color: white;
+}
+
+.field-type.text {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.field-value {
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.field-value.empty {
+    color: var(--gray-400);
+    font-style: italic;
+}
+
+.field-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.field-input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.field-textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.copy-btn {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    background: var(--gray-200);
+    border: none;
+    border-radius: 3px;
+    color: var(--gray-700);
+}
+
+.copy-btn:hover {
+    background: var(--gray-300);
+}
+
+.needs-translation-badge {
+    background: var(--warning);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 3px;
+}
+
+.status-badge.synced {
+    background: var(--success);
+    color: white;
+}
+
+.status-badge.missing {
+    background: var(--gray-300);
+    color: var(--gray-700);
+}
+
+.actions-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--gray-100);
+    border-radius: 8px;
+}
+
+.diff-highlight {
+    background: #fef3c7;
+    padding: 0.125rem 0.25rem;
+    border-radius: 2px;
+}
+</style>
+
+<div class="actions-bar">
+    <span style="display: flex; align-items: center; margin-right: 0.5rem;">
+        <strong>Quick Copy:</strong>
+    </span>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="copyAllFields('en', 'de')">📋 EN → DE (all fields)</button>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="copyAllFields('en', 'fa')">📋 EN → FA (all fields)</button>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="copyAllFields('de', 'en')">📋 DE → EN (all fields)</button>
+    {% if stable_id %}
+    <span style="margin-left: auto; color: var(--gray-500); font-size: 0.8rem;">
+        Stable ID: <code>{{ stable_id[:8] }}...</code>
+    </span>
+    {% endif %}
+</div>
+
+<form method="post" id="cross-lang-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="cross-lang-grid">
+        {% for lang in supported_languages %}
+        {% set lang_entry = linked_entries.get(lang) %}
+        <div class="lang-pane">
+            <div class="lang-pane-header {{ lang }}">
+                <div>
+                    <span class="lang-code">{{ lang | upper }}</span>
+                    {% if lang_entry %}
+                        {% if lang_entry.needs_translation %}
+                        <span class="needs-translation-badge">⚠️ Needs Translation</span>
+                        {% else %}
+                        <span class="status-badge synced">✓ Synced</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="status-badge missing">Missing</span>
+                    {% endif %}
+                </div>
+                {% if lang_entry %}
+                <a href="{{ url_for('edit_entry_route', entry_id=lang_entry.id) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white;">Edit Full</a>
+                {% endif %}
+            </div>
+            
+            {% if lang_entry %}
+            <div class="lang-pane-body">
+                <input type="hidden" name="entry_id_{{ lang }}" value="{{ lang_entry.id }}">
+                
+                {% for field_name, field_info in fields.items() %}
+                <div class="field-row">
+                    <div class="field-label">
+                        <span>{{ field_info.label }}</span>
+                        <span style="display: flex; gap: 0.25rem; align-items: center;">
+                            <span class="field-type {{ 'shared' if field_info.shared else 'text' }}">
+                                {{ '🔗 shared' if field_info.shared else '📝 text' }}
+                            </span>
+                            {% if lang != 'en' %}
+                            <button type="button" class="copy-btn" onclick="copyField('en', '{{ lang }}', '{{ field_name }}')" title="Copy from EN">
+                                ← EN
+                            </button>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if field_info.multiline %}
+                    <textarea class="field-textarea" name="field_{{ lang }}_{{ field_name }}" 
+                              id="field_{{ lang }}_{{ field_name }}"
+                              data-field="{{ field_name }}" data-lang="{{ lang }}">{{ lang_entry.data.get(field_name, '') }}</textarea>
+                    {% else %}
+                    <input type="{{ field_info.input_type }}" class="field-input" 
+                           name="field_{{ lang }}_{{ field_name }}" 
+                           id="field_{{ lang }}_{{ field_name }}"
+                           data-field="{{ field_name }}" data-lang="{{ lang }}"
+                           value="{{ lang_entry.data.get(field_name, '') }}"
+                           placeholder="{{ field_info.placeholder }}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="lang-pane-body missing">
+                <p>Entry not available in {{ lang | upper }}</p>
+                <form action="{{ url_for('create_missing_lang_entry_route', entry_id=entry.id) }}" method="post" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="target_lang" value="{{ lang }}">
+                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">
+                        ➕ Create {{ lang | upper }} Entry
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="card" style="margin-top: 1rem;">
+        <h4 style="margin-bottom: 0.75rem;">Save Options</h4>
+        <div style="margin-bottom: 1rem;">
+            <label class="checkbox-item" style="margin-bottom: 0.5rem;">
+                <input type="checkbox" name="mark_translated" value="1">
+                Clear "needs translation" flags on all edited languages
+            </label>
+        </div>
+        <div class="actions">
+            <button type="submit" class="btn btn-primary">💾 Save All Changes</button>
+            <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+
+<script>
+// Copy a single field from one language to another
+function copyField(fromLang, toLang, fieldName) {
+    const fromInput = document.getElementById(`field_${fromLang}_${fieldName}`);
+    const toInput = document.getElementById(`field_${toLang}_${fieldName}`);
+    
+    if (fromInput && toInput) {
+        toInput.value = fromInput.value;
+        // Highlight the target field briefly
+        toInput.style.backgroundColor = '#dcfce7';
+        setTimeout(() => {
+            toInput.style.backgroundColor = '';
+        }, 1000);
+    }
+}
+
+// Copy all fields from one language to another
+function copyAllFields(fromLang, toLang) {
+    const toPane = document.querySelector(`[data-lang="${toLang}"]`);
+    if (!toPane) return;
+    
+    const allInputs = document.querySelectorAll(`[data-lang="${toLang}"]`);
+    allInputs.forEach(toInput => {
+        const fieldName = toInput.dataset.field;
+        const fromInput = document.getElementById(`field_${fromLang}_${fieldName}`);
+        if (fromInput && toInput) {
+            toInput.value = fromInput.value;
+            toInput.style.backgroundColor = '#dcfce7';
+            setTimeout(() => {
+                toInput.style.backgroundColor = '';
+            }, 1000);
+        }
+    });
+}
+
+// Store original values for undo functionality
+const originalValues = {};
+document.querySelectorAll('.field-input, .field-textarea').forEach(input => {
+    const key = `${input.dataset.lang}_${input.dataset.field}`;
+    originalValues[key] = input.value;
+});
+
+// Undo a single field
+function undoField(lang, fieldName) {
+    const input = document.getElementById(`field_${lang}_${fieldName}`);
+    const key = `${lang}_${fieldName}`;
+    if (input && originalValues[key] !== undefined) {
+        input.value = originalValues[key];
+        input.style.backgroundColor = '#fee2e2';
+        setTimeout(() => {
+            input.style.backgroundColor = '';
+        }, 1000);
+    }
+}
+</script>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3 style="margin-bottom: 1rem;">ℹ️ About Cross-Language Editing</h3>
+    <ul style="color: var(--gray-600); line-height: 1.8;">
+        <li><strong>🔗 Shared fields</strong> (URL, email, dates, etc.) should be the same across languages.</li>
+        <li><strong>📝 Text fields</strong> (title, description, etc.) are translated per language.</li>
+        <li>Use <strong>Copy buttons</strong> to quickly transfer content between languages.</li>
+        <li>Changes are saved for each language independently in a single transaction.</li>
+        <li>The <strong>"Clear needs translation"</strong> option marks all entries as fully translated.</li>
+    </ul>
+</div>
+{% endblock %}

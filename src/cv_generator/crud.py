@@ -143,6 +143,7 @@ DEFAULT_LANGUAGE = "en"
 
 # Fields that are shared across languages (not translated)
 SHARED_FIELDS = {
+    "basics": ["email", "phone", "urls", "nationality", "linkedin", "github", "website", "type_key"],
     "projects": ["url", "type_key"],
     "experiences": ["type_key"],
     "publications": ["doi", "identifiers", "type_key", "year", "status"],
@@ -1094,7 +1095,7 @@ class ListSectionAdapter(SectionAdapter):
 
 # List of sections that use list adapters
 LIST_SECTIONS = [
-    "projects", "experiences", "publications", "references",
+    "basics", "projects", "experiences", "publications", "references",
     "education", "languages", "profiles", "workshop_and_certifications"
 ]
 

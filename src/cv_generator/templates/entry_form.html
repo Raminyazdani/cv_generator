@@ -177,6 +177,72 @@
             <small style="color: var(--gray-500);">🔗 Shared field</small>
         </div>
         
+        {% elif section == 'basics' %}
+        <div class="form-group">
+            <label for="field_fname">First Name *</label>
+            <input type="text" id="field_fname" name="field_fname" 
+                   value="{{ entry.data.fname if entry else '' }}" required
+                   placeholder="First name">
+        </div>
+        <div class="form-group">
+            <label for="field_lname">Last Name *</label>
+            <input type="text" id="field_lname" name="field_lname" 
+                   value="{{ entry.data.lname if entry else '' }}" required
+                   placeholder="Last name">
+        </div>
+        <div class="form-group">
+            <label for="field_headline">Headline / Title</label>
+            <input type="text" id="field_headline" name="field_headline" 
+                   value="{{ entry.data.headline if entry else '' }}"
+                   placeholder="Software Engineer, Data Scientist, etc.">
+        </div>
+        <div class="form-group">
+            <label for="field_location">Location</label>
+            <input type="text" id="field_location" name="field_location" 
+                   value="{{ entry.data.location if entry else '' }}"
+                   placeholder="City, Country">
+        </div>
+        <div class="form-group">
+            <label for="field_email">Email</label>
+            <input type="email" id="field_email" name="field_email" 
+                   value="{{ entry.data.email if entry else '' }}"
+                   placeholder="email@example.com">
+            <small style="color: var(--gray-500);">🔗 Shared field - will sync across languages</small>
+        </div>
+        <div class="form-group">
+            <label for="field_phone">Phone</label>
+            <input type="text" id="field_phone" name="field_phone" 
+                   value="{{ entry.data.phone if entry else '' }}"
+                   placeholder="+49 123 456 7890">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_website">Website</label>
+            <input type="url" id="field_website" name="field_website" 
+                   value="{{ entry.data.website if entry else '' }}"
+                   placeholder="https://example.com">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_linkedin">LinkedIn URL</label>
+            <input type="url" id="field_linkedin" name="field_linkedin" 
+                   value="{{ entry.data.linkedin if entry else '' }}"
+                   placeholder="https://linkedin.com/in/...">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_github">GitHub URL</label>
+            <input type="url" id="field_github" name="field_github" 
+                   value="{{ entry.data.github if entry else '' }}"
+                   placeholder="https://github.com/...">
+            <small style="color: var(--gray-500);">🔗 Shared field</small>
+        </div>
+        <div class="form-group">
+            <label for="field_summary">Summary / Bio</label>
+            <textarea id="field_summary" name="field_summary" rows="4"
+                      placeholder="A brief professional summary">{{ entry.data.summary if entry else '' }}</textarea>
+        </div>
+        
         {% else %}
         {# Generic fallback for other sections #}
         <div class="form-group">

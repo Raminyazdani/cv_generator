@@ -44,7 +44,26 @@ class Problem:
 
 
 class FinalAuditor:
-    """Master auditor that runs all audit categories."""
+    """
+    Master auditor that runs all audit categories and generates a problem report.
+
+    This class orchestrates a comprehensive audit of the CV Generator project by:
+    1. Running 20 specialized audit categories (database, import, export, web UI, etc.)
+    2. Collecting problems from each audit category
+    3. Categorizing problems by severity (CRITICAL, HIGH, MEDIUM, LOW)
+    4. Generating a markdown report (final_audit.md) containing ONLY problems found
+
+    The generated report includes:
+    - Summary table with problem counts by severity
+    - Problems grouped by category
+    - Detailed information for each problem including reproduction steps
+    - Problem index for quick reference
+
+    Usage:
+        auditor = FinalAuditor(project_root)
+        problems = auditor.run_full_audit()
+        report = auditor.generate_report()
+    """
 
     def __init__(self, project_root: Path):
         self.project_root = project_root
@@ -602,12 +621,33 @@ class FinalAuditor:
                 with open(db_file, "r", encoding="utf-8") as f:
                     content = f.read()
 
-                # Check for loops with queries inside
+                # Check for loops with queries inside (N+1 pattern)
                 lines = content.split("\n")
+                n_plus_1_candidates = []
                 for i, line in enumerate(lines):
-                    if "for " in line and "cursor.execute" in "\n".join(lines[i : i + 5]):
-                        # Potential N+1 pattern
-                        pass  # Note: this is just a heuristic check
+                    if "for " in line:
+                        # Check next 5 lines for cursor.execute
+                        nearby_lines = "\n".join(lines[i : i + 5])
+                        if "cursor.execute" in nearby_lines:
+                            n_plus_1_candidates.append((i + 1, line.strip()))
+
+                # Only report if found multiple instances (potential pattern)
+                if len(n_plus_1_candidates) > 3:
+                    self._add_problem(
+                        severity=Severity.LOW,
+                        category="Performance",
+                        subcategory="N+1 Queries",
+                        title="Potential N+1 query patterns in db.py",
+                        description=f"Found {len(n_plus_1_candidates)} loops with database queries nearby",
+                        reproduction_steps=[
+                            "1. Review db.py for loops containing cursor.execute",
+                            "2. Consider batch queries where applicable",
+                        ],
+                        expected="Batch queries for better performance",
+                        actual=f"{len(n_plus_1_candidates)} potential N+1 patterns",
+                        affected_files=[str(db_file)],
+                        suggested_fix="Consider using batch queries or JOINs",
+                    )
             except Exception:
                 pass
 
@@ -664,24 +704,27 @@ class FinalAuditor:
                     with open(py_file, "r", encoding="utf-8") as f:
                         content = f.read()
 
-                    # Check for bare except
-                    if "except:" in content and "except Exception" not in content:
-                        lines = content.split("\n")
-                        for i, line in enumerate(lines, 1):
-                            if line.strip() == "except:" or line.strip().startswith("except:"):
-                                self._add_problem(
-                                    severity=Severity.LOW,
-                                    category="Error Handling",
-                                    subcategory="Bare Except",
-                                    title=f"Bare except clause in {py_file.name}",
-                                    description="Using bare 'except:' catches all exceptions including SystemExit",
-                                    reproduction_steps=[f"1. Check {py_file.name} line {i}"],
-                                    expected="except Exception: or specific exception",
-                                    actual="Bare except: clause",
-                                    affected_files=[str(py_file)],
-                                    suggested_fix="Use 'except Exception:' instead",
-                                )
-                                break  # Only report first occurrence per file
+                    # Check for bare except clauses
+                    lines = content.split("\n")
+                    for i, line in enumerate(lines, 1):
+                        stripped = line.strip()
+                        # Match bare except: but not except Something:
+                        if stripped == "except:" or (
+                            stripped.startswith("except:") and not stripped.startswith("except ")
+                        ):
+                            self._add_problem(
+                                severity=Severity.LOW,
+                                category="Error Handling",
+                                subcategory="Bare Except",
+                                title=f"Bare except clause in {py_file.name}",
+                                description="Using bare 'except:' catches all exceptions including SystemExit",
+                                reproduction_steps=[f"1. Check {py_file.name} line {i}"],
+                                expected="except Exception: or specific exception",
+                                actual="Bare except: clause",
+                                affected_files=[str(py_file)],
+                                suggested_fix="Use 'except Exception:' instead",
+                            )
+                            break  # Only report first occurrence per file
                 except Exception:
                     pass
 
@@ -806,7 +849,10 @@ class FinalAuditor:
                 by_category[problem.category] = []
             by_category[problem.category].append(problem)
 
-        # Count by severity (compare by name to handle cross-module imports)
+        # Count by severity.
+        # Note: We compare by .name instead of direct enum comparison because
+        # audit modules import Severity from final_audit, creating separate enum
+        # instances that don't compare equal despite having the same values.
         critical = len([p for p in self.problems if p.severity.name == "CRITICAL"])
         high = len([p for p in self.problems if p.severity.name == "HIGH"])
         medium = len([p for p in self.problems if p.severity.name == "MEDIUM"])

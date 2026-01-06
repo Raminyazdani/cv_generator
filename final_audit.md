@@ -1,7 +1,7 @@
 # Final Audit Report
 
-> Generated: 2026-01-06T14:23:53.945977
-> Audit Duration: 0:00:54.594403
+> Generated: 2026-01-06T14:28:14.265412
+> Audit Duration: 0:00:53.251536
 
 ---
 
@@ -12,8 +12,8 @@
 | 🔴 CRITICAL | 7 |
 | 🟠 HIGH | 1 |
 | 🟡 MEDIUM | 2 |
-| 🟢 LOW | 14 |
-| **TOTAL** | **24** |
+| 🟢 LOW | 15 |
+| **TOTAL** | **25** |
 
 ---
 
@@ -348,6 +348,35 @@ Found: __pycache__/generate_cv.cpython-312.pyc, scripts/__pycache__/find_duplica
 Add these patterns to .gitignore
 
 
+### Performance (1 problems)
+
+
+---
+
+#### [PROB-0025] Potential N+1 query patterns in db.py
+
+**Severity**: 🟢 LOW
+**Category**: Performance > N+1 Queries
+
+**Description**:
+Found 18 loops with database queries nearby
+
+**Reproduction Steps**:
+   1. Review db.py for loops containing cursor.execute
+   2. Consider batch queries where applicable
+
+**Expected Behavior**:
+Batch queries for better performance
+
+**Actual Behavior**:
+18 potential N+1 patterns
+
+**Affected Files**: /home/runner/work/cv_generator/cv_generator/src/cv_generator/db.py
+
+**Suggested Fix**:
+Consider using batch queries or JOINs
+
+
 ### Security (7 problems)
 
 
@@ -594,9 +623,9 @@ tests/test_registry.py::TestHooksInGenerator::test_hooks_fire_during_generate_cv
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
 FAILED tests/test_path_config.py::TestPathConfigAllPaths::test_templates_dir_error - Failed: DID NOT RAISE <class 'FileNotFoundError'>
-FAILED tests/test_path_config.py::TestConfigFileParsing::test_config_file_with_expanduser - AssertionError: assert PosixPath('/home/runner/my_cvs') == PosixPath('/tmp/pytest-of-runner/pytest-4/test_config_file_with_expandus0/home/my_cvs')
- +  where PosixPath('/home/runner/my_cvs') = PathConfig(\n  cvs_dir=/home/runner/my_cvs,\n  pics_dir=/tmp/pytest-of-runner/pytest-4/test_config_file_with_expandus0/home/.cvgen/pics,\n  db_path=/tmp/pytest-of-runner/pytest-4/test_config_file_with_expandus0/home/.cvgen/db/cv.db,\n  templates_dir=/home/runner/work/cv_generator/cv_generator/templates,\n  output_dir=/home/runner/work/cv_generator/cv_generator/output,\n  assets_dir=/home/runner/work/cv_generator/cv_generator/assets\n).cvs_dir
-================= 2 failed, 1283 passed, 7 warnings in 52.97s ==================
+FAILED tests/test_path_config.py::TestConfigFileParsing::test_config_file_with_expanduser - AssertionError: assert PosixPath('/home/runner/my_cvs') == PosixPath('/tmp/pytest-of-runner/pytest-5/test_config_file_with_expandus0/home/my_cvs')
+ +  where PosixPath('/home/runner/my_cvs') = PathConfig(\n  cvs_dir=/home/runner/my_cvs,\n  pics_dir=/tmp/pytest-of-runner/pytest-5/test_config_file_with_expandus0/home/.cvgen/pics,\n  db_path=/tmp/pytest-of-runner/pytest-5/test_config_file_with_expandus0/home/.cvgen/db/cv.db,\n  templates_dir=/home/runner/work/cv_generator/cv_generator/templates,\n  output_dir=/home/runner/work/cv_generator/cv_generator/output,\n  assets_dir=/home/runner/work/cv_generator/cv_generator/assets\n).cvs_dir
+================= 2 failed, 1283 passed, 7 warnings in 51.67s ==================
 
 ```
 
@@ -684,3 +713,4 @@ Add @app.errorhandler decorators
 | PROB-0022 | 🔴 CRITICAL | Security | Potential SQL injection in person.py |
 | PROB-0023 | 🔴 CRITICAL | Security | Potential SQL injection in db.py |
 | PROB-0024 | 🔴 CRITICAL | Security | Potential SQL injection in migrate_to_v2.py |
+| PROB-0025 | 🟢 LOW | Performance | Potential N+1 query patterns in db.py |

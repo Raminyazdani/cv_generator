@@ -44,18 +44,23 @@ JSON CV Data → Jinja2 Templates → XeLaTeX → PDF
 
 - [Installation Guide](installation.md) — Detailed setup instructions
 - [Quick Start](quickstart.md) — Get your first PDF in 5 minutes
+- [User Guide](user-guide.md) — Complete usage walkthrough
 - [Cookbook](example.md) — Copy-paste recipes for common workflows
 
 ### Guides
 
 - [Templates](templates.md) — Customize CV appearance
 - [Languages](languages.md) — Multilingual support (en/de/fa)
+- [Multi-Language CVs](multi-language.md) — Managing language variants
+- [Import/Export](import-export.md) — Database import/export workflows
 - [SQLite & Tagging](sqlite_tagging_cookbook.md) — Database and tagging system
+- [Web UI Cookbook](webui_cookbook.md) — Web interface documentation
 - [Plugin Development](plugins.md) — Extend CV Generator
 
 ### Reference
 
 - [CLI Reference](cli.md) — All commands and options
+- [API Reference](api.md) — Python API documentation
 - [Configuration](config-reference.md) — TOML config file reference
 - [JSON Schema](json-schema.md) — Complete data format reference
 - [Troubleshooting](troubleshooting.md) — Common issues and solutions
@@ -63,6 +68,7 @@ JSON CV Data → Jinja2 Templates → XeLaTeX → PDF
 ### Contributing
 
 - [Contributing Guide](contributing.md) — How to contribute
+- [Development Workflow](development-workflow.md) — Development setup
 - [Changelog](changelog.md) — Version history
 
 ## Project Structure

@@ -864,6 +864,27 @@ def init_db_v2(db_path: Path, force: bool = False) -> Path:
         conn.commit()
         logger.info(f"[SCHEMA] Database initialized with schema version {SCHEMA_VERSION_V2}")
 
+        # Verify schema matches ERD
+        try:
+            from .erd_parser import verify_schema_against_erd
+
+            verification = verify_schema_against_erd(db_path)
+            if verification["valid"]:
+                logger.info(
+                    f"[SCHEMA] ✓ Schema verification passed: "
+                    f"{verification['tables_matched']}/{verification['tables_checked']} tables match ERD"
+                )
+            else:
+                logger.warning(
+                    f"[SCHEMA] ⚠ Schema verification issues detected: "
+                    f"{verification['tables_mismatched']} mismatched, "
+                    f"{len(verification['tables_missing'])} missing"
+                )
+                for issue in verification.get("issues", [])[:5]:
+                    logger.warning(f"[SCHEMA]   - {issue}")
+        except ImportError:
+            pass  # erd_parser not available, skip verification
+
     except Exception as e:
         conn.rollback()
         logger.error(f"[SCHEMA] Failed to initialize database: {e}")

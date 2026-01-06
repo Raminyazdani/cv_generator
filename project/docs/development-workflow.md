@@ -82,7 +82,7 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 cvgen build --name ramin
 
 # Run tests
-pytest tests/ -q
+pytest project/tests/ -q
 
 # Check code style
 ruff check .
@@ -222,7 +222,7 @@ pip check
 # Should print: No broken requirements found.
 
 # 4. Tests pass
-pytest tests/ -q
+pytest project/tests/ -q
 # Should show all tests passing
 
 # 5. Linting passes

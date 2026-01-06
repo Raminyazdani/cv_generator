@@ -127,7 +127,7 @@ output/latex/ramin/en/sections/education.tex
 
 ## Path Resolution
 
-The `ArtifactPaths` class in `src/cv_generator/paths.py` manages all output paths. You can use it programmatically:
+The `ArtifactPaths` class in `project/src/cv_generator/paths.py` manages all output paths. You can use it programmatically:
 
 ```python
 from cv_generator.paths import ArtifactPaths

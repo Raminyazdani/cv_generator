@@ -27,7 +27,7 @@ pip install -e ".[dev]"
 
 # Verify installation
 cvgen --version
-pytest tests/ -q
+pytest project/tests/ -q
 ```
 
 ## Code Quality
@@ -50,23 +50,23 @@ Run the test suite with pytest:
 
 ```bash
 # Run all tests
-pytest tests/
+pytest project/tests/
 
 # Run with coverage
-pytest tests/ --cov=src/cv_generator --cov-report=term-missing
+pytest project/tests/ --cov=project/src/cv_generator --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_cli.py -v
+pytest project/tests/test_cli.py -v
 
 # Run specific test
-pytest tests/test_cli.py::test_build_command -v
+pytest project/tests/test_cli.py::test_build_command -v
 ```
 
 ### Pre-commit Checks
 
 Before submitting a PR, ensure:
 
-1. All tests pass: `pytest tests/ -q`
+1. All tests pass: `pytest project/tests/ -q`
 2. Linting passes: `ruff check .`
 3. Documentation builds: `mkdocs build`
 
@@ -74,7 +74,7 @@ Before submitting a PR, ensure:
 
 ```
 cv_generator/
-├── src/cv_generator/     # Main Python package
+├── project/src/cv_generator/     # Main Python package
 │   ├── cli.py            # Command-line interface
 │   ├── generator.py      # CV generation logic
 │   ├── jinja_env.py      # Jinja2 environment setup
@@ -82,7 +82,7 @@ cv_generator/
 │   ├── db.py             # SQLite database layer
 │   └── ...
 ├── templates/            # Jinja2/LaTeX templates
-├── tests/                # Test suite
+├── project/tests/                # Test suite
 │   ├── unit/             # Unit tests
 │   ├── integration/      # Integration tests
 │   └── e2e/              # End-to-end tests
@@ -117,9 +117,9 @@ cv_generator/
 
 ### New CLI Command
 
-1. Add command function in `src/cv_generator/cli.py`
+1. Add command function in `project/src/cv_generator/cli.py`
 2. Register in the argument parser
-3. Add tests in `tests/test_cli.py`
+3. Add tests in `project/tests/test_cli.py`
 4. Document in `docs/cli.md`
 
 ### New CV Section
@@ -131,7 +131,7 @@ cv_generator/
 
 ### New Plugin Hook
 
-1. Define hook type in `src/cv_generator/hooks.py`
+1. Define hook type in `project/src/cv_generator/hooks.py`
 2. Add hook invocation in generator pipeline
 3. Document in `docs/plugins.md`
 4. Add tests

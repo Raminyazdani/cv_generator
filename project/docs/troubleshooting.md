@@ -125,7 +125,7 @@ ModuleNotFoundError: No module named 'cv_generator'
 3. **Verify installation:**
    ```bash
    python -c "import cv_generator; print(cv_generator.__file__)"
-   # Should print: /path/to/cv_generator/src/cv_generator/__init__.py
+   # Should print: /path/to/cv_generator/project/src/cv_generator/__init__.py
    ```
 
 ### Changes Not Reflected After Editing
@@ -473,7 +473,7 @@ CV file not found for language 'de'
 
 **Solution:**
 
-1. Check `src/cv_generator/lang_engine/lang.json`:
+1. Check `project/src/cv_generator/lang_engine/lang.json`:
    ```json
    {
      "Technical Skills": {
@@ -666,7 +666,7 @@ Unicode characters pass through unchanged; only LaTeX special characters are esc
 
 Built-in tags (Full CV, Academic, Biotechnology, etc.) have translations.
 Custom tags use the canonical ID as fallback display. To add translations,
-extend the TAG_TRANSLATIONS dictionary in `src/cv_generator/tags.py`.
+extend the TAG_TRANSLATIONS dictionary in `project/src/cv_generator/tags.py`.
 
 ### Orphan Tag References
 

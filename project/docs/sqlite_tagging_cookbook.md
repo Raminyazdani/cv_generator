@@ -504,7 +504,7 @@ The system automatically:
 
 #### 3. (Optional) Add Identity Key Logic
 
-Edit `src/cv_generator/db.py`, add to `_compute_identity_key()`:
+Edit `project/src/cv_generator/db.py`, add to `_compute_identity_key()`:
 
 ```python
 elif section == "awards":
@@ -514,7 +514,7 @@ elif section == "awards":
 
 #### 4. (Optional) Add Web UI Summary
 
-Edit `src/cv_generator/web.py`, add to `get_entry_summary()`:
+Edit `project/src/cv_generator/web.py`, add to `get_entry_summary()`:
 
 ```python
 elif section == "awards":
@@ -583,7 +583,7 @@ For schema changes, use the migrations pattern:
 
 #### 1. Update SCHEMA_VERSION
 
-In `src/cv_generator/db.py`:
+In `project/src/cv_generator/db.py`:
 ```python
 SCHEMA_VERSION = 2  # Was 1
 ```
@@ -625,7 +625,7 @@ def init_db(db_path, force=False):
 
 #### Importer Changes
 
-Key functions in `src/cv_generator/db.py`:
+Key functions in `project/src/cv_generator/db.py`:
 
 - `import_cv()` - Main import logic
 - `_compute_identity_key()` - Generate stable IDs
@@ -643,7 +643,7 @@ Key functions:
 
 #### Add Test Fixtures
 
-Create `tests/fixtures/new_test_cv.json`:
+Create `project/tests/fixtures/new_test_cv.json`:
 ```json
 {
   "basics": [{"fname": "Test", "lname": "User"}],
@@ -653,7 +653,7 @@ Create `tests/fixtures/new_test_cv.json`:
 
 #### Add Tests
 
-In `tests/test_db.py`:
+In `project/tests/test_db.py`:
 ```python
 def test_new_section_round_trip(self, tmp_path):
     """Test that new sections are preserved."""

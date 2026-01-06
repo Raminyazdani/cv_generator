@@ -2,6 +2,14 @@
 
 **CV Generator** transforms structured JSON data into polished, professional PDF resumes using the elegant [Awesome-CV](https://github.com/posquit0/Awesome-CV) LaTeX class. Write your CV once in JSON, generate beautiful PDFs in multiple languages (English, German, Persian with RTL support), and use variant filtering to create targeted versions for academia or industry—all from a single source of truth.
 
+## 📁 Repository Structure
+
+This repository is organized for clarity:
+- **Root directory**: Core runtime files (`data/`, `templates/`, `generate_cv.py`, `awesome-cv.cls`)
+- **`project/` directory**: Development files (`src/`, `tests/`, `docs/`, configuration files, examples)
+
+This structure keeps the root clean for end users while maintaining a complete development environment in `project/`.
+
 ## Quick Start (5 lines to first PDF)
 
 ```bash
@@ -85,9 +93,11 @@ cv_generator/
 │  ├─ cvs/                  # Input JSON CVs (one file per person)
 │  │  ├─ mahsa.json
 │  │  └─ ramin.json
-│  └─ pics/                 # Optional profile photos
-│     ├─ mahsa.jpg
-│     └─ ramin.jpg
+│  ├─ pics/                 # Optional profile photos
+│  │  ├─ mahsa.jpg
+│  │  └─ ramin.jpg
+│  └─ assets/               # Logos and other assets
+│     └─ logo_map.json
 ├─ output/                  # All generated artifacts
 │  ├─ pdf/                  # Generated PDFs organized by profile/lang
 │  │  └─ ramin/
@@ -113,7 +123,13 @@ cv_generator/
 │  ├─ publications.tex
 │  ├─ references.tex
 │  └─ ... (extendable)
-└─ src/cv_generator/        # Python package source
+└─ project/                 # Development files
+   ├─ src/cv_generator/     # Python package source
+   ├─ tests/                # Test suite
+   ├─ docs/                 # Documentation source
+   ├─ plugins/              # Example plugins
+   ├─ scripts/              # Helper scripts
+   └─ examples/             # Usage examples
 ```
 
 ---
@@ -351,7 +367,7 @@ Place this file in your project root. Use `--config path/to/config.toml` to spec
 
 **Precedence**: CLI flags override config values, which override defaults.
 
-See [docs/config-reference.md](docs/config-reference.md) for full documentation.
+See [project/docs/config-reference.md](project/docs/config-reference.md) for full documentation.
 
 ---
 
@@ -559,8 +575,8 @@ cvgen db export --apply-tags-to-all --force
 ### Detailed Documentation
 
 For comprehensive documentation, see:
-- [SQLite Tagging Cookbook](docs/sqlite_tagging_cookbook.md) - Concepts, operations, extending the system
-- [SQLite Workflows Examples](examples/sqlite_workflows.md) - Real command examples
+- [SQLite Tagging Cookbook](project/docs/sqlite_tagging_cookbook.md) - Concepts, operations, extending the system
+- [SQLite Workflows Examples](project/examples/sqlite_workflows.md) - Real command examples
 
 ---
 
@@ -714,7 +730,7 @@ Structure:
 - Top level: **sections** (e.g. `"Technical Skills"`, `"Soft Skills"`).
 - Second level: **categories** (e.g. `"Programming"`, `"Data Science"`).
 - Items: each item must have a `short_name` field, used in the skills list.
-- Items may include a `type_key` array for variant filtering (see [SQLite Tagging Cookbook](docs/sqlite_tagging_cookbook.md)).
+- Items may include a `type_key` array for variant filtering (see [SQLite Tagging Cookbook](project/docs/sqlite_tagging_cookbook.md)).
 
 **Skills Tagging**: Unlike flat sections, skills are stored as individual entries in the database. Each skill item can have its own `type_key` tags, enabling fine-grained filtering by skill. The Web UI displays skills grouped by category, and you can tag/untag individual skills.
 
@@ -984,7 +1000,8 @@ The project is organized as a Python package for maintainability and extensibili
 
 ```text
 cv_generator/
-├─ src/cv_generator/          # Main package
+├─ project/
+│  └─ src/cv_generator/     # Main package
 │  ├─ __init__.py             # Package exports
 │  ├─ cli.py                  # Command-line interface (cvgen)
 │  ├─ generator.py            # CV generation orchestration
@@ -1012,7 +1029,7 @@ pip install -e .
 pip install -e ".[dev]"
 
 # Run tests
-pytest tests/
+pytest project/tests/
 ```
 
 ### Reproducible Builds
@@ -1062,7 +1079,7 @@ To run CI checks locally:
 ruff check .
 
 # Tests with coverage
-pytest tests/ --cov=src/cv_generator --cov-report=term-missing
+pytest project/tests/ --cov=project/src/cv_generator --cov-report=term-missing
 ```
 
 ### Adding a new section
@@ -1086,19 +1103,20 @@ pytest tests/ --cov=src/cv_generator --cov-report=term-missing
 
 - **Commenting in templates**:
   - Use LaTeX comments (`%`) or the `cmt` / `cblock` filters.
-  - Toggle `SHOW_COMMENTS` in `src/cv_generator/jinja_env.py` to control whether these get emitted.
+  - Toggle `SHOW_COMMENTS` in `project/src/cv_generator/jinja_env.py` to control whether these get emitted.
 
 ---
 
 ## Documentation
 
-Full documentation is available at [docs/](docs/) or can be served locally:
+Full documentation is available at [project/docs/](project/docs/) or can be served locally:
 
 ```bash
 # Install MkDocs (one-time)
 pip install mkdocs mkdocs-material
 
-# Serve documentation locally
+# Serve documentation locally (from project directory)
+cd project
 mkdocs serve
 # → Open http://127.0.0.1:8000
 
@@ -1111,16 +1129,16 @@ mkdocs build
 
 | Section | Description |
 |---------|-------------|
-| [Installation](docs/installation.md) | Detailed setup instructions |
-| [Quick Start](docs/quickstart.md) | Get your first PDF in 5 minutes |
-| [CLI Reference](docs/cli.md) | All commands and options |
-| [JSON Schema](docs/json-schema.md) | Complete data format reference |
-| [Templates](docs/templates.md) | Customization guide |
-| [Languages](docs/languages.md) | Multilingual support (en/de/fa) |
-| [SQLite Cookbook](docs/sqlite_tagging_cookbook.md) | Database and tagging system |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
-| [Plugins](docs/plugins.md) | Extending CV Generator |
-| [Configuration](docs/config-reference.md) | TOML config file reference |
+| [Installation](project/docs/installation.md) | Detailed setup instructions |
+| [Quick Start](project/docs/quickstart.md) | Get your first PDF in 5 minutes |
+| [CLI Reference](project/docs/cli.md) | All commands and options |
+| [JSON Schema](project/docs/json-schema.md) | Complete data format reference |
+| [Templates](project/docs/templates.md) | Customization guide |
+| [Languages](project/docs/languages.md) | Multilingual support (en/de/fa) |
+| [SQLite Cookbook](project/docs/sqlite_tagging_cookbook.md) | Database and tagging system |
+| [Troubleshooting](project/docs/troubleshooting.md) | Common issues and solutions |
+| [Plugins](project/docs/plugins.md) | Extending CV Generator |
+| [Configuration](project/docs/config-reference.md) | TOML config file reference |
 
 ---
 

@@ -69,7 +69,7 @@ JSON CV Data → Jinja2 Templates → XeLaTeX → PDF
 
 ```text
 cv_generator/
-├── src/cv_generator/     # Python package
+├── project/src/cv_generator/     # Python package
 ├── templates/            # Jinja2/LaTeX templates
 ├── data/
 │   ├── cvs/              # CV JSON files

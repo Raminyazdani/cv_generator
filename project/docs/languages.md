@@ -47,7 +47,7 @@ The mapping file can be placed at:
 
 1. `data/cvs/i18n/<name>/lang.json` (per-person)
 2. `data/cvs/lang.json` (shared)
-3. `src/cv_generator/lang_engine/lang.json` (default)
+3. `project/src/cv_generator/lang_engine/lang.json` (default)
 
 ### Format
 
@@ -200,7 +200,7 @@ Update `lang.json` with French translations:
 
 ### Step 4: Update RTL List (if needed)
 
-For RTL languages, add the code to `src/cv_generator/jinja_env.py`:
+For RTL languages, add the code to `project/src/cv_generator/jinja_env.py`:
 
 ```python
 RTL_LANGUAGES = {"fa", "ar", "he"}  # Add new RTL language codes

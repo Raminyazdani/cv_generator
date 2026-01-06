@@ -227,7 +227,7 @@ Skill headings can be translated using `LANG_MAP`:
 <VAR> heading_translated | latex_escape </VAR>
 ```
 
-The mapping is defined in `src/cv_generator/lang_engine/lang.json`:
+The mapping is defined in `project/src/cv_generator/lang_engine/lang.json`:
 
 ```json
 {

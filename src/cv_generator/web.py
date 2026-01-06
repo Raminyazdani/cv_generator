@@ -1529,7 +1529,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             filename = _secure_filename(file.filename)
             if not filename.endswith(".json"):
                 validation_results.append({
-                    "filename": file.filename,
+                    "filename": filename,
                     "valid": False,
                     "error": "Only JSON files are allowed.",
                     "error_type": "invalid_extension",

@@ -49,6 +49,13 @@ def normalize_name(name: Optional[str]) -> str:
     3. Case folding (lowercase, but Unicode-aware)
     4. Collapse multiple spaces to single space
 
+    Note on non-Latin scripts:
+        casefold() is primarily designed for Latin scripts and has limited effect
+        on scripts like Arabic, Hebrew, Chinese, etc. This means names in different
+        scripts (e.g., "Ramin Yazdani" vs "رامین یزدانی") will produce different
+        name keys and won't auto-group together. This is intentional - manual
+        linking is required to associate names across different scripts.
+
     Args:
         name: The name string to normalize. Can be None.
 
@@ -279,9 +286,10 @@ def create_person_entity(
             "updated_at": now,
             "variants": {}
         }
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         conn.rollback()
-        raise
+        logger.error(f"Database error creating person entity: {e}")
+        raise ConfigurationError(f"Failed to create person entity: {e}") from e
     finally:
         conn.close()
 
@@ -594,9 +602,10 @@ def link_variant_to_person(
         logger.info(f"Linked variant {person_id} ({language}) to person entity {person_entity_id[:8]}...")
 
         return get_person_entity(person_entity_id, db_path)
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         conn.rollback()
-        raise
+        logger.error(f"Database error linking variant: {e}")
+        raise ConfigurationError(f"Failed to link variant: {e}") from e
     finally:
         conn.close()
 
@@ -646,9 +655,10 @@ def unlink_variant_from_person(
             logger.info(f"Unlinked variant {person_id} from person entity {person_entity_id[:8]}...")
 
         return deleted
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         conn.rollback()
-        raise
+        logger.error(f"Database error unlinking variant: {e}")
+        raise ConfigurationError(f"Failed to unlink variant: {e}") from e
     finally:
         conn.close()
 
@@ -798,16 +808,24 @@ def auto_group_variants(
                 stats["persons_created"] += 1
 
             # Link variants to person entity
+            # Primary variant logic: prefer DEFAULT_LANGUAGE (en), else first variant
             now = _utcnow()
-            for i, variant in enumerate(variants):
-                is_primary = (variant["language"] == DEFAULT_LANGUAGE or i == 0)
+            has_set_primary = False
+            for variant in variants:
+                # Set as primary if it's the default language, or if no primary set yet
+                should_be_primary = (
+                    variant["language"] == DEFAULT_LANGUAGE or
+                    (not has_set_primary and variant == variants[0])
+                )
+                if should_be_primary:
+                    has_set_primary = True
 
                 cursor.execute(
                     """INSERT OR REPLACE INTO person_entity_variant
                        (person_entity_id, person_id, language, is_primary, created_at)
                        VALUES (?, ?, ?, ?, ?)""",
                     (person_entity_id, variant["person_id"], variant["language"],
-                     1 if is_primary else 0, now)
+                     1 if should_be_primary else 0, now)
                 )
                 stats["variants_linked"] += 1
 
@@ -926,9 +944,10 @@ def update_person_entity(
         conn.commit()
 
         return get_person_entity(person_entity_id, db_path)
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         conn.rollback()
-        raise
+        logger.error(f"Database error updating person entity: {e}")
+        raise ConfigurationError(f"Failed to update person entity: {e}") from e
     finally:
         conn.close()
 
@@ -979,8 +998,9 @@ def delete_person_entity(
             logger.info(f"Deleted person entity: {person_entity_id[:8]}...")
 
         return deleted
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         conn.rollback()
-        raise
+        logger.error(f"Database error deleting person entity: {e}")
+        raise ConfigurationError(f"Failed to delete person entity: {e}") from e
     finally:
         conn.close()

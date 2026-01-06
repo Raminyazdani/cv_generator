@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
@@ -186,7 +187,6 @@ class Vocabulary:
             return key_label_map[key]
 
         # Handle camelCase
-        import re
         result = re.sub(r'([a-z])([A-Z])', r'\1 \2', key)
         # Handle snake_case
         result = result.replace("_", " ")
@@ -341,39 +341,3 @@ def get_section_label(section: str, language: str = DEFAULT_LANGUAGE) -> str:
         Localized section name.
     """
     return get_vocabulary().get_section_label(section, language)
-
-
-def get_localized_section_fields(
-    section: str,
-    language: str = DEFAULT_LANGUAGE,
-    show_canonical: bool = False,
-) -> dict[str, dict[str, Any]]:
-    """
-    Get section field definitions with localized labels.
-
-    This integrates with the existing _get_section_fields() in web.py
-    to add localized labels.
-
-    Args:
-        section: Section key (e.g., "basics", "projects")
-        language: Target language code
-        show_canonical: If True, include canonical key under each label
-
-    Returns:
-        Dict of field definitions with localized labels.
-    """
-    # Import here to avoid circular imports
-    from .web import _get_section_fields
-
-    fields = _get_section_fields(section)
-    vocab = get_vocabulary()
-
-    # Add localized labels to each field
-    for field_name, field_info in fields.items():
-        localized_label = vocab.get_label(field_name, language)
-        field_info["localized_label"] = localized_label
-        field_info["has_translation"] = vocab.has_translation(field_name, language)
-        if show_canonical:
-            field_info["canonical_key"] = field_name
-
-    return fields

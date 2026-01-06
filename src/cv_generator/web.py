@@ -88,8 +88,6 @@ from .tags import (
     validate_tags,
 )
 from .vocabulary import (
-    get_field_label,
-    get_section_label,
     get_vocabulary,
 )
 

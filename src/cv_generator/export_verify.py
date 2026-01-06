@@ -17,7 +17,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +188,7 @@ class ExportVerifier:
         ignore_order: bool = False,
         ignore_whitespace: bool = True,
         ignore_type_key_order: bool = True,
+        ignore_extra_null_keys: bool = True,
     ):
         """
         Initialize verifier.
@@ -196,10 +197,13 @@ class ExportVerifier:
             ignore_order: Whether to ignore key order differences
             ignore_whitespace: Whether to ignore whitespace in string values
             ignore_type_key_order: Whether to treat type_key arrays as sets (ignore order)
+            ignore_extra_null_keys: Whether to ignore extra keys in exported data when their value is null
+                                    (adding null values doesn't lose information)
         """
         self.ignore_order = ignore_order
         self.ignore_whitespace = ignore_whitespace
         self.ignore_type_key_order = ignore_type_key_order
+        self.ignore_extra_null_keys = ignore_extra_null_keys
 
     def verify_export(
         self,
@@ -275,8 +279,8 @@ class ExportVerifier:
         """
         import time
 
-        from .importer_v2 import CVImporter
         from .exporter_v2 import CVExporter
+        from .importer_v2 import CVImporter
         from .schema_v2 import init_db_v2
 
         start_time = time.time()
@@ -513,9 +517,12 @@ class ExportVerifier:
             key_path = f"{path}.{key}" if path else key
             result.missing_keys.append(key_path)
 
-        # Extra keys
+        # Extra keys - optionally skip if value is null
         for key in exp_keys - orig_keys:
             key_path = f"{path}.{key}" if path else key
+            # Skip extra null values if configured
+            if self.ignore_extra_null_keys and exported[key] is None:
+                continue
             result.extra_keys.append(key_path)
 
         # Compare common keys

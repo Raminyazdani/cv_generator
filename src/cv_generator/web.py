@@ -1143,6 +1143,151 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             supported_languages=SUPPORTED_LANGUAGES
         )
 
+    @app.route("/entry/<int:entry_id>/cross-language", methods=["GET", "POST"])
+    @requires_auth
+    def cross_language_editor_route(entry_id: int):
+        """Cross-language entry editor - edit EN/DE/FA from one screen."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            if section not in CRUD_SECTIONS:
+                flash(f"Section '{section}' does not support cross-language editing.", "error")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            linked_entries = get_linked_entries(entry_id, section, app.config["DB_PATH"])
+            entry["summary"] = get_entry_summary(section, entry["data"])
+
+            # Get stable_id
+            stable_id = entry.get("stable_id")
+
+            # Define field info for the section
+            fields = _get_section_fields(section)
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        if request.method == "POST":
+            try:
+                updated_count = 0
+                mark_translated = request.form.get("mark_translated") == "1"
+
+                # Process updates for each language
+                for lang in SUPPORTED_LANGUAGES:
+                    lang_entry_id = request.form.get(f"entry_id_{lang}")
+                    if not lang_entry_id:
+                        continue
+
+                    lang_entry_id = int(lang_entry_id)
+
+                    # Build data from form fields
+                    data = {}
+                    for field_name in fields.keys():
+                        value = request.form.get(f"field_{lang}_{field_name}", "").strip()
+                        if value:
+                            data[field_name] = value
+
+                    if data:
+                        # Update the entry
+                        crud_update_entry(
+                            entry_id=lang_entry_id,
+                            data=data,
+                            section=section,
+                            db_path=app.config["DB_PATH"],
+                            sync_shared_fields=False  # We're manually updating all
+                        )
+
+                        # Clear needs_translation if requested
+                        if mark_translated:
+                            _clear_needs_translation(lang_entry_id, app.config["DB_PATH"])
+
+                        updated_count += 1
+
+                if updated_count > 0:
+                    flash(f"✓ Updated {updated_count} language variant(s) successfully.", "success")
+                else:
+                    flash("No changes were made.", "warning")
+
+                return redirect(url_for("cross_language_editor_route", entry_id=entry_id))
+
+            except (ConfigurationError, ValidationError) as e:
+                flash(str(e), "error")
+
+        return render_template(
+            "cross_language_editor.html",
+            entry=entry,
+            linked_entries=linked_entries,
+            fields=fields,
+            stable_id=stable_id,
+            supported_languages=SUPPORTED_LANGUAGES
+        )
+
+    @app.route("/entry/<int:entry_id>/create-lang", methods=["POST"])
+    @requires_auth
+    def create_missing_lang_entry_route(entry_id: int):
+        """Create a missing language variant for an entry."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            if section not in CRUD_SECTIONS:
+                flash(f"Section '{section}' does not support this operation.", "error")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            target_lang = request.form.get("target_lang")
+            if not target_lang or target_lang not in SUPPORTED_LANGUAGES:
+                flash("Invalid target language", "error")
+                return redirect(url_for("entry_linked_route", entry_id=entry_id))
+
+            # Get linked entries to find the stable_id
+            linked_entries = get_linked_entries(entry_id, section, app.config["DB_PATH"])
+
+            if target_lang in linked_entries:
+                flash(f"Entry already exists in {target_lang.upper()}", "warning")
+                return redirect(url_for("cross_language_editor_route", entry_id=entry_id))
+
+            # Get base person from current entry
+            person_slug = entry["person_slug"]
+            # Compute base person and target slug
+            from .crud import _get_base_person, _get_person_slug_for_lang
+
+            base_person = _get_base_person(person_slug)
+            target_slug = _get_person_slug_for_lang(base_person, target_lang)
+
+            # Get source entry data (use English if available, else the current)
+            source_entry = linked_entries.get("en", entry)
+            source_data = source_entry["data"].copy()
+
+            # Create placeholder entry (reuse the data structure)
+            result = crud_create_entry(
+                person_slug=target_slug,
+                section=section,
+                data=source_data,
+                db_path=app.config["DB_PATH"],
+                sync_languages=False  # Only create in target language
+            )
+
+            # Link to existing stable_id if we have one
+            stable_id = entry.get("stable_id")
+            if stable_id:
+                _link_entry_to_stable(result["entries"].get(target_lang), stable_id, target_lang, app.config["DB_PATH"])
+                flash(f"✓ Created {target_lang.upper()} entry and linked to existing stable ID.", "success")
+            else:
+                flash(f"✓ Created {target_lang.upper()} entry.", "success")
+
+            return redirect(url_for("cross_language_editor_route", entry_id=entry_id))
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+            return redirect(url_for("entry_detail", entry_id=entry_id))
+
     @app.route("/diagnostics")
     @requires_auth
     def diagnostics():
@@ -1322,6 +1467,137 @@ def _get_missing_counterparts(db_path: Path) -> list[dict[str, Any]]:
         pass  # Tables may not exist yet
 
     return missing
+
+
+def _get_section_fields(section: str) -> dict[str, dict[str, Any]]:
+    """
+    Get field definitions for a section for the cross-language editor.
+
+    Returns a dict mapping field names to field info:
+    - label: Display label
+    - shared: Whether this is a shared field (not translated)
+    - multiline: Whether this is a multiline field
+    - input_type: HTML input type
+    - placeholder: Placeholder text
+    """
+    if section == "basics":
+        return {
+            "fname": {"label": "First Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "First name"},
+            "lname": {"label": "Last Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Last name"},
+            "headline": {"label": "Headline", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Professional title"},
+            "location": {"label": "Location", "shared": False, "multiline": False, "input_type": "text", "placeholder": "City, Country"},
+            "email": {"label": "Email", "shared": True, "multiline": False, "input_type": "email", "placeholder": "email@example.com"},
+            "phone": {"label": "Phone", "shared": True, "multiline": False, "input_type": "text", "placeholder": "+49 123 456"},
+            "website": {"label": "Website", "shared": True, "multiline": False, "input_type": "url", "placeholder": "https://example.com"},
+            "linkedin": {"label": "LinkedIn", "shared": True, "multiline": False, "input_type": "url", "placeholder": "https://linkedin.com/in/..."},
+            "github": {"label": "GitHub", "shared": True, "multiline": False, "input_type": "url", "placeholder": "https://github.com/..."},
+            "summary": {"label": "Summary / Bio", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Professional summary"},
+        }
+    elif section == "projects":
+        return {
+            "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Project title"},
+            "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Project description"},
+            "url": {"label": "URL", "shared": True, "multiline": False, "input_type": "url", "placeholder": "https://github.com/..."},
+        }
+    elif section == "experiences":
+        return {
+            "role": {"label": "Role", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Job title"},
+            "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Company name"},
+            "duration": {"label": "Duration", "shared": False, "multiline": False, "input_type": "text", "placeholder": "2020 - present"},
+            "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Responsibilities"},
+        }
+    elif section == "publications":
+        return {
+            "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Publication title"},
+            "authors": {"label": "Authors", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Author names"},
+            "journal": {"label": "Journal", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Journal name"},
+            "year": {"label": "Year", "shared": True, "multiline": False, "input_type": "text", "placeholder": "2024"},
+            "doi": {"label": "DOI", "shared": True, "multiline": False, "input_type": "text", "placeholder": "10.1000/xyz123"},
+            "status": {"label": "Status", "shared": True, "multiline": False, "input_type": "text", "placeholder": "Published"},
+        }
+    elif section == "references":
+        return {
+            "name": {"label": "Name", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Reference name"},
+            "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Company"},
+            "email": {"label": "Email", "shared": True, "multiline": False, "input_type": "email", "placeholder": "email@example.com"},
+            "phone": {"label": "Phone", "shared": True, "multiline": False, "input_type": "text", "placeholder": "+49 123 456"},
+        }
+    elif section == "education":
+        return {
+            "institution": {"label": "Institution", "shared": False, "multiline": False, "input_type": "text", "placeholder": "University name"},
+            "area": {"label": "Area / Major", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Computer Science"},
+            "studyType": {"label": "Degree Type", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Master's"},
+            "location": {"label": "Location", "shared": False, "multiline": False, "input_type": "text", "placeholder": "City, Country"},
+            "startDate": {"label": "Start Date", "shared": True, "multiline": False, "input_type": "text", "placeholder": "2020-10"},
+            "endDate": {"label": "End Date", "shared": True, "multiline": False, "input_type": "text", "placeholder": "2024-09"},
+            "gpa": {"label": "GPA", "shared": True, "multiline": False, "input_type": "text", "placeholder": "3.5 / 4.0"},
+        }
+    else:
+        # Generic fields
+        return {
+            "title": {"label": "Title", "shared": False, "multiline": False, "input_type": "text", "placeholder": "Title"},
+            "description": {"label": "Description", "shared": False, "multiline": True, "input_type": "text", "placeholder": "Description"},
+        }
+
+
+def _clear_needs_translation(entry_id: int, db_path: Path) -> None:
+    """Clear the needs_translation flag for an entry."""
+    import sqlite3
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE entry_lang_link SET needs_translation = 0 WHERE entry_id = ?",
+            (entry_id,)
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass  # Ignore errors
+
+
+def _link_entry_to_stable(entry_id: int, stable_id: str, language: str, db_path: Path) -> None:
+    """Link an entry to an existing stable_id."""
+    import sqlite3
+
+    if not entry_id or not stable_id:
+        return
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        now = _utcnow()
+
+        # Check if link already exists
+        cursor.execute(
+            "SELECT 1 FROM entry_lang_link WHERE entry_id = ?",
+            (entry_id,)
+        )
+        if cursor.fetchone():
+            # Update existing link
+            cursor.execute(
+                "UPDATE entry_lang_link SET stable_id = ?, language = ? WHERE entry_id = ?",
+                (stable_id, language, entry_id)
+            )
+        else:
+            # Create new link
+            cursor.execute(
+                """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
+                   VALUES (?, ?, ?, 1, ?)""",
+                (stable_id, language, entry_id, now)
+            )
+
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.warning(f"Failed to link entry to stable_id: {e}")
+
+
+def _utcnow() -> str:
+    """Return current UTC time as ISO format string."""
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat()
 
 
 def run_server(

@@ -11,7 +11,7 @@
 
 <h2>{{ section | replace('_', ' ') | title }}</h2>
 
-{% if section in ['projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
+{% if section in ['basics', 'projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
 <div style="margin-bottom: 1rem;">
     <a href="{{ url_for('create_entry_route', person=person.slug, section=section) }}" class="btn btn-primary">
         ➕ Add New {{ section | replace('_', ' ') | title | replace('S', '', 1) if section.endswith('s') else section | replace('_', ' ') | title }}

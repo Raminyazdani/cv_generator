@@ -1528,3 +1528,282 @@ class TestPersonEntityRoutes:
         # Both EN and DE should be shown as linked
         assert b"EN" in response.data
         assert b"DE" in response.data
+
+
+class TestBasicsEditing:
+    """Tests for editing Basics section entries."""
+
+    @pytest.fixture
+    def app_with_basics(self, tmp_path):
+        """Create a test Flask app with basics data in multiple languages."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "John", "lname": "Doe", "email": "john@example.com", "headline": "Software Engineer"}],
+            "projects": [{"title": "Test Project"}]
+        }
+        cv_en_path = tmp_path / "cvs" / "johndoe.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        # Create DE CV
+        cv_de = {
+            "basics": [{"fname": "Johann", "lname": "Doe", "email": "john@example.com", "headline": "Software Ingenieur"}],
+            "projects": [{"title": "Testprojekt"}]
+        }
+        cv_de_path = tmp_path / "cvs" / "johndoe_de.json"
+        cv_de_path.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_de_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_basics):
+        """Create a test client."""
+        return app_with_basics.test_client()
+
+    def test_basics_section_in_crud_sections(self):
+        """Test that basics is included in CRUD sections list."""
+        from cv_generator.crud import LIST_SECTIONS
+        assert "basics" in LIST_SECTIONS
+
+    def test_basics_has_shared_fields_defined(self):
+        """Test that basics section has shared fields defined."""
+        from cv_generator.crud import SHARED_FIELDS
+        assert "basics" in SHARED_FIELDS
+        assert "email" in SHARED_FIELDS["basics"]
+        assert "phone" in SHARED_FIELDS["basics"]
+
+    def test_basics_entry_edit_form_loads(self, client):
+        """Test that basics entry edit form loads correctly."""
+        # Get basics entry ID
+        response = client.get("/p/johndoe/basics")
+        assert response.status_code == 200
+
+        # Get the basics entry (should be entry ID 1)
+        response = client.get("/entry/1/edit")
+        assert response.status_code == 200
+        assert b"First Name" in response.data
+        assert b"Last Name" in response.data
+        assert b"Email" in response.data
+
+    def test_basics_entry_update_post(self, client):
+        """Test updating basics entry."""
+        # Get CSRF token
+        form_response = client.get("/entry/1/edit")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/entry/1/edit",
+            data={
+                "field_fname": "Johnny",
+                "field_lname": "Doe",
+                "field_email": "johnny@example.com",
+                "field_headline": "Senior Software Engineer",
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"updated successfully" in response.data.lower()
+
+    def test_basics_create_form_loads(self, client):
+        """Test that basics create form loads."""
+        response = client.get("/p/johndoe/basics/create")
+        assert response.status_code == 200
+        assert b"First Name" in response.data
+        assert b"Last Name" in response.data
+
+    def test_section_entries_shows_add_button_for_basics(self, client):
+        """Test that basics section shows add button."""
+        response = client.get("/p/johndoe/basics")
+        assert response.status_code == 200
+        assert b"Add New" in response.data
+
+
+class TestCrossLanguageEditor:
+    """Tests for the cross-language entry editor."""
+
+    @pytest.fixture
+    def app_with_multi_lang(self, tmp_path):
+        """Create a test Flask app with multi-language CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Existing Project", "url": "https://example.com", "description": "A test project"}
+            ]
+        }
+        cv_en_path = tmp_path / "cvs" / "testuser.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        # Create DE CV
+        cv_de = {
+            "basics": [{"fname": "Test", "lname": "Benutzer"}],
+            "projects": [
+                {"title": "Bestehendes Projekt", "url": "https://example.com", "description": "Ein Testprojekt"}
+            ]
+        }
+        cv_de_path = tmp_path / "cvs" / "testuser_de.json"
+        cv_de_path.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_de_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_multi_lang):
+        """Create a test client."""
+        return app_with_multi_lang.test_client()
+
+    def test_cross_language_editor_link_visible(self, client):
+        """Test that cross-language editor link is visible on entry page."""
+        response = client.get("/entry/2")  # Skip basics (entry 1)
+        assert response.status_code == 200
+        assert b"Cross-Language Editor" in response.data
+
+    def test_cross_language_editor_page_loads(self, client):
+        """Test that cross-language editor page loads."""
+        response = client.get("/entry/2/cross-language")
+        assert response.status_code == 200
+        assert b"Cross-Language Entry Editor" in response.data
+        assert b"EN" in response.data
+        assert b"DE" in response.data
+
+    def test_cross_language_editor_shows_fields(self, client):
+        """Test that cross-language editor shows correct fields for projects."""
+        response = client.get("/entry/2/cross-language")
+        assert response.status_code == 200
+        assert b"Title" in response.data
+        assert b"Description" in response.data
+        assert b"URL" in response.data
+
+    def test_get_section_fields_returns_basics_fields(self):
+        """Test that _get_section_fields returns correct fields for basics."""
+        from cv_generator.web import _get_section_fields
+
+        fields = _get_section_fields("basics")
+        assert "fname" in fields
+        assert "lname" in fields
+        assert "email" in fields
+        assert fields["email"]["shared"] is True
+        assert fields["fname"]["shared"] is False
+
+    def test_get_section_fields_returns_projects_fields(self):
+        """Test that _get_section_fields returns correct fields for projects."""
+        from cv_generator.web import _get_section_fields
+
+        fields = _get_section_fields("projects")
+        assert "title" in fields
+        assert "url" in fields
+        assert fields["url"]["shared"] is True
+        assert fields["title"]["shared"] is False
+
+    def test_cross_language_editor_post_updates_entries(self, client):
+        """Test that posting to cross-language editor updates entries."""
+        # First get CSRF token and entry IDs
+        response = client.get("/entry/2/cross-language")
+        csrf_token = get_csrf_token(response)
+
+        # Post updates - we'll update at least EN fields
+        # Note: we need the entry_id fields which are provided by the form
+        response = client.post(
+            "/entry/2/cross-language",
+            data={
+                "entry_id_en": "2",
+                "field_en_title": "Updated EN Title",
+                "field_en_description": "Updated EN Description",
+                "field_en_url": "https://updated.example.com",
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        # Check for success message
+        assert b"Updated" in response.data or b"updated" in response.data.lower()
+
+
+class TestCopyHelpers:
+    """Tests for copy helpers in cross-language editor."""
+
+    def test_cross_language_editor_has_copy_buttons(self):
+        """Test that the cross-language editor template includes copy buttons."""
+
+        template_path = Path(__file__).parent.parent / "src" / "cv_generator" / "templates" / "cross_language_editor.html"
+        content = template_path.read_text()
+
+        # Check for copy functionality
+        assert "EN → DE" in content
+        assert "EN → FA" in content
+        assert "copyField" in content
+        assert "copyAllFields" in content
+
+    def test_cross_language_editor_has_undo_support(self):
+        """Test that the cross-language editor has undo support."""
+
+        template_path = Path(__file__).parent.parent / "src" / "cv_generator" / "templates" / "cross_language_editor.html"
+        content = template_path.read_text()
+
+        # Check for undo functionality
+        assert "originalValues" in content
+        assert "undoField" in content
+
+
+class TestTranslationWorkflow:
+    """Tests for translation workflow helpers."""
+
+    @pytest.fixture
+    def app_with_translation_data(self, tmp_path):
+        """Create app with entries needing translation."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [{"title": "Test Project"}]
+        }
+        cv_en_path = tmp_path / "cvs" / "testuser.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_translation_data):
+        """Create a test client."""
+        return app_with_translation_data.test_client()
+
+    def test_cross_language_editor_has_mark_translated_option(self, client):
+        """Test that cross-language editor has mark translated option."""
+        response = client.get("/entry/2/cross-language")
+        assert response.status_code == 200
+        assert b"mark_translated" in response.data or b"Clear" in response.data
+
+    def test_needs_translation_badge_in_template(self):
+        """Test that needs translation badge is in template."""
+
+        template_path = Path(__file__).parent.parent / "src" / "cv_generator" / "templates" / "cross_language_editor.html"
+        content = template_path.read_text()
+
+        assert "needs_translation" in content.lower() or "Needs Translation" in content

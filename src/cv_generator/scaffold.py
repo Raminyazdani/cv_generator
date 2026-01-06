@@ -285,6 +285,20 @@ def scaffold_project(
         gitignore_path = dest_path / ".gitignore"
         gitignore_content = """# CV Generator output
 output/
+!output/.gitkeep
+
+# CV Generator state directory
+.cvgen/
+!.cvgen/.gitkeep
+
+# LaTeX intermediate files
+*.aux
+*.log
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.synctex.gz
 
 # Editor files
 .vscode/

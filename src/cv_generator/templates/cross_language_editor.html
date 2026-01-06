@@ -228,10 +228,16 @@
             <div class="lang-pane-body">
                 <input type="hidden" name="entry_id_{{ lang }}" value="{{ lang_entry.id }}">
                 
-                {% for field_name, field_info in fields.items() %}
+                {% set lang_fields = fields_by_lang.get(lang, fields) if fields_by_lang else fields %}
+                {% for field_name, field_info in lang_fields.items() %}
                 <div class="field-row">
                     <div class="field-label">
-                        <span>{{ field_info.label }}</span>
+                        <span>
+                            {{ field_info.localized_label if field_info.localized_label else field_info.label }}
+                            {% if show_canonical_keys and field_info.canonical_key %}
+                            <small style="color: var(--gray-400); font-weight: normal;"> ({{ field_info.canonical_key }})</small>
+                            {% endif %}
+                        </span>
                         <span style="display: flex; gap: 0.25rem; align-items: center;">
                             <span class="field-type {{ 'shared' if field_info.shared else 'text' }}">
                                 {{ '🔗 shared' if field_info.shared else '📝 text' }}

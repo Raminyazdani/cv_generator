@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}{{ section | title }} - {{ person.slug }}{% endblock %}
+{% block title %}{{ get_section_label(section) }} - {{ person.slug }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &raquo;
     <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &raquo;
-    {{ section | replace('_', ' ') | title }}
+    {{ get_section_label(section) }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">({{ section }})</small>{% endif %}
 </nav>
 
-<h2>{{ section | replace('_', ' ') | title }}</h2>
+<h2>{{ get_section_label(section) }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">({{ section }})</small>{% endif %}</h2>
 
 {% if section in ['basics', 'projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
 <div style="margin-bottom: 1rem;">
     <a href="{{ url_for('create_entry_route', person=person.slug, section=section) }}" class="btn btn-primary">
-        ➕ Add New {{ section | replace('_', ' ') | title | replace('S', '', 1) if section.endswith('s') else section | replace('_', ' ') | title }}
+        ➕ Add New {{ get_section_label(section) | replace('s', '', 1) if get_section_label(section).endswith('s') else get_section_label(section) }}
     </a>
 </div>
 {% endif %}

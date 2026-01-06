@@ -41,17 +41,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .export_mappings import (
     BASICS_FIELD_ORDER,
-    CERTIFICATION_FIELD_ORDER,
     CERT_ISSUER_FIELD_ORDER,
+    CERTIFICATION_FIELD_ORDER,
     EDUCATION_FIELD_ORDER,
     EXPERIENCE_FIELD_ORDER,
     LANGUAGE_CERT_FIELD_ORDER,
     LANGUAGE_FIELD_ORDER,
     LOCATION_FIELD_ORDER,
-    PHONE_FIELD_ORDER,
     PICTURE_FIELD_ORDER,
-    PROFILE_FIELD_ORDER,
     PROFICIENCY_FIELD_ORDER,
+    PROFILE_FIELD_ORDER,
     PROJECT_FIELD_ORDER,
     PUBLICATION_FIELD_ORDER,
     REFERENCE_FIELD_ORDER,
@@ -562,7 +561,7 @@ class CVExporter:
             """
             SELECT pa.username, pa.url, pa.uuid, pai.network_display
             FROM profile_accounts pa
-            LEFT JOIN profile_account_i18n pai ON pa.id = pai.profile_account_id 
+            LEFT JOIN profile_account_i18n pai ON pa.id = pai.profile_account_id
                 AND pai.resume_version_id = ?
             WHERE pa.resume_key = ?
             ORDER BY pa.sort_order
@@ -597,7 +596,7 @@ class CVExporter:
             SELECT ei.id, ei.start_date, ei.end_date, ei.end_date_text, ei.gpa, ei.logo_url,
                    edu.institution, edu.location, edu.area, edu.study_type
             FROM education_items ei
-            LEFT JOIN education_i18n edu ON ei.id = edu.education_item_id 
+            LEFT JOIN education_i18n edu ON ei.id = edu.education_item_id
                 AND edu.resume_version_id = ?
             WHERE ei.resume_key = ?
             ORDER BY ei.sort_order
@@ -644,7 +643,7 @@ class CVExporter:
             SELECT sli.id, sli.proficiency_cefr,
                    sln.language_name, sln.proficiency_level, sln.proficiency_status
             FROM spoken_language_items sli
-            LEFT JOIN spoken_language_i18n sln ON sli.id = sln.spoken_language_item_id 
+            LEFT JOIN spoken_language_i18n sln ON sli.id = sln.spoken_language_item_id
                 AND sln.resume_version_id = ?
             WHERE sli.resume_key = ?
             ORDER BY sli.sort_order
@@ -673,7 +672,7 @@ class CVExporter:
                        slc.max_score, slc.min_score, slc.exam_date, slc.url,
                        sci.test_name, sci.organization
                 FROM spoken_language_certs slc
-                LEFT JOIN spoken_language_cert_i18n sci ON slc.id = sci.cert_id 
+                LEFT JOIN spoken_language_cert_i18n sci ON slc.id = sci.cert_id
                     AND sci.resume_version_id = ?
                 WHERE slc.spoken_language_item_id = ?
                 ORDER BY slc.sort_order
@@ -683,6 +682,9 @@ class CVExporter:
 
             certifications = []
             for cert_row in cursor.fetchall():
+                # Always include all fields for lossless round-trip export.
+                # The original JSON may have these fields as null values,
+                # and we need to preserve that structure exactly.
                 cert_data = {
                     "test": cert_row["test_name"],
                     "organization": cert_row["organization"],
@@ -691,21 +693,11 @@ class CVExporter:
                     "writing": cert_row["writing"],
                     "listening": cert_row["listening"],
                     "speaking": cert_row["speaking"],
+                    "maxScore": cert_row["max_score"],
+                    "minScore": cert_row["min_score"],
                     "examDate": cert_row["exam_date"],
                     "URL": cert_row["url"],
                 }
-                # Include maxScore/minScore when there are actual score values
-                # This is a heuristic: if any score field has a value, include the scale fields
-                has_scores = any([
-                    cert_row["overall"] is not None,
-                    cert_row["reading"] is not None,
-                    cert_row["writing"] is not None,
-                    cert_row["listening"] is not None,
-                    cert_row["speaking"] is not None,
-                ])
-                if has_scores or cert_row["max_score"] is not None or cert_row["min_score"] is not None:
-                    cert_data["maxScore"] = cert_row["max_score"]
-                    cert_data["minScore"] = cert_row["min_score"]
 
                 cert = ordered_dict_from_mapping(cert_data, LANGUAGE_CERT_FIELD_ORDER)
                 certifications.append(cert)
@@ -733,7 +725,7 @@ class CVExporter:
             """
             SELECT ci.id, cii.issuer_name
             FROM cert_issuers ci
-            LEFT JOIN cert_issuer_i18n cii ON ci.id = cii.issuer_id 
+            LEFT JOIN cert_issuer_i18n cii ON ci.id = cii.issuer_id
                 AND cii.resume_version_id = ?
             WHERE ci.resume_key = ?
             ORDER BY ci.sort_order
@@ -751,7 +743,7 @@ class CVExporter:
                 SELECT c.id, c.is_certificate, c.date_text, c.date, c.url,
                        ci.name, ci.duration
                 FROM certifications c
-                LEFT JOIN certification_i18n ci ON c.id = ci.certification_id 
+                LEFT JOIN certification_i18n ci ON c.id = ci.certification_id
                     AND ci.resume_version_id = ?
                 WHERE c.issuer_id = ?
                 ORDER BY c.sort_order
@@ -806,7 +798,7 @@ class CVExporter:
             """
             SELECT sc.id, sci.name
             FROM skill_categories sc
-            LEFT JOIN skill_category_i18n sci ON sc.id = sci.category_id 
+            LEFT JOIN skill_category_i18n sci ON sc.id = sci.category_id
                 AND sci.resume_version_id = ?
             WHERE sc.resume_key = ?
             ORDER BY sc.sort_order
@@ -824,7 +816,7 @@ class CVExporter:
                 """
                 SELECT ss.id, ssi.name
                 FROM skill_subcategories ss
-                LEFT JOIN skill_subcategory_i18n ssi ON ss.id = ssi.subcategory_id 
+                LEFT JOIN skill_subcategory_i18n ssi ON ss.id = ssi.subcategory_id
                     AND ssi.resume_version_id = ?
                 WHERE ss.category_id = ?
                 ORDER BY ss.sort_order
@@ -842,7 +834,7 @@ class CVExporter:
                     """
                     SELECT si.id, sii.long_name, sii.short_name
                     FROM skill_items si
-                    LEFT JOIN skill_item_i18n sii ON si.id = sii.skill_item_id 
+                    LEFT JOIN skill_item_i18n sii ON si.id = sii.skill_item_id
                         AND sii.resume_version_id = ?
                     WHERE si.subcategory_id = ?
                     ORDER BY si.sort_order
@@ -884,7 +876,7 @@ class CVExporter:
             SELECT ei.id, ei.start_date, ei.end_date, ei.is_current,
                    exp.duration_text, exp.role, exp.institution, exp.primary_focus, exp.description
             FROM experience_items ei
-            LEFT JOIN experience_i18n exp ON ei.id = exp.experience_item_id 
+            LEFT JOIN experience_i18n exp ON ei.id = exp.experience_item_id
                 AND exp.resume_version_id = ?
             WHERE ei.resume_key = ?
             ORDER BY ei.sort_order
@@ -921,7 +913,7 @@ class CVExporter:
             """
             SELECT pi.id, pi.url, proj.title, proj.description
             FROM project_items pi
-            LEFT JOIN project_i18n proj ON pi.id = proj.project_item_id 
+            LEFT JOIN project_i18n proj ON pi.id = proj.project_item_id
                 AND proj.resume_version_id = ?
             WHERE pi.resume_key = ?
             ORDER BY pi.sort_order
@@ -966,7 +958,7 @@ class CVExporter:
                    pub.place, pub.edition, pub.degree_type, pub.correspondent,
                    pub.institution, pub.faculty, pub.school
             FROM publication_items pi
-            LEFT JOIN publication_i18n pub ON pi.id = pub.publication_id 
+            LEFT JOIN publication_i18n pub ON pi.id = pub.publication_id
                 AND pub.resume_version_id = ?
             WHERE pi.resume_key = ?
             ORDER BY pi.sort_order
@@ -1091,7 +1083,7 @@ class CVExporter:
             SELECT ri.id, ri.phone, ri.url,
                    ref.name, ref.position, ref.department, ref.institution, ref.location
             FROM reference_items ri
-            LEFT JOIN reference_i18n ref ON ri.id = ref.reference_id 
+            LEFT JOIN reference_i18n ref ON ri.id = ref.reference_id
                 AND ref.resume_version_id = ?
             WHERE ri.resume_key = ?
             ORDER BY ri.sort_order

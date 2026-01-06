@@ -1369,3 +1369,158 @@ class TestLanguageSelectorInHeader:
         response = client.get("/")
         assert response.status_code == 200
         assert b"CV JSON Manager" in response.data
+
+
+class TestPersonEntityRoutes:
+    """Tests for the person entity management routes."""
+
+    @pytest.fixture
+    def app_with_variants(self, tmp_path):
+        """Create a test Flask app with multi-language CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create EN CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [{"title": "Test Project"}]
+        }
+        cv_en_path = tmp_path / "cvs" / "testuser.json"
+        cv_en_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_en_path.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_en_path, db_path)
+
+        # Create DE CV
+        cv_de = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [{"title": "Testprojekt"}]
+        }
+        cv_de_path = tmp_path / "cvs" / "testuser_de.json"
+        cv_de_path.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_de_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_variants):
+        """Create a test client."""
+        return app_with_variants.test_client()
+
+    def test_index_shows_create_person_button(self, client):
+        """Test that index page shows Create Person button."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Create Person" in response.data
+
+    def test_index_shows_unlinked_variants(self, client):
+        """Test that index page shows unlinked variants section."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Unlinked Variants" in response.data
+
+    def test_create_person_form_loads(self, client):
+        """Test that create person form loads."""
+        response = client.get("/persons/create")
+        assert response.status_code == 200
+        assert b"First Name" in response.data
+        assert b"Last Name" in response.data
+
+    def test_create_person_post(self, client):
+        """Test creating a person via POST."""
+        # Get CSRF token
+        form_response = client.get("/persons/create")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/persons/create",
+            data={
+                "first_name": "New",
+                "last_name": "Person",
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"created successfully" in response.data.lower()
+
+    def test_create_person_shows_in_list(self, client):
+        """Test that created person appears in list."""
+        # Create a person
+        form_response = client.get("/persons/create")
+        csrf_token = get_csrf_token(form_response)
+
+        client.post(
+            "/persons/create",
+            data={
+                "first_name": "Listed",
+                "last_name": "Person",
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=True
+        )
+
+        # Check list
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Listed Person" in response.data
+
+    def test_person_entity_detail_page_loads(self, client):
+        """Test that person entity detail page loads."""
+        # Create a person first
+        form_response = client.get("/persons/create")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/persons/create",
+            data={
+                "first_name": "Detail",
+                "last_name": "Test",
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=False
+        )
+
+        # Should redirect to person detail page
+        assert response.status_code == 302
+        # Follow the redirect
+        detail_response = client.get(response.headers["Location"])
+        assert detail_response.status_code == 200
+        assert b"Detail Test" in detail_response.data
+
+    def test_auto_group_variants(self, client):
+        """Test auto-grouping variants."""
+        # Get CSRF token
+        form_response = client.get("/")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/persons/auto-group",
+            data={"csrf_token": csrf_token},
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"Auto-grouping complete" in response.data
+
+    def test_auto_group_links_variants_together(self, client):
+        """Test that auto-group links variants with same name."""
+        # Auto-group
+        form_response = client.get("/")
+        csrf_token = get_csrf_token(form_response)
+
+        client.post(
+            "/persons/auto-group",
+            data={"csrf_token": csrf_token},
+            follow_redirects=True
+        )
+
+        # Check that "Test User" person entity exists with multiple variants
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Test User" in response.data
+        # Both EN and DE should be shown as linked
+        assert b"EN" in response.data
+        assert b"DE" in response.data

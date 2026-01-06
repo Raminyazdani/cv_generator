@@ -3,24 +3,82 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h2>Select a Person</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2 style="margin-bottom: 0;">People</h2>
+    <div class="actions">
+        <a href="{{ url_for('create_person_route') }}" class="btn btn-primary">➕ Create Person</a>
+        {% if unlinked_variants %}
+        <form action="{{ url_for('auto_group_route') }}" method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary" 
+                    onclick="return confirm('This will automatically group CV variants by name. Continue?');">
+                🔄 Auto-Group Variants
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
 
-{% if persons %}
+{% if person_entities %}
 <div class="card-grid">
-    {% for person in persons %}
+    {% for person in person_entities %}
     <div class="card">
-        <a href="{{ url_for('person_dashboard', person=person.slug) }}" class="card-link">
-            <h3>{{ person.display_name or person.slug }}</h3>
-            <p>{{ person.entry_count }} entries</p>
+        <a href="{{ url_for('person_entity_detail', person_entity_id=person.id) }}" class="card-link">
+            <h3>{{ person.display_name }}</h3>
+            <div style="margin-top: 0.5rem;">
+                {% for lang in supported_languages %}
+                    {% if lang in person.variants %}
+                        <span class="tag" style="background: var(--success);">{{ lang|upper }}</span>
+                    {% else %}
+                        <span class="tag tag-count" style="opacity: 0.5;">{{ lang|upper }}</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <p style="margin-top: 0.5rem; color: var(--gray-500); font-size: 0.85rem;">
+                {% set total_entries = 0 %}
+                {% for lang, v in person.variants.items() %}
+                    {% set total_entries = total_entries + v.entry_count %}
+                {% endfor %}
+                {{ person.variants|length }} variant(s)
+            </p>
         </a>
     </div>
     {% endfor %}
 </div>
-{% else %}
+{% endif %}
+
+{% if unlinked_variants %}
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Unlinked Variants</h3>
+<p style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
+    These CV variants have not been linked to a person entity yet.
+    Click "Auto-Group Variants" to automatically group them by name, or create a person and link manually.
+</p>
+<div class="card-grid">
+    {% for variant in unlinked_variants %}
+    <div class="card" style="border-left: 4px solid var(--warning);">
+        <a href="{{ url_for('person_dashboard', person=variant.slug) }}" class="card-link">
+            <h3>{{ variant.display_name or variant.slug }}</h3>
+            <p>
+                <span class="tag tag-count">{{ variant.language|upper }}</span>
+                {{ variant.entry_count }} entries
+            </p>
+            {% if variant.first_name or variant.last_name %}
+            <p style="font-size: 0.8rem; color: var(--gray-500);">
+                Basics: {{ variant.first_name }} {{ variant.last_name }}
+            </p>
+            {% endif %}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not person_entities and not unlinked_variants %}
 <div class="card empty-state">
     <p>No persons found in database.</p>
     <p style="margin-top: 1rem;">
-        Run <code>cvgen db import</code> to import CV data first.
+        Run <code>cvgen db import</code> to import CV data first,<br>
+        or <a href="{{ url_for('create_person_route') }}">create a new person</a>.
     </p>
 </div>
 {% endif %}

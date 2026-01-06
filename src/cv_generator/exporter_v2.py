@@ -1170,32 +1170,56 @@ class CVExporter:
         """
         cursor = conn.cursor()
 
-        # Map entity_type to table and column names
-        entity_tables = {
-            "education": ("education_item_tags", "education_item_id"),
-            "certification": ("certification_tags", "certification_id"),
-            "skill_item": ("skill_item_tags", "skill_item_id"),
-            "project": ("project_tags", "project_item_id"),
-            "publication": ("publication_tags", "publication_id"),
-            "reference": ("reference_tags", "reference_id"),
+        # Pre-constructed queries for each entity type
+        # Using explicit queries instead of f-strings for security
+        queries = {
+            "education": """
+                SELECT ti.label
+                FROM education_item_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.education_item_id = ?
+                ORDER BY ti.label
+            """,
+            "certification": """
+                SELECT ti.label
+                FROM certification_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.certification_id = ?
+                ORDER BY ti.label
+            """,
+            "skill_item": """
+                SELECT ti.label
+                FROM skill_item_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.skill_item_id = ?
+                ORDER BY ti.label
+            """,
+            "project": """
+                SELECT ti.label
+                FROM project_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.project_item_id = ?
+                ORDER BY ti.label
+            """,
+            "publication": """
+                SELECT ti.label
+                FROM publication_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.publication_id = ?
+                ORDER BY ti.label
+            """,
+            "reference": """
+                SELECT ti.label
+                FROM reference_tags et
+                JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
+                WHERE et.reference_id = ?
+                ORDER BY ti.label
+            """,
         }
 
-        if entity_type not in entity_tables:
+        if entity_type not in queries:
             return []
 
-        table_name, id_column = entity_tables[entity_type]
-
-        # Query to get tag labels for this entity
-        # Safe: table_name and id_column are from hardcoded whitelist above
-        cursor.execute(
-            f"""
-            SELECT ti.label
-            FROM {table_name} et
-            JOIN tag_i18n ti ON et.tag_code = ti.tag_code AND ti.resume_version_id = ?
-            WHERE et.{id_column} = ?
-            ORDER BY ti.label
-            """,  # noqa: S608
-            (version_id, entity_id),
-        )
+        cursor.execute(queries[entity_type], (version_id, entity_id))
 
         return [row["label"] for row in cursor.fetchall()]

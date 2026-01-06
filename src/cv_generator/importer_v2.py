@@ -694,6 +694,9 @@ class CVImporter:
                 )
 
             for cert_idx, cert in enumerate(lang.get("certifications", [])):
+                # Import all certifications including empty ones to preserve structure
+                # for lossless round-trip export. Some languages may have placeholder
+                # certifications with all null values that should still be exported.
 
                 cursor.execute(
                     "SELECT id FROM spoken_language_certs WHERE spoken_language_item_id = ? AND sort_order = ?",

@@ -477,10 +477,6 @@ class TestRealDataIntegration:
         # and maxScore/minScore fields. The important thing is structural identity.
         # Check for critical fields
         assert len(result.missing_keys) < 5  # Allow minor differences
-        print(f"Verification: matches={result.matches}")
-        print(f"  Missing keys: {len(result.missing_keys)}")
-        print(f"  Extra keys: {len(result.extra_keys)}")
-        print(f"  Value diffs: {len(result.value_diffs)}")
 
 
 class TestEdgeCases:

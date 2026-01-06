@@ -398,14 +398,15 @@ class TestWebLanguageAwareness:
         assert response.status_code == 200
         assert b"Unsupported language" in response.data
 
-    def test_entry_page_shows_language_selector(self, client):
-        """Test entry page shows language selector."""
+    def test_entry_page_shows_entry_language_indicator(self, client):
+        """Test entry page shows entry language indicator (not session language selector)."""
         # First get an entry ID (skip basics which is id 1)
         response = client.get("/entry/2")
         assert response.status_code == 200
-        assert b"Language:" in response.data
+        # Check for entry language indicator
+        assert b"Entry Language:" in response.data
+        # English entry should show EN
         assert b"EN" in response.data
-        assert b"DE" in response.data
 
     def test_tags_display_in_selected_language(self, client):
         """Test tags display in the selected language."""
@@ -420,3 +421,105 @@ class TestWebLanguageAwareness:
         assert "Vollständiger Lebenslauf".encode() in response.data
         # English canonical should also appear
         assert b"Full CV" in response.data
+
+
+class TestEntryLanguageAwareTags:
+    """Tests for entry-specific language-aware tag display."""
+
+    @pytest.fixture
+    def multilang_app(self, tmp_path):
+        """Create a test Flask app with multilingual CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Import English CV
+        cv_en = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Test Project EN", "type_key": ["Full CV", "Programming"]}
+            ]
+        }
+        cv_path_en = tmp_path / "cvs" / "testuser.json"
+        cv_path_en.parent.mkdir(parents=True, exist_ok=True)
+        cv_path_en.write_text(json.dumps(cv_en, ensure_ascii=False))
+        import_cv(cv_path_en, db_path)
+
+        # Import German CV
+        cv_de = {
+            "basics": [{"fname": "Test", "lname": "Benutzer"}],
+            "projects": [
+                {"title": "Testprojekt DE", "type_key": ["Full CV", "Programming"]}
+            ]
+        }
+        cv_path_de = tmp_path / "cvs" / "testuser_de.json"
+        cv_path_de.write_text(json.dumps(cv_de, ensure_ascii=False))
+        import_cv(cv_path_de, db_path)
+
+        # Import Farsi CV
+        cv_fa = {
+            "basics": [{"fname": "تست", "lname": "کاربر"}],
+            "projects": [
+                {"title": "پروژه تست FA", "type_key": ["Full CV", "Programming"]}
+            ]
+        }
+        cv_path_fa = tmp_path / "cvs" / "testuser_fa.json"
+        cv_path_fa.write_text(json.dumps(cv_fa, ensure_ascii=False))
+        import_cv(cv_path_fa, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def multilang_client(self, multilang_app):
+        """Create a test client for multilingual app."""
+        return multilang_app.test_client()
+
+    def test_english_entry_shows_tags_in_english(self, multilang_client):
+        """Test that English entry displays tags in English."""
+        # Get the English project entry (id 2 is projects for testuser)
+        response = multilang_client.get("/entry/2")
+        assert response.status_code == 200
+        # Should show entry language indicator
+        assert b"Entry Language:" in response.data
+        assert b">EN</span>" in response.data or b">EN<" in response.data
+        # Tags should be in English canonical form
+        assert b"Full CV" in response.data
+        assert b"Programming" in response.data
+
+    def test_german_entry_shows_tags_in_german(self, multilang_client):
+        """Test that German entry displays tags in German."""
+        # Get the German project entry (id 4 is projects for testuser_de)
+        response = multilang_client.get("/entry/4")
+        assert response.status_code == 200
+        # Should show DE language indicator
+        assert b"Entry Language:" in response.data
+        # Tags should be in German
+        assert "Vollständiger Lebenslauf".encode() in response.data
+        assert "Programmierung".encode() in response.data
+
+    def test_farsi_entry_shows_tags_in_farsi(self, multilang_client):
+        """Test that Farsi entry displays tags in Farsi."""
+        # Get the Farsi project entry (id 6 is projects for testuser_fa)
+        response = multilang_client.get("/entry/6")
+        assert response.status_code == 200
+        # Should show FA language indicator
+        assert b"Entry Language:" in response.data
+        # Tags should be in Farsi
+        assert "رزومه کامل".encode() in response.data
+        assert "برنامه‌نویسی".encode() in response.data
+
+    def test_entry_language_independent_of_session_language(self, multilang_client):
+        """Test that entry tag language is based on entry, not session."""
+        # Set session language to German
+        multilang_client.get("/language/de")
+
+        # Access English entry - should still show English tags
+        response = multilang_client.get("/entry/2")
+        assert response.status_code == 200
+        # Tags should still be in English (based on entry), not German
+        assert b"Full CV" in response.data
+        # The entry language indicator should show EN
+        assert b"Entry Language:" in response.data

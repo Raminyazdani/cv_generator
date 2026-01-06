@@ -260,7 +260,14 @@
         
         {# Tags / type_key selection #}
         <div class="form-group" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
-            <label>Tags (type_key)</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label style="margin-bottom: 0;">Tags (type_key)</label>
+                {% if entry_language %}
+                <span style="color: var(--gray-500); font-size: 0.8rem;">
+                    Showing tags in: <strong>{{ entry_language | upper }}</strong>
+                </span>
+                {% endif %}
+            </div>
             <div class="checkbox-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--gray-200); border-radius: 4px; padding: 0.5rem;">
                 {% if all_tags %}
                     {% for tag in all_tags %}
@@ -268,7 +275,7 @@
                         <input type="checkbox" name="type_key" value="{{ tag.name }}"
                             {% if entry and tag.name in (entry.data.type_key or entry.tags or []) %}checked{% endif %}>
                         {{ tag.display_label }}
-                        {% if tag.display_label != tag.name and current_language != 'en' %}
+                        {% if tag.display_label != tag.name and entry_language != 'en' %}
                         <span style="color: var(--gray-400); font-size: 0.8rem;">({{ tag.name }})</span>
                         {% endif %}
                     </label>

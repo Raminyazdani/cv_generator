@@ -1,0 +1,624 @@
+// Option B — "Everything localized via i18n (including English)"
+// - Core tables hold only invariant fields + stable slugs.
+// - Every displayable string lives in *_i18n for ALL languages (en/de/fa/..).
+// - Adding a new language is just new app_languages + resume_versions + translation rows.
+// - This option is the cleanest for a multilingual editing UI (same logic for every language).
+
+Table app_languages {
+  code varchar [pk] // e.g., 'en', 'de', 'fa', 'it'
+  name_en varchar
+  direction varchar // 'ltr' or 'rtl'
+}
+
+Table resume_sets {
+  resume_key varchar [pk]
+  base_lang_code varchar [ref: > app_languages.code]
+  created_at datetime
+  updated_at datetime
+}
+
+Table resume_versions {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  lang_code varchar [ref: > app_languages.code]
+  is_base boolean
+  is_published boolean
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (resume_key, lang_code) [unique]
+  }
+}
+
+//
+// Tags (your type_key arrays)
+//
+
+Table tag_codes {
+  code varchar [pk] // stable app code: 'full_cv', 'academic', ...
+  group_code varchar
+  is_system boolean
+}
+
+Table tag_i18n {
+  id int [pk, increment]
+  tag_code varchar [ref: > tag_codes.code]
+  resume_version_id int [ref: > resume_versions.id]
+  label varchar
+
+  indexes {
+    (tag_code, resume_version_id) [unique]
+  }
+}
+
+//
+// Basics (single person per resume_set)
+//
+
+Table persons {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+
+  // invariant
+  email varchar
+  birth_date date
+
+  phone_country_code varchar
+  phone_number varchar
+  phone_formatted varchar
+
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (resume_key) [unique]
+  }
+}
+
+Table person_i18n {
+  id int [pk, increment]
+  person_id int [ref: > persons.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  fname varchar
+  lname varchar
+  summary text
+
+  indexes {
+    (person_id, resume_version_id) [unique]
+  }
+}
+
+Table person_locations {
+  id int [pk, increment]
+  person_id int [ref: > persons.id]
+  sort_order int
+  postal_code varchar
+
+  indexes {
+    (person_id, sort_order) [unique]
+  }
+}
+
+Table person_location_i18n {
+  id int [pk, increment]
+  location_id int [ref: > person_locations.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  address varchar
+  city varchar
+  region varchar
+  country varchar
+
+  indexes {
+    (location_id, resume_version_id) [unique]
+  }
+}
+
+Table person_pictures {
+  id int [pk, increment]
+  person_id int [ref: > persons.id]
+  sort_order int
+  type_of varchar
+  url varchar
+
+  indexes {
+    (person_id, type_of) [unique]
+  }
+}
+
+Table person_labels {
+  id int [pk, increment]
+  person_id int [ref: > persons.id]
+  sort_order int
+  label_key varchar // stable key/slug per label slot (optional)
+
+  indexes {
+    (person_id, sort_order) [unique]
+  }
+}
+
+Table person_label_i18n {
+  id int [pk, increment]
+  label_id int [ref: > person_labels.id]
+  resume_version_id int [ref: > resume_versions.id]
+  label_text varchar
+
+  indexes {
+    (label_id, resume_version_id) [unique]
+  }
+}
+
+//
+// Profiles (social links)
+//
+
+Table profile_accounts {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  network_code varchar // optional canonical code
+  username varchar
+  url varchar
+  uuid varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table profile_account_i18n {
+  id int [pk, increment]
+  profile_account_id int [ref: > profile_accounts.id]
+  resume_version_id int [ref: > resume_versions.id]
+  network_display varchar
+
+  indexes {
+    (profile_account_id, resume_version_id) [unique]
+  }
+}
+
+//
+// Education
+//
+
+Table education_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  start_date date
+  end_date date
+  end_date_text varchar
+  gpa varchar
+  logo_url varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table education_i18n {
+  id int [pk, increment]
+  education_item_id int [ref: > education_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  institution varchar
+  location varchar
+  area varchar
+  study_type varchar
+
+  indexes {
+    (education_item_id, resume_version_id) [unique]
+  }
+}
+
+Table education_item_tags {
+  education_item_id int [ref: > education_items.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}
+
+//
+// Spoken languages (the "Languages" section)
+//
+
+Table spoken_language_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  described_language_code varchar // 'fa', 'en', 'de', ...
+  proficiency_cefr varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table spoken_language_i18n {
+  id int [pk, increment]
+  spoken_language_item_id int [ref: > spoken_language_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  language_name varchar
+  proficiency_level varchar
+  proficiency_status varchar
+
+  indexes {
+    (spoken_language_item_id, resume_version_id) [unique]
+  }
+}
+
+Table spoken_language_certs {
+  id int [pk, increment]
+  spoken_language_item_id int [ref: > spoken_language_items.id]
+  sort_order int
+
+  overall float
+  reading float
+  writing float
+  listening float
+  speaking float
+  max_score float
+  min_score float
+
+  exam_date date
+  url varchar
+
+  indexes {
+    (spoken_language_item_id, sort_order) [unique]
+  }
+}
+
+Table spoken_language_cert_i18n {
+  id int [pk, increment]
+  cert_id int [ref: > spoken_language_certs.id]
+  resume_version_id int [ref: > resume_versions.id]
+  test_name varchar
+  organization varchar
+
+  indexes {
+    (cert_id, resume_version_id) [unique]
+  }
+}
+
+//
+// Workshops & Certifications
+//
+
+Table cert_issuers {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+  issuer_slug varchar
+
+  indexes {
+    (resume_key, issuer_slug) [unique]
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table cert_issuer_i18n {
+  id int [pk, increment]
+  issuer_id int [ref: > cert_issuers.id]
+  resume_version_id int [ref: > resume_versions.id]
+  issuer_name varchar
+
+  indexes {
+    (issuer_id, resume_version_id) [unique]
+  }
+}
+
+Table certifications {
+  id int [pk, increment]
+  issuer_id int [ref: > cert_issuers.id]
+  sort_order int
+
+  is_certificate boolean
+  date_text varchar
+  date date
+  url varchar
+
+  indexes {
+    (issuer_id, sort_order) [unique]
+  }
+}
+
+Table certification_i18n {
+  id int [pk, increment]
+  certification_id int [ref: > certifications.id]
+  resume_version_id int [ref: > resume_versions.id]
+  name varchar
+  duration varchar
+
+  indexes {
+    (certification_id, resume_version_id) [unique]
+  }
+}
+
+Table certification_tags {
+  certification_id int [ref: > certifications.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}
+
+//
+// Skills
+//
+
+Table skill_categories {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+  category_code varchar
+
+  indexes {
+    (resume_key, category_code) [unique]
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table skill_category_i18n {
+  id int [pk, increment]
+  category_id int [ref: > skill_categories.id]
+  resume_version_id int [ref: > resume_versions.id]
+  name varchar
+
+  indexes {
+    (category_id, resume_version_id) [unique]
+  }
+}
+
+Table skill_subcategories {
+  id int [pk, increment]
+  category_id int [ref: > skill_categories.id]
+  sort_order int
+  subcategory_code varchar
+
+  indexes {
+    (category_id, subcategory_code) [unique]
+    (category_id, sort_order) [unique]
+  }
+}
+
+Table skill_subcategory_i18n {
+  id int [pk, increment]
+  subcategory_id int [ref: > skill_subcategories.id]
+  resume_version_id int [ref: > resume_versions.id]
+  name varchar
+
+  indexes {
+    (subcategory_id, resume_version_id) [unique]
+  }
+}
+
+Table skill_items {
+  id int [pk, increment]
+  subcategory_id int [ref: > skill_subcategories.id]
+  sort_order int
+
+  indexes {
+    (subcategory_id, sort_order) [unique]
+  }
+}
+
+Table skill_item_i18n {
+  id int [pk, increment]
+  skill_item_id int [ref: > skill_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+  long_name varchar
+  short_name varchar
+
+  indexes {
+    (skill_item_id, resume_version_id) [unique]
+  }
+}
+
+Table skill_item_tags {
+  skill_item_id int [ref: > skill_items.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}
+
+//
+// Experiences
+//
+
+Table experience_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  start_date date
+  end_date date
+  is_current boolean
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table experience_i18n {
+  id int [pk, increment]
+  experience_item_id int [ref: > experience_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  duration_text varchar
+  role varchar
+  institution varchar
+  primary_focus varchar
+  description text
+
+  indexes {
+    (experience_item_id, resume_version_id) [unique]
+  }
+}
+
+//
+// Projects
+//
+
+Table project_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+  url varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table project_i18n {
+  id int [pk, increment]
+  project_item_id int [ref: > project_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+  title varchar
+  description text
+
+  indexes {
+    (project_item_id, resume_version_id) [unique]
+  }
+}
+
+Table project_tags {
+  project_item_id int [ref: > project_items.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}
+
+//
+// Publications
+//
+
+Table publication_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  year int
+  month int
+  day int
+  date date
+  submission_date date
+  access_date date
+
+  doi varchar
+  isbn varchar
+  issn varchar
+  pmid varchar
+  pmcid varchar
+  arxiv varchar
+
+  url varchar
+  url_caps varchar
+  repository_url varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table publication_i18n {
+  id int [pk, increment]
+  publication_id int [ref: > publication_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  title text
+  pub_type varchar
+  status varchar
+  language varchar
+  notes text
+
+  journal varchar
+  volume varchar
+  issue varchar
+  pages varchar
+  article_number varchar
+
+  book_title varchar
+  chapter_pages varchar
+  conference varchar
+  publisher varchar
+  place varchar
+  edition varchar
+  degree_type varchar
+
+  correspondent varchar
+  institution varchar
+  faculty varchar
+  school varchar
+
+  indexes {
+    (publication_id, resume_version_id) [unique]
+  }
+}
+
+Table publication_authors {
+  publication_id int [ref: > publication_items.id, pk]
+  resume_version_id int [ref: > resume_versions.id, pk]
+  sort_order int [pk]
+  author_literal varchar
+}
+
+Table publication_editors {
+  publication_id int [ref: > publication_items.id, pk]
+  resume_version_id int [ref: > resume_versions.id, pk]
+  sort_order int [pk]
+  editor_literal varchar
+}
+
+Table publication_supervisors {
+  publication_id int [ref: > publication_items.id, pk]
+  resume_version_id int [ref: > resume_versions.id, pk]
+  sort_order int [pk]
+  supervisor_literal varchar
+}
+
+Table publication_tags {
+  publication_id int [ref: > publication_items.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}
+
+//
+// References
+//
+
+Table reference_items {
+  id int [pk, increment]
+  resume_key varchar [ref: > resume_sets.resume_key]
+  sort_order int
+
+  phone varchar
+  url varchar
+
+  indexes {
+    (resume_key, sort_order) [unique]
+  }
+}
+
+Table reference_i18n {
+  id int [pk, increment]
+  reference_id int [ref: > reference_items.id]
+  resume_version_id int [ref: > resume_versions.id]
+
+  name varchar
+  position varchar
+  department varchar
+  institution varchar
+  location varchar
+
+  indexes {
+    (reference_id, resume_version_id) [unique]
+  }
+}
+
+Table reference_emails {
+  reference_id int [ref: > reference_items.id, pk]
+  sort_order int [pk]
+  email varchar
+}
+
+Table reference_tags {
+  reference_id int [ref: > reference_items.id, pk]
+  tag_code varchar [ref: > tag_codes.code, pk]
+}

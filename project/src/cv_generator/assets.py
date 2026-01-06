@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 # Allowed image extensions for assets
 ALLOWED_IMAGE_EXTENSIONS: Set[str] = {".jpg", ".jpeg", ".png", ".gif", ".svg", ".pdf"}
 
-# Default logo map location (outside data/)
-DEFAULT_LOGO_MAP_PATH = "assets/logo_map.json"
+# Default logo map location (in data/assets/)
+DEFAULT_LOGO_MAP_PATH = "data/assets/logo_map.json"
 
 
 class AssetType(Enum):

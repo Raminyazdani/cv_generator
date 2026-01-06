@@ -262,7 +262,7 @@ class TestLegacyScriptDeprecation:
         # Import the function from the generate_cv module (not from package)
         spec = importlib.util.spec_from_file_location(
             "generate_cv_script",
-            Path(__file__).parent.parent / "generate_cv.py"
+            Path(__file__).parent.parent.parent / "generate_cv.py"
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)

@@ -3,6 +3,7 @@ site_description: Generate beautiful PDF CVs from JSON data using Jinja2 templat
 site_author: CV Generator Contributors
 repo_url: https://github.com/Raminyazdani/cv_generator
 repo_name: Raminyazdani/cv_generator
+docs_dir: docs
 
 theme:
   name: material

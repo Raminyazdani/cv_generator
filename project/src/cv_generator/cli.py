@@ -1943,7 +1943,7 @@ EXAMPLES
     cvgen assets optimize --max-width 600 --quality 90
 
 LOGO LIBRARY
-    A logo library can be configured at assets/logo_map.json with structure:
+    A logo library can be configured at data/assets/logo_map.json with structure:
 
     {
       "mapping": {

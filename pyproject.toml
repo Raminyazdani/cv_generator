@@ -48,19 +48,19 @@ Homepage = "https://github.com/Raminyazdani/cv_generator"
 Repository = "https://github.com/Raminyazdani/cv_generator"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["project/src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.tex", "*.cls"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["project/tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v"
 
 [tool.coverage.run]
-source = ["src/cv_generator"]
+source = ["project/src/cv_generator"]
 branch = true
 
 [tool.coverage.report]
@@ -86,6 +86,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["F401"]  # Allow unused imports in tests for fixtures
+"project/tests/*" = ["F401"]  # Allow unused imports in tests for fixtures
 "generate_cv.py" = ["E402"]  # Allow import after sys.path manipulation for dev setup
 

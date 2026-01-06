@@ -694,8 +694,6 @@ class CVImporter:
                 )
 
             for cert_idx, cert in enumerate(lang.get("certifications", [])):
-                if not cert.get("test") and not cert.get("overall"):
-                    continue
 
                 cursor.execute(
                     "SELECT id FROM spoken_language_certs WHERE spoken_language_item_id = ? AND sort_order = ?",
@@ -994,7 +992,7 @@ class CVImporter:
                        (experience_item_id, resume_version_id, duration_text, role, institution, primary_focus, description)
                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
                     (exp_id, version_id, exp.get("duration"), exp.get("role"),
-                     exp.get("institution"), exp.get("primary_focus"), exp.get("description")),
+                     exp.get("institution"), exp.get("primaryFocus"), exp.get("description")),
                 )
 
         return count or len(experiences)
@@ -1178,17 +1176,16 @@ class CVImporter:
                 ref_id = row[0]
             else:
                 # Handle phone - can be string, None, or list of phone objects
+                # Store as JSON string if it's a complex structure
                 phone_raw = ref.get("phone")
                 phone_str = None
-                if isinstance(phone_raw, str):
+                if phone_raw is None:
+                    phone_str = None
+                elif isinstance(phone_raw, str):
                     phone_str = phone_raw
-                elif isinstance(phone_raw, list) and phone_raw:
-                    # Take the formatted phone from the first phone object
-                    first_phone = phone_raw[0]
-                    if isinstance(first_phone, dict):
-                        phone_str = first_phone.get("formatted")
-                    else:
-                        phone_str = str(first_phone)
+                elif isinstance(phone_raw, list):
+                    # Store as JSON to preserve full structure
+                    phone_str = json.dumps(phone_raw, ensure_ascii=False)
 
                 cursor.execute(
                     "INSERT INTO reference_items (resume_key, sort_order, phone, url) VALUES (?, ?, ?, ?)",

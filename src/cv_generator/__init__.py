@@ -27,6 +27,8 @@ from .db import (
     update_tag,
 )
 from .ensure import EnsureIssue, EnsureReport, run_ensure
+from .exporter_v2 import CVExporter, ExportBatchResult, ExportResult
+from .export_verify import ExportVerifier, VerificationResult, RoundTripResult
 from .generator import generate_all_cvs, generate_cv
 
 # Registry and plugin system
@@ -80,6 +82,13 @@ __all__ = [
     "get_entry",
     "get_section_entries",
     "get_person_sections",
+    # v2 Export Engine
+    "CVExporter",
+    "ExportResult",
+    "ExportBatchResult",
+    "ExportVerifier",
+    "VerificationResult",
+    "RoundTripResult",
     "__version__",
     # Registry and plugin system
     "SectionAdapter",

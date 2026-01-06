@@ -84,7 +84,6 @@ dmypy.json
 *.ilg
 *.ind
 *.lof
-*.log
 *.lot
 *.lox
 *.nav

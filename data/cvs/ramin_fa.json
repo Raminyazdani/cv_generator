@@ -1,4 +1,7 @@
-{
+{  "config": {
+    "lang": "fa",
+    "ID": "ramin_yazdani"
+  },
   "basics": [
     {
       "fname": "رامین",

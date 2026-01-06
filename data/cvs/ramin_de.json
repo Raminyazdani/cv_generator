@@ -1,4 +1,7 @@
-{
+{  "config": {
+    "lang": "de",
+    "ID": "ramin_yazdani"
+  },
   "basics": [
     {
       "fname": "Ramin",

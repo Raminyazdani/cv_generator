@@ -257,6 +257,52 @@ def generate_unique_filename(base_name: str, extension: str = ".json") -> str:
     return f"{base_name}_{timestamp}{extension}"
 
 
+def format_sync_result_message(
+    operation: str,
+    sync_result: dict,
+    stable_id: Optional[str] = None
+) -> str:
+    """
+    Format a user-friendly message from a sync result.
+
+    Args:
+        operation: Operation type ("create", "update", "delete")
+        sync_result: Sync result dictionary from CRUD operations
+        stable_id: Optional stable ID to include in message
+
+    Returns:
+        Formatted message string suitable for flash()
+    """
+    synced_langs = sync_result.get("synced_languages", [])
+    skipped_langs = sync_result.get("skipped_languages", {})
+
+    if operation == "create":
+        if synced_langs:
+            msg = f"✓ Entry created in {len(synced_langs)} language(s): {', '.join(lang.upper() for lang in synced_langs)}."
+        else:
+            msg = "✓ Entry created successfully."
+        if skipped_langs:
+            msg += f" (Skipped: {', '.join(f'{k.upper()} - {v}' for k, v in skipped_langs.items())})"
+        if stable_id:
+            msg += f" ID: {stable_id[:8]}..."
+
+    elif operation == "update":
+        msg = "✓ Entry updated successfully."
+        if len(synced_langs) > 1:
+            msg += f" Shared fields synced to: {', '.join(lang.upper() for lang in synced_langs)}."
+
+    elif operation == "delete":
+        if len(synced_langs) > 1:
+            msg = f"Entry deleted successfully from {len(synced_langs)} language(s): {', '.join(lang.upper() for lang in synced_langs)}."
+        else:
+            msg = "Entry deleted successfully."
+
+    else:
+        msg = f"Operation {operation} completed successfully."
+
+    return msg
+
+
 def is_localhost(host: str) -> bool:
     """
     Check if a host string represents localhost.
@@ -931,18 +977,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
                 # Build detailed success message with sync info
                 sync_result = result.get("sync_result", {})
-                synced_langs = sync_result.get("synced_languages", [])
-                skipped_langs = sync_result.get("skipped_languages", {})
-
-                if synced_langs:
-                    msg = f"✓ Entry created in {len(synced_langs)} language(s): {', '.join(lang.upper() for lang in synced_langs)}."
-                else:
-                    msg = "✓ Entry created successfully."
-
-                if skipped_langs:
-                    msg += f" (Skipped: {', '.join(f'{k.upper()} - {v}' for k, v in skipped_langs.items())})"
-
-                msg += f" ID: {result['stable_id'][:8]}..."
+                msg = format_sync_result_message("create", sync_result, result.get("stable_id"))
                 flash(msg, "success")
                 return redirect(url_for("section_entries", person=person, section=section))
 
@@ -1011,11 +1046,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
                 # Build detailed success message with sync info
                 sync_result = result.get("sync_result", {})
-                synced_langs = sync_result.get("synced_languages", [])
-
-                msg = "✓ Entry updated successfully."
-                if sync_shared_fields and len(synced_langs) > 1:
-                    msg += f" Shared fields synced to: {', '.join(lang.upper() for lang in synced_langs)}."
+                msg = format_sync_result_message("update", sync_result)
                 flash(msg, "success")
                 return redirect(url_for("entry_detail", entry_id=entry_id))
 
@@ -1071,12 +1102,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
             if result.get("success"):
                 sync_result = result.get("sync_result", {})
-                synced_langs = sync_result.get("synced_languages", [])
-
-                if sync_languages and len(synced_langs) > 1:
-                    msg = f"Entry deleted successfully from {len(synced_langs)} language(s): {', '.join(lang.upper() for lang in synced_langs)}."
-                else:
-                    msg = "Entry deleted successfully."
+                msg = format_sync_result_message("delete", sync_result)
                 flash(msg, "success")
             else:
                 flash("Entry not found or already deleted.", "warning")

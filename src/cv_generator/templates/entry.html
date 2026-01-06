@@ -74,4 +74,42 @@
         <pre class="json-preview" style="margin-top: 1rem;">{{ data_json }}</pre>
     </details>
 </div>
+
+<div class="card" style="margin-top: 1rem; background: var(--gray-100);">
+    <h3 style="margin-bottom: 1rem;">🔧 Debug Info</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 0.5rem; font-weight: 500; width: 150px;">Entry ID:</td>
+            <td style="padding: 0.5rem;"><code>{{ entry.id }}</code></td>
+        </tr>
+        <tr>
+            <td style="padding: 0.5rem; font-weight: 500;">Stable ID:</td>
+            <td style="padding: 0.5rem;">
+                {% if entry.stable_id %}
+                <code style="background: var(--success-light); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ entry.stable_id }}</code>
+                {% else %}
+                <span style="color: var(--warning);">⚠️ No stable ID assigned</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 0.5rem; font-weight: 500;">Identity Key:</td>
+            <td style="padding: 0.5rem;">
+                {% if entry.identity_key %}
+                <code>{{ entry.identity_key }}</code>
+                {% else %}
+                <span style="color: var(--gray-400);">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 0.5rem; font-weight: 500;">Section:</td>
+            <td style="padding: 0.5rem;"><code>{{ entry.section }}</code></td>
+        </tr>
+        <tr>
+            <td style="padding: 0.5rem; font-weight: 500;">Person:</td>
+            <td style="padding: 0.5rem;"><code>{{ entry.person_slug }}</code></td>
+        </tr>
+    </table>
+</div>
 {% endblock %}

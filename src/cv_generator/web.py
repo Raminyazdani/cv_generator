@@ -2064,14 +2064,15 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                 if result.resume_set_deleted:
                     msg += " Resume set was deleted."
                 flash(msg, "success")
+
+                # If resume_set was deleted, redirect to index
+                if result.resume_set_deleted:
+                    return redirect(url_for("index"))
             else:
                 flash(f"Failed to remove variant: {result.error}", "error")
 
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")
-
-        if result.resume_set_deleted if 'result' in dir() else False:
-            return redirect(url_for("index"))
 
         return redirect(url_for("variant_status_route", resume_key=resume_key))
 

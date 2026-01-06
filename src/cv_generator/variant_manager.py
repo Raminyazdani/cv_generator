@@ -13,6 +13,7 @@ Non-negotiable Constraints:
 
 import logging
 import sqlite3
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -908,7 +909,6 @@ class VariantManager:
 
             if create_new_resume_set:
                 # Generate a new resume_key
-                import uuid
                 new_resume_key = f"{resume_key}_{lang_code}_{uuid.uuid4().hex[:8]}"
 
                 now = _utcnow()

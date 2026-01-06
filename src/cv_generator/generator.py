@@ -322,9 +322,6 @@ def filter_by_variant(data: Dict[str, Any], variant: str) -> Dict[str, Any]:
         "workshop_and_certifications", "references", "awards", "honors"
     ]
 
-    # Protected sections that should not be filtered
-    protected_sections = {'basics', 'profiles', 'languages', 'meta', 'metadata'}
-
     filtered = copy.deepcopy(data)
 
     # Handle list sections

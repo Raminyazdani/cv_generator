@@ -55,7 +55,7 @@ class Exporter(ABC):
         output_dir: Path,
         profile_name: str,
         lang: str,
-        **opts: Any
+        **_opts: Any
     ) -> ExportResult:
         """
         Export CV data to the target format.

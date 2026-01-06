@@ -1744,6 +1744,7 @@ class TestCopyHelpers:
     def test_cross_language_editor_has_copy_buttons(self):
         """Test that the cross-language editor template includes copy buttons."""
 
+        # Navigate from project/tests to project/src
         template_path = Path(__file__).parent.parent / "src" / "cv_generator" / "templates" / "cross_language_editor.html"
         content = template_path.read_text()
 
@@ -1803,6 +1804,7 @@ class TestTranslationWorkflow:
     def test_needs_translation_badge_in_template(self):
         """Test that needs translation badge is in template."""
 
+        # Navigate from project/tests to project/src
         template_path = Path(__file__).parent.parent / "src" / "cv_generator" / "templates" / "cross_language_editor.html"
         content = template_path.read_text()
 

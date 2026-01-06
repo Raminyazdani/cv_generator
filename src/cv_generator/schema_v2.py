@@ -840,7 +840,9 @@ def init_db_v2(db_path: Path, force: bool = False) -> Path:
 
     conn = sqlite3.connect(db_path)
     try:
-        # Enable foreign keys
+        # Enable foreign key constraint enforcement for this connection.
+        # Note: SQLite has foreign keys disabled by default. Each new connection
+        # must explicitly enable them with PRAGMA foreign_keys = ON.
         conn.execute("PRAGMA foreign_keys = ON")
 
         cursor = conn.cursor()

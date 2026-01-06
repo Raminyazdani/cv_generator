@@ -515,18 +515,22 @@ def verify_unique_constraints(db_path: Path, table: str, columns: Tuple[str, ...
             if set(columns) == idx_cols:
                 return True
 
-        # Also check CREATE TABLE for UNIQUE constraints
-        cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
-            (table,),
-        )
-        row = cursor.fetchone()
-        if row and row[0]:
-            sql = row[0].upper()
-            # Simple check for UNIQUE(...columns...)
-            col_str = ", ".join(columns).upper()
-            if f"UNIQUE({col_str})" in sql.replace(" ", ""):
-                return True
+        # Check for autoindex (unique constraints defined in CREATE TABLE)
+        # SQLite creates autoindexes for UNIQUE constraints with format
+        # sqlite_autoindex_<table>_<n>
+        for idx in indices:
+            idx_name = idx[1]
+            is_unique = idx[2] == 1
+
+            if not is_unique:
+                continue
+
+            # For autoindexes, check if they match our columns
+            if idx_name.startswith("sqlite_autoindex_"):
+                cursor.execute(f"PRAGMA index_info('{idx_name}')")
+                idx_cols = {row[2] for row in cursor.fetchall()}
+                if set(columns) == idx_cols:
+                    return True
 
     finally:
         conn.close()

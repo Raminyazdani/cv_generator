@@ -173,7 +173,10 @@ def migrate_to_v2(
 
     conn = sqlite3.connect(db_path)
     try:
-        conn.execute("PRAGMA foreign_keys = OFF")  # Disable during migration
+        # Disable foreign keys during migration to allow inserting records
+        # in any order. They will be re-enabled after commit to validate
+        # referential integrity.
+        conn.execute("PRAGMA foreign_keys = OFF")
         cursor = conn.cursor()
 
         # Step 1: Create v2 tables (they don't overlap with v1 tables)
@@ -1306,10 +1309,26 @@ def _migrate_entry_tags(
     Args:
         cursor: Database cursor.
         entry_id: V1 entry ID.
-        junction_table: Name of the v2 junction table.
-        item_column: Name of the item ID column in the junction table.
+        junction_table: Name of the v2 junction table (must be from whitelist).
+        item_column: Name of the item ID column in the junction table (must be from whitelist).
         item_id: V2 item ID.
     """
+    # Whitelist of allowed junction tables and columns to prevent SQL injection
+    allowed_tables = {
+        "education_item_tags": "education_item_id",
+        "certification_tags": "certification_id",
+        "skill_item_tags": "skill_item_id",
+        "project_tags": "project_item_id",
+        "publication_tags": "publication_id",
+        "reference_tags": "reference_id",
+    }
+
+    # Validate junction_table and item_column against whitelist
+    if junction_table not in allowed_tables:
+        return
+    if item_column != allowed_tables[junction_table]:
+        return
+
     # Get tag names from v1 entry_tag
     cursor.execute(
         """SELECT value FROM meta WHERE key = ?""",

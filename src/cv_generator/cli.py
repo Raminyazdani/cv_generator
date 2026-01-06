@@ -1011,6 +1011,114 @@ def db_integrity_command(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
+def db_verify_erd_command(args: argparse.Namespace) -> int:
+    """
+    Execute the db verify-erd command (ERD schema verification).
+
+    Verifies that the database schema matches the ERD specification in docs/erd.txt.
+    Reports table-by-table status and any mismatches.
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        Exit code.
+    """
+    from .db import get_db_path
+    from .erd_parser import verify_schema_against_erd
+
+    db_path = Path(args.db) if args.db else get_db_path()
+    erd_path = Path(args.erd) if args.erd else None
+
+    try:
+        # Perform verification once and reuse results
+        results = verify_schema_against_erd(db_path, erd_path)
+
+        if args.format == "json":
+            print(json.dumps(results, indent=2, ensure_ascii=False))
+        else:
+            # Generate text report from the results
+            _print_erd_verification_report(results)
+
+        return EXIT_SUCCESS if results["valid"] else EXIT_ENSURE_ERROR
+
+    except Exception as e:
+        logger.error(f"Error verifying ERD schema: {e}")
+        print(f"❌ Error: {e}")
+        return EXIT_ERROR
+
+
+def _print_erd_verification_report(results: Dict) -> None:
+    """Print ERD verification report in text format."""
+    lines = [
+        "=" * 80,
+        "ERD Schema Verification Report",
+        "=" * 80,
+        f"ERD File: {results['erd_path']}",
+        f"Database: {results['db_path']}",
+        "",
+        f"Overall Status: {'✓ VALID' if results['valid'] else '✗ INVALID'}",
+        f"Tables Checked: {results['tables_checked']}",
+        f"Tables Matched: {results['tables_matched']}",
+        f"Tables Mismatched: {results['tables_mismatched']}",
+        f"Tables Missing: {len(results['tables_missing'])}",
+        "",
+        "-" * 80,
+        "Table-by-Table Results:",
+        "-" * 80,
+    ]
+
+    for table_name, detail in sorted(results.get("table_details", {}).items()):
+        status = detail["status"]
+        status_icon = "✓" if status == "match" else "✗"
+
+        lines.append(f"\n{status_icon} {table_name}: {status.upper()}")
+
+        if detail["columns"]["expected"]:
+            lines.append(
+                f"   Columns: {len(detail['columns']['found'])}/{len(detail['columns']['expected'])}"
+            )
+
+        if detail["columns"]["missing"]:
+            lines.append(f"   Missing columns: {', '.join(detail['columns']['missing'])}")
+
+        if detail["foreign_keys"]["missing"]:
+            for fk in detail["foreign_keys"]["missing"]:
+                lines.append(f"   Missing FK: {fk['from']} -> {fk['table']}.{fk['to']}")
+
+        if detail["unique_constraints"]["missing"]:
+            for uc in detail["unique_constraints"]["missing"]:
+                lines.append(f"   Missing unique: ({', '.join(uc)})")
+
+    if results["tables_missing"]:
+        lines.append("\n" + "-" * 80)
+        lines.append("Missing Tables:")
+        lines.append("-" * 80)
+        for table in results["tables_missing"]:
+            lines.append(f"  ✗ {table}")
+
+    if results["issues"]:
+        lines.append("\n" + "-" * 80)
+        lines.append("All Issues:")
+        lines.append("-" * 80)
+        for issue in results["issues"]:
+            lines.append(f"  • {issue}")
+
+    lines.append("\n" + "=" * 80)
+
+    print("\n".join(lines))
+
+    # Print summary
+    if results["valid"]:
+        print()
+        print("✅ Database schema matches ERD specification 100%")
+    else:
+        print()
+        print("❌ Database schema does NOT match ERD specification")
+        print(f"   Tables missing: {len(results['tables_missing'])}")
+        print(f"   Tables with issues: {results['tables_mismatched']}")
+
+
 def doctor_command(args: argparse.Namespace) -> int:
     """
     Execute the doctor command for system health checks.
@@ -2811,6 +2919,33 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output format (default: text)"
     )
     db_integrity_parser.set_defaults(func=db_integrity_command)
+
+    # DB verify-erd command
+    db_verify_erd_parser = db_subparsers.add_parser(
+        "verify-erd",
+        help="Verify database schema matches ERD specification",
+        description="Compare the database schema against docs/erd.txt and report "
+                    "table-by-table match status. Reports missing tables, columns, "
+                    "foreign keys, and unique constraints."
+    )
+    db_verify_erd_parser.add_argument(
+        "--db",
+        type=str,
+        help="Path to database file (default: data/db/cv.db)"
+    )
+    db_verify_erd_parser.add_argument(
+        "--erd",
+        type=str,
+        help="Path to ERD file (default: docs/erd.txt)"
+    )
+    db_verify_erd_parser.add_argument(
+        "--format", "-f",
+        type=str,
+        choices=["text", "json"],
+        default="text",
+        help="Output format (default: text)"
+    )
+    db_verify_erd_parser.set_defaults(func=db_verify_erd_command)
 
     db_parser.set_defaults(func=lambda args: db_parser.print_help() or EXIT_SUCCESS)
 

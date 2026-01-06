@@ -809,19 +809,21 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                 flash(f"Entry {entry_id} not found", "error")
                 return redirect(url_for("index"))
 
+            # Detect the entry's language from person_slug for language-aware tag display
+            entry_language = _detect_language_from_slug(entry["person_slug"])
+
             all_tags = list_tags(app.config["DB_PATH"])
-            # Add localized display labels to tags
-            all_tags_with_labels = [get_tag_display(tag) for tag in all_tags]
+            # Add localized display labels to tags using the ENTRY's language (not session)
+            all_tags_with_labels = [get_tag_display(tag, entry_language) for tag in all_tags]
             entry["summary"] = get_entry_summary(entry["section"], entry["data"])
 
-            # Validate tags on this entry
-            current_lang = get_current_language()
-            if entry["tags"] and current_lang != DEFAULT_LANGUAGE:
-                validation = validate_tags(entry["tags"], current_lang)
+            # Validate tags on this entry using the entry's language
+            if entry["tags"] and entry_language != DEFAULT_LANGUAGE:
+                validation = validate_tags(entry["tags"], entry_language)
                 if validation["missing_translations"]:
                     missing = validation["missing_translations"]
                     flash(
-                        f"Some tags lack translation for {current_lang}: "
+                        f"Some tags lack translation for {entry_language}: "
                         f"{', '.join(missing[:MAX_WARNING_ITEMS])}"
                         f"{'...' if len(missing) > MAX_WARNING_ITEMS else ''}",
                         "warning"
@@ -834,7 +836,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             "entry.html",
             entry=entry,
             all_tags=all_tags_with_labels,
-            data_json=json.dumps(entry["data"], indent=2, ensure_ascii=False)
+            data_json=json.dumps(entry["data"], indent=2, ensure_ascii=False),
+            entry_language=entry_language
         )
 
     @app.route("/entry/<int:entry_id>/tags", methods=["POST"])
@@ -1017,6 +1020,10 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             if not person_info:
                 flash(f"Person '{person}' not found", "error")
                 return redirect(url_for("index"))
+
+            # Detect the person's language from slug for language-aware tag display
+            entry_language = _detect_language_from_slug(person)
+
         except ConfigurationError as e:
             flash(str(e), "error")
             return redirect(url_for("index"))
@@ -1048,7 +1055,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                         section=section,
                         action="Create",
                         entry=None,
-                        all_tags=[get_tag_display(tag) for tag in list_tags(app.config["DB_PATH"])]
+                        all_tags=[get_tag_display(tag, entry_language) for tag in list_tags(app.config["DB_PATH"])],
+                        entry_language=entry_language
                     )
 
                 result = crud_create_entry(
@@ -1076,7 +1084,8 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             section=section,
             action="Create",
             entry=None,
-            all_tags=[get_tag_display(tag) for tag in all_tags]
+            all_tags=[get_tag_display(tag, entry_language) for tag in all_tags],
+            entry_language=entry_language
         )
 
     @app.route("/entry/<int:entry_id>/edit", methods=["GET", "POST"])
@@ -1096,6 +1105,9 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
             persons = list_persons(app.config["DB_PATH"])
             person_info = next((p for p in persons if p["slug"] == entry["person_slug"]), None)
+
+            # Detect the entry's language from person_slug for language-aware tag display
+            entry_language = _detect_language_from_slug(entry["person_slug"])
 
         except ConfigurationError as e:
             flash(str(e), "error")
@@ -1153,8 +1165,9 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             section=section,
             action="Edit",
             entry=entry,
-            all_tags=[get_tag_display(tag) for tag in all_tags],
-            linked_entries=linked_entries
+            all_tags=[get_tag_display(tag, entry_language) for tag in all_tags],
+            linked_entries=linked_entries,
+            entry_language=entry_language
         )
 
     @app.route("/entry/<int:entry_id>/delete", methods=["POST"])

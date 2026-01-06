@@ -1656,6 +1656,16 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         the preview and confirmed they want to proceed.
         """
         from .importer_v2 import CVImporter
+        from .migrations.migrate_to_v2 import migrate_to_v2
+
+        # Ensure v2 schema exists before using CVImporter
+        # This handles both fresh databases and migration from v1
+        try:
+            migrate_to_v2(app.config["DB_PATH"], backup=True)
+        except Exception as e:
+            logger.error(f"[IMPORT] Schema migration failed: {e}")
+            flash(f"Database schema migration failed: {e}", "error")
+            return redirect(url_for("import_page"))
 
         # Retrieve session data
         session_key = f"import_session_{session_id}"

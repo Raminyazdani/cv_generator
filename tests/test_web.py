@@ -1807,3 +1807,175 @@ class TestTranslationWorkflow:
         content = template_path.read_text()
 
         assert "needs_translation" in content.lower() or "Needs Translation" in content
+
+
+class TestImportUIRoutes:
+    """Tests for the Import UI routes."""
+
+    @pytest.fixture
+    def app_with_data(self, tmp_path):
+        """Create a test Flask app with CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create CV with tags
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "url": "https://example.com"}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_data):
+        """Create a test client."""
+        return app_with_data.test_client()
+
+    def test_import_page_loads(self, client):
+        """Test that the import page loads successfully."""
+        response = client.get("/import")
+        assert response.status_code == 200
+        assert b"Import" in response.data
+        assert b"Upload Files" in response.data
+
+    def test_import_page_shows_existing_persons(self, client):
+        """Test that import page shows existing persons."""
+        response = client.get("/import")
+        assert response.status_code == 200
+        assert b"testuser" in response.data
+
+    def test_import_upload_requires_files(self, client):
+        """Test that import upload requires files."""
+        form_response = client.get("/import")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/import/upload",
+            data={"csrf_token": csrf_token, "import_mode": "merge"},
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"No files" in response.data
+
+    def test_import_link_in_header(self, client):
+        """Test that import link appears in header."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Import" in response.data
+
+
+class TestExportUIRoutes:
+    """Tests for the Export UI routes."""
+
+    @pytest.fixture
+    def app_with_data(self, tmp_path):
+        """Create a test Flask app with CV data."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create CV with tags
+        cv_data = {
+            "basics": [{"fname": "Test", "lname": "User"}],
+            "projects": [
+                {"title": "Project A", "url": "https://example.com"}
+            ]
+        }
+        cv_path = tmp_path / "cvs" / "testuser.json"
+        cv_path.parent.mkdir(parents=True, exist_ok=True)
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+        import_cv(cv_path, db_path)
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        return app
+
+    @pytest.fixture
+    def client(self, app_with_data):
+        """Create a test client."""
+        return app_with_data.test_client()
+
+    def test_export_page_loads(self, client):
+        """Test that the export page loads successfully."""
+        response = client.get("/export")
+        assert response.status_code == 200
+        assert b"Export" in response.data
+
+    def test_export_page_shows_persons(self, client):
+        """Test that export page shows available persons."""
+        response = client.get("/export")
+        assert response.status_code == 200
+        assert b"testuser" in response.data
+
+    def test_export_page_shows_language_options(self, client):
+        """Test that export page shows language options."""
+        response = client.get("/export")
+        assert response.status_code == 200
+        assert b"EN" in response.data
+        assert b"DE" in response.data
+        assert b"FA" in response.data
+
+    def test_export_link_in_header(self, client):
+        """Test that export link appears in header."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Export" in response.data
+
+    def test_export_requires_person_selection(self, client):
+        """Test that export requires person selection."""
+        form_response = client.get("/export")
+        csrf_token = get_csrf_token(form_response)
+
+        response = client.post(
+            "/export/single",
+            data={"csrf_token": csrf_token, "language": "en"},
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"Please select a person" in response.data
+
+
+class TestSecureFilename:
+    """Tests for the _secure_filename function."""
+
+    def test_secure_filename_removes_path_traversal(self):
+        """Test that path traversal is prevented."""
+        from cv_generator.web import _secure_filename
+
+        assert ".." not in _secure_filename("../../../etc/passwd")
+        assert "/" not in _secure_filename("path/to/file.json")
+        assert "\\" not in _secure_filename("path\\to\\file.json")
+
+    def test_secure_filename_preserves_valid_names(self):
+        """Test that valid filenames are preserved."""
+        from cv_generator.web import _secure_filename
+
+        assert _secure_filename("myfile.json") == "myfile.json"
+        assert _secure_filename("my_file.json") == "my_file.json"
+        assert _secure_filename("my-file.json") == "my-file.json"
+
+    def test_secure_filename_handles_special_chars(self):
+        """Test that special characters are handled."""
+        from cv_generator.web import _secure_filename
+
+        result = _secure_filename("file<script>.json")
+        assert "<" not in result
+        assert ">" not in result
+
+    def test_secure_filename_handles_empty_string(self):
+        """Test that empty strings are handled."""
+        from cv_generator.web import _secure_filename
+
+        assert _secure_filename("") == "unnamed"
+        assert _secure_filename("...") == "unnamed"

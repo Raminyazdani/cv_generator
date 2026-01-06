@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Import Results{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('import_page') }}">Import</a> &rsaquo;
+    Results
+</div>
+
+<h2>📊 Import Results</h2>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Summary</h3>
+        <div>
+            {% if error_count == 0 %}
+                <span class="tag" style="background: var(--success);">All Successful</span>
+            {% elif success_count == 0 %}
+                <span class="tag" style="background: var(--danger);">All Failed</span>
+            {% else %}
+                <span class="tag" style="background: var(--warning);">Partial Success</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; padding: 1rem 0;">
+        <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--gray-700);">{{ results|length }}</div>
+            <div class="entry-meta">Total Files</div>
+        </div>
+        <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--success);">{{ success_count }}</div>
+            <div class="entry-meta">Successful</div>
+        </div>
+        <div>
+            <div style="font-size: 2rem; font-weight: bold; color: var(--danger);">{{ error_count }}</div>
+            <div class="entry-meta">Failed</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>Detailed Results</h3>
+
+    <div class="list-item-container">
+        {% for result in results %}
+        <div class="list-item" style="display: block; padding: 1rem; {% if result.success %}background: #dcfce7;{% else %}background: #fee2e2;{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <strong style="font-size: 1.1rem;">
+                        {% if result.success %}
+                            <span style="color: var(--success);">✓</span>
+                        {% else %}
+                            <span style="color: var(--danger);">✗</span>
+                        {% endif %}
+                        {{ result.resume_key | default(result.file_path | basename, true) }}
+                    </strong>
+
+                    {% if result.success %}
+                        <div style="margin-top: 0.5rem;">
+                            <span class="tag">{{ result.resume_key }}</span>
+                            <span class="tag tag-count">{{ result.lang_code | upper }}</span>
+                            <span class="entry-meta" style="margin-left: 0.5rem;">
+                                {{ result.duration_ms | round(0) }}ms
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if result.success and result.stats %}
+                <div style="text-align: right;">
+                    <span class="entry-meta">Records imported:</span>
+                    <div style="margin-top: 0.25rem;">
+                        {% for section, count in result.stats.items() %}
+                            {% if count > 0 %}
+                                <span class="tag tag-count" style="font-size: 0.7rem;">{{ section }}: {{ count }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not result.success %}
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 4px; border-left: 3px solid var(--danger);">
+                <strong style="color: var(--danger);">Error:</strong> {{ result.error }}
+                {% if result.error_details %}
+                <details style="margin-top: 0.5rem;">
+                    <summary style="cursor: pointer; color: var(--gray-500);">Show details</summary>
+                    <pre style="background: var(--gray-100); padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; font-size: 0.8rem; overflow-x: auto;">{{ result.error_details | tojson(indent=2) }}</pre>
+                </details>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if result.warnings %}
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 4px; border-left: 3px solid var(--warning);">
+                <strong style="color: var(--warning);">⚠️ Warnings:</strong>
+                <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                    {% for warning in result.warnings %}
+                        <li class="entry-meta">{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>Next Steps</h3>
+    <div class="actions">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">🏠 Go to Home</a>
+        <a href="{{ url_for('import_page') }}" class="btn btn-secondary">📥 Import More Files</a>
+        <a href="{{ url_for('diagnostics') }}" class="btn btn-secondary">🔍 Run Diagnostics</a>
+    </div>
+</div>
+{% endblock %}

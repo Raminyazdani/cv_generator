@@ -260,6 +260,45 @@ def generate_unique_filename(base_name: str, extension: str = ".json") -> str:
     return f"{base_name}_{timestamp}{extension}"
 
 
+def _secure_filename(filename: str) -> str:
+    """
+    Sanitize a filename to prevent path traversal attacks.
+
+    This function removes or replaces potentially dangerous characters
+    from filenames to prevent security vulnerabilities like path traversal.
+
+    Args:
+        filename: The original filename from user upload.
+
+    Returns:
+        A sanitized filename safe for filesystem operations.
+    """
+    import re
+
+    # Normalize unicode characters
+    import unicodedata
+    filename = unicodedata.normalize("NFKD", filename)
+    filename = filename.encode("ascii", "ignore").decode("ascii")
+
+    # Remove any path components (directory traversal protection)
+    filename = filename.replace("/", "_").replace("\\", "_")
+
+    # Remove potentially dangerous characters, keep only alphanumeric, dots, underscores, hyphens
+    filename = re.sub(r"[^\w.\-]", "_", filename)
+
+    # Remove leading/trailing dots and underscores
+    filename = filename.strip("._")
+
+    # Collapse multiple underscores
+    filename = re.sub(r"_+", "_", filename)
+
+    # Default filename if empty
+    if not filename:
+        filename = "unnamed"
+
+    return filename
+
+
 def format_sync_result_message(
     operation: str,
     sync_result: dict,
@@ -1414,6 +1453,527 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         except ConfigurationError as e:
             flash(str(e), "error")
             return redirect(url_for("person_dashboard", person=person))
+
+    # =========================================================================
+    # Import UI Routes
+    # =========================================================================
+
+    @app.route("/import")
+    @requires_auth
+    def import_page():
+        """
+        Import landing page with file upload form.
+
+        Shows:
+        - File upload dropzone (single or multiple)
+        - Import options (overwrite vs merge)
+        - Recent import history
+        """
+        # Get recent import history from session
+        import_history = session.get("import_history", [])
+
+        # Get list of existing persons for collision info
+        try:
+            persons = list_persons(app.config["DB_PATH"])
+        except ConfigurationError:
+            persons = []
+
+        return render_template(
+            "import.html",
+            import_history=import_history,
+            existing_persons=persons,
+        )
+
+    @app.route("/import/upload", methods=["POST"])
+    @requires_auth
+    def import_upload():
+        """
+        Handle file upload and return validation preview.
+
+        1. Receive uploaded file(s)
+        2. Validate JSON syntax
+        3. Parse config block
+        4. Check for collisions with existing data
+        5. Return preview page with validation results
+        """
+        # Check if files were uploaded
+        if "files" not in request.files:
+            flash("No files were uploaded.", "error")
+            return redirect(url_for("import_page"))
+
+        files = request.files.getlist("files")
+        if not files or all(f.filename == "" for f in files):
+            flash("No files were selected.", "error")
+            return redirect(url_for("import_page"))
+
+        # Get import options
+        import_mode = request.form.get("import_mode", "merge")
+        overwrite = import_mode == "overwrite"
+
+        # Create a temporary directory for uploaded files
+        import tempfile
+        import uuid
+        session_id = str(uuid.uuid4())[:8]
+        temp_dir = Path(tempfile.gettempdir()) / f"cvgen_import_{session_id}"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Process each uploaded file
+        validation_results = []
+        valid_files = []
+
+        for file in files:
+            if not file.filename:
+                continue
+
+            # Security: validate filename
+            filename = _secure_filename(file.filename)
+            if not filename.endswith(".json"):
+                validation_results.append({
+                    "filename": filename,
+                    "valid": False,
+                    "error": "Only JSON files are allowed.",
+                    "error_type": "invalid_extension",
+                })
+                continue
+
+            # Save file temporarily
+            file_path = temp_dir / filename
+            try:
+                file.save(str(file_path))
+            except Exception as e:
+                validation_results.append({
+                    "filename": filename,
+                    "valid": False,
+                    "error": f"Failed to save file: {e}",
+                    "error_type": "save_error",
+                })
+                continue
+
+            # Validate JSON syntax
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError as e:
+                validation_results.append({
+                    "filename": filename,
+                    "valid": False,
+                    "error": f"Invalid JSON: {e}",
+                    "error_type": "json_error",
+                    "error_details": {"line": e.lineno, "column": e.colno},
+                })
+                continue
+
+            # Parse config block
+            config = data.get("config", {})
+            resume_key = config.get("ID")
+            lang_code = config.get("lang")
+
+            # Infer from filename if not in config
+            if not resume_key or not lang_code:
+                stem = file_path.stem
+                parts = stem.rsplit("_", 1)
+                if len(parts) == 2 and parts[1] in SUPPORTED_LANGUAGES:
+                    if not resume_key:
+                        resume_key = parts[0]
+                    if not lang_code:
+                        lang_code = parts[1]
+                else:
+                    if not resume_key:
+                        resume_key = stem
+                    if not lang_code:
+                        lang_code = "en"
+
+            # Check for collisions with existing data
+            collision = None
+            try:
+                persons = list_persons(app.config["DB_PATH"])
+                for p in persons:
+                    if p["slug"] == resume_key or p["slug"] == f"{resume_key}_{lang_code}":
+                        collision = {
+                            "person_slug": p["slug"],
+                            "display_name": p.get("display_name", p["slug"]),
+                            "entry_count": p.get("entry_count", 0),
+                        }
+                        break
+            except ConfigurationError:
+                pass
+
+            # Count sections in the import data
+            section_counts = {}
+            for section in ["basics", "profiles", "education", "languages",
+                           "workshop_and_certifications", "skills", "experiences",
+                           "projects", "publications", "references"]:
+                if section in data:
+                    section_data = data[section]
+                    if isinstance(section_data, list):
+                        section_counts[section] = len(section_data)
+                    elif isinstance(section_data, dict):
+                        # Skills is a nested dict
+                        count = sum(
+                            len(items)
+                            for subcats in section_data.values()
+                            for items in subcats.values()
+                        ) if section == "skills" else 1
+                        section_counts[section] = count
+
+            validation_results.append({
+                "filename": filename,
+                "valid": True,
+                "resume_key": resume_key,
+                "lang_code": lang_code,
+                "collision": collision,
+                "section_counts": section_counts,
+                "file_path": str(file_path),
+            })
+            valid_files.append(str(file_path))
+
+        # Store session data for confirmation step
+        session[f"import_session_{session_id}"] = {
+            "temp_dir": str(temp_dir),
+            "files": valid_files,
+            "overwrite": overwrite,
+            "created_at": _utcnow(),
+        }
+
+        return render_template(
+            "import_preview.html",
+            session_id=session_id,
+            validation_results=validation_results,
+            import_mode=import_mode,
+            has_valid_files=len(valid_files) > 0,
+            has_collisions=any(r.get("collision") for r in validation_results if r.get("valid")),
+        )
+
+    @app.route("/import/confirm/<session_id>", methods=["POST"])
+    @requires_auth
+    def import_confirm(session_id: str):
+        """
+        Commit import after user confirmation.
+
+        This performs the actual import operation after the user has reviewed
+        the preview and confirmed they want to proceed.
+        """
+        from .importer_v2 import CVImporter
+
+        # Retrieve session data
+        session_key = f"import_session_{session_id}"
+        session_data = session.get(session_key)
+
+        if not session_data:
+            flash("Import session expired. Please upload files again.", "error")
+            return redirect(url_for("import_page"))
+
+        files = session_data.get("files", [])
+        overwrite = session_data.get("overwrite", False)
+
+        if not files:
+            flash("No valid files to import.", "error")
+            return redirect(url_for("import_page"))
+
+        # Perform the import
+        importer = CVImporter(app.config["DB_PATH"])
+        results = []
+        success_count = 0
+        error_count = 0
+
+        for file_path in files:
+            try:
+                result = importer.import_file(Path(file_path), dry_run=False, overwrite=overwrite)
+                results.append(result.to_dict())
+                if result.success:
+                    success_count += 1
+                else:
+                    error_count += 1
+            except Exception as e:
+                results.append({
+                    "success": False,
+                    "file_path": file_path,
+                    "error": str(e),
+                })
+                error_count += 1
+
+        # Clean up temp directory
+        temp_dir = session_data.get("temp_dir")
+        if temp_dir and Path(temp_dir).exists():
+            try:
+                import shutil
+                shutil.rmtree(temp_dir)
+            except Exception:
+                pass
+
+        # Clear session data
+        session.pop(session_key, None)
+
+        # Update import history
+        import_history = session.get("import_history", [])
+        import_history.insert(0, {
+            "timestamp": _utcnow(),
+            "files_count": len(files),
+            "success_count": success_count,
+            "error_count": error_count,
+            "overwrite": overwrite,
+        })
+        # Keep only last 10 entries
+        session["import_history"] = import_history[:10]
+
+        if error_count == 0:
+            flash(f"Successfully imported {success_count} file(s).", "success")
+        elif success_count > 0:
+            flash(
+                f"Imported {success_count} file(s) with {error_count} error(s). "
+                "Check the results below.",
+                "warning"
+            )
+        else:
+            flash(f"Import failed for all {error_count} file(s).", "error")
+
+        return render_template(
+            "import_results.html",
+            results=results,
+            success_count=success_count,
+            error_count=error_count,
+        )
+
+    @app.route("/import/cancel/<session_id>", methods=["POST"])
+    @requires_auth
+    def import_cancel(session_id: str):
+        """Cancel an import session and clean up temporary files."""
+        session_key = f"import_session_{session_id}"
+        session_data = session.get(session_key)
+
+        if session_data:
+            # Clean up temp directory
+            temp_dir = session_data.get("temp_dir")
+            if temp_dir and Path(temp_dir).exists():
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                except Exception:
+                    pass
+
+            # Clear session data
+            session.pop(session_key, None)
+
+        flash("Import cancelled.", "success")
+        return redirect(url_for("import_page"))
+
+    # =========================================================================
+    # Export UI Routes
+    # =========================================================================
+
+    @app.route("/export")
+    @requires_auth
+    def export_page():
+        """
+        Export landing page with person/language selection and batch options.
+        """
+        from .exporter_v2 import CVExporter
+
+        try:
+            # Get list of persons
+            persons = list_persons(app.config["DB_PATH"])
+
+            # Try to get available exports from v2 exporter
+            available_variants = []
+            try:
+                exporter = CVExporter(app.config["DB_PATH"])
+                available_variants = exporter.list_available()
+            except Exception:
+                pass
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            persons = []
+            available_variants = []
+
+        # Get recent export history
+        export_history = session.get("export_history", [])
+
+        return render_template(
+            "export.html",
+            persons=persons,
+            available_variants=available_variants,
+            export_history=export_history,
+            supported_languages=SUPPORTED_LANGUAGES,
+        )
+
+    @app.route("/export/single", methods=["POST"])
+    @requires_auth
+    def export_single():
+        """Export a single CV variant to a file."""
+        from .exporter_v2 import CVExporter
+
+        person = request.form.get("person")
+        language = request.form.get("language", "en")
+
+        if not person:
+            flash("Please select a person to export.", "error")
+            return redirect(url_for("export_page"))
+
+        # Check throttle
+        wait_time = check_throttle(f"export_single_{person}_{language}")
+        if wait_time is not None:
+            flash(f"Please wait {wait_time} seconds before exporting again.", "warning")
+            return redirect(url_for("export_page"))
+
+        try:
+            # Determine resume_key from person slug
+            # The person slug might be "ramin" or "ramin_de" etc.
+            resume_key = person
+            if "_" in person:
+                parts = person.rsplit("_", 1)
+                if parts[1] in SUPPORTED_LANGUAGES:
+                    resume_key = parts[0]
+
+            exporter = CVExporter(app.config["DB_PATH"])
+
+            # Create output directory
+            output_dir = get_default_output_path() / "json" / resume_key
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate filename
+            lang_suffix = f"_{language}" if language != "en" else ""
+            filename = generate_unique_filename(f"{resume_key}{lang_suffix}", ".json")
+            output_path = output_dir / filename
+
+            # Export
+            result = exporter.export_to_file(resume_key, language, output_path)
+
+            if result.success:
+                flash(f"Exported CV to {output_path}", "success")
+
+                # Update export history
+                export_history = session.get("export_history", [])
+                export_history.insert(0, {
+                    "timestamp": _utcnow(),
+                    "resume_key": resume_key,
+                    "language": language,
+                    "output_path": str(output_path),
+                    "success": True,
+                })
+                session["export_history"] = export_history[:10]
+            else:
+                flash(f"Export failed: {result.error}", "error")
+
+        except Exception as e:
+            flash(f"Export failed: {e}", "error")
+
+        return redirect(url_for("export_page"))
+
+    @app.route("/export/batch", methods=["POST"])
+    @requires_auth
+    def export_batch():
+        """
+        Batch export all variants for selected persons.
+        """
+        from .exporter_v2 import CVExporter
+
+        # Get selected persons (checkboxes)
+        selected_persons = request.form.getlist("persons")
+
+        if not selected_persons:
+            flash("Please select at least one person to export.", "error")
+            return redirect(url_for("export_page"))
+
+        # Check throttle
+        wait_time = check_throttle("export_batch")
+        if wait_time is not None:
+            flash(f"Please wait {wait_time} seconds before exporting again.", "warning")
+            return redirect(url_for("export_page"))
+
+        try:
+            exporter = CVExporter(app.config["DB_PATH"])
+
+            # Create output directory
+            output_dir = get_default_output_path() / "json" / "batch"
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            total_success = 0
+            total_failed = 0
+            results = []
+
+            for person in selected_persons:
+                # Determine resume_key
+                resume_key = person
+                if "_" in person:
+                    parts = person.rsplit("_", 1)
+                    if parts[1] in SUPPORTED_LANGUAGES:
+                        resume_key = parts[0]
+
+                # Export all variants for this person
+                variant_results = exporter.export_all_variants(resume_key, output_dir)
+
+                for result in variant_results:
+                    results.append(result.to_dict())
+                    if result.success:
+                        total_success += 1
+                    else:
+                        total_failed += 1
+
+            # Update export history
+            export_history = session.get("export_history", [])
+            export_history.insert(0, {
+                "timestamp": _utcnow(),
+                "batch": True,
+                "persons_count": len(selected_persons),
+                "success_count": total_success,
+                "failed_count": total_failed,
+                "output_dir": str(output_dir),
+            })
+            session["export_history"] = export_history[:10]
+
+            if total_failed == 0:
+                flash(f"Successfully exported {total_success} file(s) to {output_dir}", "success")
+            else:
+                flash(
+                    f"Exported {total_success} file(s), {total_failed} failed. "
+                    f"Output directory: {output_dir}",
+                    "warning"
+                )
+
+        except Exception as e:
+            flash(f"Batch export failed: {e}", "error")
+
+        return redirect(url_for("export_page"))
+
+    @app.route("/export/preview", methods=["POST"])
+    @requires_auth
+    def export_preview_v2():
+        """
+        Preview export for a person/language combination using v2 exporter.
+        """
+        from .exporter_v2 import CVExporter
+
+        person = request.form.get("person")
+        language = request.form.get("language", "en")
+
+        if not person:
+            flash("Please select a person to preview.", "error")
+            return redirect(url_for("export_page"))
+
+        try:
+            # Determine resume_key
+            resume_key = person
+            if "_" in person:
+                parts = person.rsplit("_", 1)
+                if parts[1] in SUPPORTED_LANGUAGES:
+                    resume_key = parts[0]
+
+            exporter = CVExporter(app.config["DB_PATH"])
+            cv_data = exporter.export(resume_key, language)
+
+            return render_template(
+                "export_preview.html",
+                person=person,
+                resume_key=resume_key,
+                language=language,
+                cv_data=cv_data,
+                json_preview=json.dumps(cv_data, indent=2, ensure_ascii=False),
+            )
+
+        except Exception as e:
+            flash(f"Preview failed: {e}", "error")
+            return redirect(url_for("export_page"))
 
     return app
 

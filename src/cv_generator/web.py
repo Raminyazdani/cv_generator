@@ -41,16 +41,28 @@ from .crud import (
     LIST_SECTIONS as CRUD_SECTIONS,
 )
 from .crud import (
+    assign_stable_id,
+)
+from .crud import (
     create_entry as crud_create_entry,
 )
 from .crud import (
     delete_entry as crud_delete_entry,
 )
 from .crud import (
+    get_entries_without_stable_ids,
+)
+from .crud import (
     get_linked_entries,
 )
 from .crud import (
+    merge_entries_to_stable_id,
+)
+from .crud import (
     update_entry as crud_update_entry,
+)
+from .crud import (
+    update_entry_stable_id,
 )
 from .db import (
     cleanup_orphan_tag_references,
@@ -1367,6 +1379,240 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             flash(str(e), "error")
             return redirect(url_for("entry_detail", entry_id=entry_id))
 
+    # =========================================================================
+    # Stable ID Management Routes
+    # =========================================================================
+
+    @app.route("/entry/<int:entry_id>/assign-stable-id", methods=["POST"])
+    @requires_auth
+    def assign_stable_id_route(entry_id: int):
+        """Assign a stable ID to an entry that doesn't have one."""
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            # Check if entry already has stable_id
+            if entry.get("stable_id"):
+                flash(f"Entry already has a stable ID: {entry['stable_id'][:8]}...", "warning")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            result = assign_stable_id(entry_id, app.config["DB_PATH"])
+            flash(
+                f"✓ Assigned stable ID: {result['stable_id'][:8]}... "
+                f"(language: {result['language'].upper()})",
+                "success"
+            )
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("entry_detail", entry_id=entry_id))
+
+    @app.route("/entry/<int:entry_id>/link-entries", methods=["GET", "POST"])
+    @requires_auth
+    def link_entries_route(entry_id: int):
+        """
+        Link entries from different languages together.
+
+        GET: Show form to select entries to link
+        POST: Perform the linking
+        """
+        try:
+            entry = get_entry(entry_id, app.config["DB_PATH"])
+            if not entry:
+                flash(f"Entry {entry_id} not found", "error")
+                return redirect(url_for("index"))
+
+            section = entry["section"]
+            if section not in CRUD_SECTIONS:
+                flash(f"Section '{section}' does not support linking.", "error")
+                return redirect(url_for("entry_detail", entry_id=entry_id))
+
+            # Get current linked entries (if any)
+            linked_entries = get_linked_entries(entry_id, section, app.config["DB_PATH"])
+            entry["summary"] = get_entry_summary(section, entry["data"])
+
+            # Get stable_id if present
+            stable_id = entry.get("stable_id")
+
+            if request.method == "POST":
+                # Get selected entries for each language
+                entry_ids_to_link = {}
+                for lang in SUPPORTED_LANGUAGES:
+                    selected_id = request.form.get(f"entry_{lang}")
+                    if selected_id:
+                        entry_ids_to_link[lang] = int(selected_id)
+
+                if not entry_ids_to_link:
+                    flash("Please select at least one entry to link.", "error")
+                    return redirect(url_for("link_entries_route", entry_id=entry_id))
+
+                if stable_id:
+                    # Merge into existing stable_id
+                    result = merge_entries_to_stable_id(
+                        stable_id, entry_ids_to_link, app.config["DB_PATH"]
+                    )
+                    if result["merged_languages"]:
+                        flash(
+                            f"✓ Merged {len(result['merged_languages'])} entry(ies) "
+                            f"to stable ID: {stable_id[:8]}...",
+                            "success"
+                        )
+                    if result["skipped_languages"]:
+                        skipped_info = ", ".join(
+                            f"{k}: {v}" for k, v in result["skipped_languages"].items()
+                        )
+                        flash(f"Skipped: {skipped_info}", "warning")
+                else:
+                    # Create new stable_id and link all entries
+                    from .crud import link_existing_entries
+                    # Include current entry
+                    current_lang = _detect_language_from_slug(entry["person_slug"])
+                    entry_ids_to_link[current_lang] = entry_id
+                    new_stable_id = link_existing_entries(
+                        entry_ids_to_link, section, app.config["DB_PATH"]
+                    )
+                    flash(
+                        f"✓ Created stable ID {new_stable_id[:8]}... and linked "
+                        f"{len(entry_ids_to_link)} entries.",
+                        "success"
+                    )
+
+                return redirect(url_for("entry_linked_route", entry_id=entry_id))
+
+            # GET: Show form with available entries from each language
+            # Get all entries in the same section from related person slugs
+            from .crud import _get_base_person, _get_person_slug_for_lang
+            base_person = _get_base_person(entry["person_slug"])
+
+            available_entries = {}
+            for lang in SUPPORTED_LANGUAGES:
+                lang_slug = _get_person_slug_for_lang(base_person, lang)
+                try:
+                    lang_entries = get_section_entries(
+                        lang_slug, section, app.config["DB_PATH"]
+                    )
+                    # Filter out entries that already have stable IDs (unless it's our stable_id)
+                    available = []
+                    for e in lang_entries:
+                        # Skip if already linked
+                        if lang in linked_entries:
+                            continue
+                        # Include entries without stable_id OR with matching stable_id
+                        e_stable = e.get("stable_id")
+                        if e_stable is None or (stable_id and e_stable == stable_id):
+                            e["summary"] = get_entry_summary(section, e["data"])
+                            available.append(e)
+                    available_entries[lang] = available
+                except Exception:
+                    available_entries[lang] = []
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "entry_link_form.html",
+            entry=entry,
+            linked_entries=linked_entries,
+            available_entries=available_entries,
+            stable_id=stable_id,
+            supported_languages=SUPPORTED_LANGUAGES
+        )
+
+    @app.route("/entry/<int:entry_id>/update-stable-id", methods=["POST"])
+    @requires_auth
+    def update_stable_id_route(entry_id: int):
+        """Update the stable ID for an entry to a different one."""
+        new_stable_id = request.form.get("new_stable_id", "").strip()
+        if not new_stable_id:
+            flash("Please provide a stable ID.", "error")
+            return redirect(url_for("entry_detail", entry_id=entry_id))
+
+        try:
+            result = update_entry_stable_id(entry_id, new_stable_id, app.config["DB_PATH"])
+            flash(
+                f"✓ Updated stable ID: {result['old_stable_id'][:8] if result['old_stable_id'] else 'None'}... "
+                f"→ {result['new_stable_id'][:8]}...",
+                "success"
+            )
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("entry_detail", entry_id=entry_id))
+
+    @app.route("/diagnostics/entries-without-stable-ids")
+    @requires_auth
+    def entries_without_stable_ids_route():
+        """Show all entries that don't have stable IDs assigned."""
+        try:
+            entries = get_entries_without_stable_ids(app.config["DB_PATH"])
+            # Add summaries
+            for entry in entries:
+                entry["summary"] = get_entry_summary(entry["section"], entry["data"])
+
+            # Group by section for easier viewing
+            entries_by_section = {}
+            for entry in entries:
+                section = entry["section"]
+                if section not in entries_by_section:
+                    entries_by_section[section] = []
+                entries_by_section[section].append(entry)
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            entries = []
+            entries_by_section = {}
+
+        return render_template(
+            "entries_without_stable_ids.html",
+            entries=entries,
+            entries_by_section=entries_by_section,
+            total_count=len(entries)
+        )
+
+    @app.route("/diagnostics/auto-assign-stable-ids", methods=["POST"])
+    @requires_auth
+    def auto_assign_stable_ids_route():
+        """
+        Automatically assign stable IDs to entries that don't have them.
+
+        This assigns a unique stable ID to each entry without one.
+        For automatic multilingual linking, use the link_entries_route.
+        """
+        try:
+            entries = get_entries_without_stable_ids(app.config["DB_PATH"])
+            assigned_count = 0
+            error_count = 0
+
+            for entry in entries:
+                try:
+                    assign_stable_id(entry["id"], app.config["DB_PATH"])
+                    assigned_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to assign stable ID to entry {entry['id']}: {e}")
+                    error_count += 1
+
+            if assigned_count > 0:
+                flash(
+                    f"✓ Assigned stable IDs to {assigned_count} entries.",
+                    "success"
+                )
+            if error_count > 0:
+                flash(
+                    f"⚠️ Failed to assign stable IDs to {error_count} entries.",
+                    "warning"
+                )
+            if assigned_count == 0 and error_count == 0:
+                flash("No entries needed stable ID assignment.", "info")
+
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("diagnostics"))
+
     @app.route("/diagnostics")
     @requires_auth
     def diagnostics():
@@ -2475,6 +2721,22 @@ def _get_section_fields(section: str, language: str = DEFAULT_LANGUAGE) -> dict[
         field_info["has_translation"] = vocab.has_translation(field_name, language)
 
     return fields
+
+
+def _detect_language_from_slug(person_slug: str) -> str:
+    """
+    Detect the language code from a person slug.
+
+    Args:
+        person_slug: Person slug (e.g., "ramin", "ramin_de", "ramin_fa")
+
+    Returns:
+        Language code (e.g., "en", "de", "fa")
+    """
+    for lang in SUPPORTED_LANGUAGES:
+        if lang != DEFAULT_LANGUAGE and person_slug.endswith(f"_{lang}"):
+            return lang
+    return DEFAULT_LANGUAGE
 
 
 def _clear_needs_translation(entry_id: int, db_path: Path) -> None:

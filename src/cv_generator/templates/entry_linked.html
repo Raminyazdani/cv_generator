@@ -95,13 +95,23 @@
         This entry is not linked to any other language variants.
     </p>
     <p style="margin-top: 0.5rem;">
-        To create linked entries, edit this entry and enable multi-language sync.
+        To create linked entries, you can:
     </p>
+    <ul style="margin: 0.5rem 0 1rem 1rem; color: var(--gray-600);">
+        <li>Edit this entry and enable multi-language sync to create new entries in other languages.</li>
+        <li>Or, manually link existing entries from other languages using the button below.</li>
+    </ul>
+    <a href="{{ url_for('link_entries_route', entry_id=entry.id) }}" class="btn btn-primary">
+        🔗 Link with Existing Entries
+    </a>
 </div>
 {% endif %}
 
 <div class="actions" style="margin-top: 1rem;">
     <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary">← Back to Entry</a>
     <a href="{{ url_for('edit_entry_route', entry_id=entry.id) }}" class="btn btn-primary">✏️ Edit Entry</a>
+    {% if entry.section in ['basics', 'projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
+    <a href="{{ url_for('link_entries_route', entry_id=entry.id) }}" class="btn btn-secondary">🔗 Link Entries</a>
+    {% endif %}
 </div>
 {% endblock %}

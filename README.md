@@ -1113,14 +1113,20 @@ mkdocs build
 |---------|-------------|
 | [Installation](docs/installation.md) | Detailed setup instructions |
 | [Quick Start](docs/quickstart.md) | Get your first PDF in 5 minutes |
+| [User Guide](docs/user-guide.md) | Complete usage walkthrough |
 | [CLI Reference](docs/cli.md) | All commands and options |
+| [API Reference](docs/api.md) | Python API documentation |
 | [JSON Schema](docs/json-schema.md) | Complete data format reference |
 | [Templates](docs/templates.md) | Customization guide |
 | [Languages](docs/languages.md) | Multilingual support (en/de/fa) |
+| [Multi-Language CVs](docs/multi-language.md) | Managing language variants |
+| [Import/Export](docs/import-export.md) | Database import/export workflows |
 | [SQLite Cookbook](docs/sqlite_tagging_cookbook.md) | Database and tagging system |
+| [Web UI Cookbook](docs/webui_cookbook.md) | Web interface documentation |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
 | [Plugins](docs/plugins.md) | Extending CV Generator |
 | [Configuration](docs/config-reference.md) | TOML config file reference |
+| [Contributing](docs/contributing.md) | How to contribute |
 
 ---
 

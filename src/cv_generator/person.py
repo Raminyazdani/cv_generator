@@ -843,7 +843,14 @@ def auto_group_variants(
                 # Create new person entity
                 person_entity_id = generate_person_entity_id()
                 now = _utcnow()
-                display_name = f"{first_name} {last_name}".strip() or config_id or "Unknown"
+                # Create display name: prefer actual names, then convert config_id to readable format
+                if first_name or last_name:
+                    display_name = f"{first_name} {last_name}".strip()
+                elif config_id:
+                    # Convert snake_case/dash-case to Title Case (e.g., "ramin_yazdani" -> "Ramin Yazdani")
+                    display_name = config_id.replace("_", " ").replace("-", " ").title()
+                else:
+                    display_name = "Unknown"
 
                 cursor.execute(
                     """INSERT INTO person_entity

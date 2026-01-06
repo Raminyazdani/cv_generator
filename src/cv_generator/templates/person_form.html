@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Person{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    {{ action }} Person
+</nav>
+
+<h2>{{ action }} Person</h2>
+
+<div class="card">
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group">
+            <label for="first_name">First Name *</label>
+            <input type="text" id="first_name" name="first_name" 
+                   value="{{ person.first_name if person else '' }}"
+                   placeholder="e.g., Ramin"
+                   required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Last Name *</label>
+            <input type="text" id="last_name" name="last_name" 
+                   value="{{ person.last_name if person else '' }}"
+                   placeholder="e.g., Yazdani"
+                   required>
+        </div>
+        
+        <div class="form-group">
+            <label for="display_name">Display Name (optional)</label>
+            <input type="text" id="display_name" name="display_name" 
+                   value="{{ person.display_name if person else '' }}"
+                   placeholder="e.g., Dr. Ramin Yazdani">
+            <p style="font-size: 0.85rem; color: var(--gray-500); margin-top: 0.25rem;">
+                Leave blank to use "First Name Last Name" as display name.
+            </p>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" rows="3" 
+                      placeholder="Any additional notes about this person...">{{ person.notes if person else '' }}</textarea>
+        </div>
+        
+        <div class="actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">
+                {% if action == 'Create' %}➕ Create Person{% else %}💾 Save Changes{% endif %}
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 2rem; background: var(--gray-50);">
+    <h3 style="margin-bottom: 0.5rem;">ℹ️ About Person Entities</h3>
+    <p style="color: var(--gray-700); font-size: 0.9rem;">
+        A <strong>Person</strong> represents a real individual who may have multiple CV variants 
+        in different languages (e.g., English, German, Persian).
+    </p>
+    <p style="color: var(--gray-700); font-size: 0.9rem; margin-top: 0.5rem;">
+        After creating a person, you can link existing CV variants to them, or create new 
+        variants from scratch.
+    </p>
+</div>
+{% endblock %}

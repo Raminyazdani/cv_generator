@@ -71,6 +71,15 @@ from .db import (
 )
 from .errors import ConfigurationError, ValidationError
 from .paths import get_default_output_path
+from .person import (
+    auto_group_variants,
+    create_person_entity,
+    ensure_person_entity_schema,
+    get_person_entity,
+    get_unlinked_variants,
+    link_variant_to_person,
+    list_person_entities,
+)
 from .tags import (
     DEFAULT_LANGUAGE,
     SUPPORTED_LANGUAGES,
@@ -487,13 +496,126 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     @app.route("/")
     @requires_auth
     def index():
-        """Home page - person selector."""
+        """Home page - person entity selector with grouped variants."""
         try:
+            # Ensure person entity schema exists and auto-group variants
+            ensure_person_entity_schema(app.config["DB_PATH"])
+
+            # Get grouped person entities
+            person_entities = list_person_entities(app.config["DB_PATH"])
+
+            # Get unlinked variants for display
+            unlinked = get_unlinked_variants(app.config["DB_PATH"])
+
+            # Also get legacy persons list for backward compatibility
             persons = list_persons(app.config["DB_PATH"])
         except ConfigurationError as e:
             flash(str(e), "error")
+            person_entities = []
+            unlinked = []
             persons = []
-        return render_template("index.html", persons=persons)
+
+        return render_template(
+            "index.html",
+            person_entities=person_entities,
+            unlinked_variants=unlinked,
+            persons=persons,
+            supported_languages=SUPPORTED_LANGUAGES
+        )
+
+    @app.route("/persons/create", methods=["GET", "POST"])
+    @requires_auth
+    def create_person_route():
+        """Create a new person entity."""
+        if request.method == "POST":
+            first_name = request.form.get("first_name", "").strip()
+            last_name = request.form.get("last_name", "").strip()
+            display_name = request.form.get("display_name", "").strip() or None
+            notes = request.form.get("notes", "").strip() or None
+
+            try:
+                person = create_person_entity(
+                    first_name=first_name,
+                    last_name=last_name,
+                    display_name=display_name,
+                    notes=notes,
+                    db_path=app.config["DB_PATH"]
+                )
+                flash(f"Person '{person['display_name']}' created successfully", "success")
+                return redirect(url_for("person_entity_detail", person_entity_id=person["id"]))
+            except (ConfigurationError, ValidationError) as e:
+                flash(str(e), "error")
+
+        return render_template("person_form.html", action="Create", person=None)
+
+    @app.route("/persons/<person_entity_id>")
+    @requires_auth
+    def person_entity_detail(person_entity_id: str):
+        """Person entity detail page - shows all language variants."""
+        try:
+            person = get_person_entity(person_entity_id, app.config["DB_PATH"])
+            if not person:
+                flash("Person not found", "error")
+                return redirect(url_for("index"))
+
+            # Get missing languages
+            existing_langs = set(person["variants"].keys())
+            missing_langs = [lang for lang in SUPPORTED_LANGUAGES if lang not in existing_langs]
+
+            # Get unlinked variants that could be linked to this person
+            unlinked = get_unlinked_variants(app.config["DB_PATH"])
+
+        except ConfigurationError as e:
+            flash(str(e), "error")
+            return redirect(url_for("index"))
+
+        return render_template(
+            "person_entity.html",
+            person=person,
+            missing_languages=missing_langs,
+            unlinked_variants=unlinked,
+            supported_languages=SUPPORTED_LANGUAGES
+        )
+
+    @app.route("/persons/<person_entity_id>/link", methods=["POST"])
+    @requires_auth
+    def link_variant_route(person_entity_id: str):
+        """Link a CV variant to a person entity."""
+        variant_person_id = request.form.get("person_id")
+        language = request.form.get("language", "en")
+
+        if not variant_person_id:
+            flash("Please select a variant to link", "error")
+            return redirect(url_for("person_entity_detail", person_entity_id=person_entity_id))
+
+        try:
+            link_variant_to_person(
+                person_entity_id=person_entity_id,
+                person_id=int(variant_person_id),
+                language=language,
+                db_path=app.config["DB_PATH"]
+            )
+            flash(f"Variant linked successfully ({language.upper()})", "success")
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("person_entity_detail", person_entity_id=person_entity_id))
+
+    @app.route("/persons/auto-group", methods=["POST"])
+    @requires_auth
+    def auto_group_route():
+        """Automatically group CV variants into person entities based on basics names."""
+        try:
+            stats = auto_group_variants(app.config["DB_PATH"], dry_run=False)
+            flash(
+                f"Auto-grouping complete: {stats['persons_created']} persons created, "
+                f"{stats['variants_linked']} variants linked",
+                "success"
+            )
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("index"))
 
     @app.route("/p/<person>")
     @requires_auth

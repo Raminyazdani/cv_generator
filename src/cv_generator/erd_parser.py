@@ -292,21 +292,36 @@ def verify_schema_against_erd(
     erd_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """
-    Verify that the database schema matches the ERD specification exactly.
+    Verify that the database schema matches the ERD specification.
 
     This function performs a table-by-table comparison and reports:
-    - Tables that match the ERD exactly
+    - Tables that match the ERD (all required columns and FKs present)
     - Tables that are missing from the database
-    - Tables with column mismatches (wrong types, missing columns, extra columns)
+    - Tables with missing columns
     - Tables with missing foreign keys
-    - Tables with missing unique constraints
+    - Tables with missing unique constraints (informational only)
+    - Extra columns in database tables (informational only)
+
+    Match/mismatch status is determined by:
+    - Missing tables → tables_missing (affects valid=False)
+    - Missing columns → mismatch status (affects valid=False)
+    - Missing foreign keys → mismatch status (affects valid=False)
+    - Missing unique constraints → reported as issues but not mismatch
+    - Extra columns → reported but not counted as issues
 
     Args:
         db_path: Path to the database file.
         erd_path: Path to the ERD file. Uses default if None.
 
     Returns:
-        Dict with detailed verification results.
+        Dict with detailed verification results:
+        - valid: True if all tables exist with required columns/FKs
+        - tables_checked: Number of tables in ERD
+        - tables_matched: Number of tables matching ERD
+        - tables_mismatched: Number of tables with missing columns/FKs
+        - tables_missing: List of table names missing from database
+        - table_details: Per-table verification results
+        - issues: List of issue strings
     """
     import sqlite3
 
@@ -426,7 +441,8 @@ def _verify_table(
     for col_name in db_columns:
         if col_name not in erd_columns:
             result["columns"]["extra"].append(col_name)
-            # Extra columns might be intentional, don't mark as issue
+            # Extra columns are allowed - they may be from implementation details
+            # (e.g., id columns not in ERD, or future additions)
 
     # Check foreign keys
     cursor.execute(f"PRAGMA foreign_key_list({table_name})")
@@ -449,7 +465,7 @@ def _verify_table(
                 f"Table '{table_name}': Missing FK '{erd_fk[0]}' -> {erd_fk[1]}.{erd_fk[2]}"
             )
 
-    # Check unique constraints
+    # Check unique constraints from ERD indexes section
     cursor.execute(f"PRAGMA index_list({table_name})")
     indices = cursor.fetchall()
 
@@ -471,14 +487,20 @@ def _verify_table(
         found = any(set(erd_uc) == set(db_uc) for db_uc in db_unique_constraints)
         if not found:
             result["unique_constraints"]["missing"].append(list(erd_uc))
+            # Unique constraints are informational - they may be enforced via
+            # UNIQUE columns or application logic rather than explicit indexes
             result["issues"].append(
                 f"Table '{table_name}': Missing unique constraint on {erd_uc}"
             )
 
-    # Determine overall status
+    # Determine overall status:
+    # - "missing": table doesn't exist in database
+    # - "mismatch": table exists but has missing columns or foreign keys
+    # - "match": table exists with all required columns and foreign keys
+    # Note: Missing unique constraints are reported as issues but don't affect
+    # overall match status since they may be enforced via other mechanisms
     if result["columns"]["missing"] or result["foreign_keys"]["missing"]:
         result["status"] = "mismatch"
-    # Note: Missing unique constraints are logged but may be enforced via other means
 
     return result
 

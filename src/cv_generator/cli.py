@@ -1025,37 +1025,98 @@ def db_verify_erd_command(args: argparse.Namespace) -> int:
         Exit code.
     """
     from .db import get_db_path
-    from .erd_parser import generate_schema_report, verify_schema_against_erd
+    from .erd_parser import verify_schema_against_erd
 
     db_path = Path(args.db) if args.db else get_db_path()
     erd_path = Path(args.erd) if args.erd else None
 
     try:
+        # Perform verification once and reuse results
+        results = verify_schema_against_erd(db_path, erd_path)
+
         if args.format == "json":
-            results = verify_schema_against_erd(db_path, erd_path)
             print(json.dumps(results, indent=2, ensure_ascii=False))
-            return EXIT_SUCCESS if results["valid"] else EXIT_ENSURE_ERROR
         else:
-            report = generate_schema_report(db_path, erd_path)
-            print(report)
+            # Generate text report from the results
+            _print_erd_verification_report(results)
 
-            # Also print a summary of results
-            results = verify_schema_against_erd(db_path, erd_path)
-            if results["valid"]:
-                print()
-                print("✅ Database schema matches ERD specification 100%")
-            else:
-                print()
-                print("❌ Database schema does NOT match ERD specification")
-                print(f"   Tables missing: {len(results['tables_missing'])}")
-                print(f"   Tables with issues: {results['tables_mismatched']}")
-
-            return EXIT_SUCCESS if results["valid"] else EXIT_ENSURE_ERROR
+        return EXIT_SUCCESS if results["valid"] else EXIT_ENSURE_ERROR
 
     except Exception as e:
         logger.error(f"Error verifying ERD schema: {e}")
         print(f"❌ Error: {e}")
         return EXIT_ERROR
+
+
+def _print_erd_verification_report(results: Dict) -> None:
+    """Print ERD verification report in text format."""
+    lines = [
+        "=" * 80,
+        "ERD Schema Verification Report",
+        "=" * 80,
+        f"ERD File: {results['erd_path']}",
+        f"Database: {results['db_path']}",
+        "",
+        f"Overall Status: {'✓ VALID' if results['valid'] else '✗ INVALID'}",
+        f"Tables Checked: {results['tables_checked']}",
+        f"Tables Matched: {results['tables_matched']}",
+        f"Tables Mismatched: {results['tables_mismatched']}",
+        f"Tables Missing: {len(results['tables_missing'])}",
+        "",
+        "-" * 80,
+        "Table-by-Table Results:",
+        "-" * 80,
+    ]
+
+    for table_name, detail in sorted(results.get("table_details", {}).items()):
+        status = detail["status"]
+        status_icon = "✓" if status == "match" else "✗"
+
+        lines.append(f"\n{status_icon} {table_name}: {status.upper()}")
+
+        if detail["columns"]["expected"]:
+            lines.append(
+                f"   Columns: {len(detail['columns']['found'])}/{len(detail['columns']['expected'])}"
+            )
+
+        if detail["columns"]["missing"]:
+            lines.append(f"   Missing columns: {', '.join(detail['columns']['missing'])}")
+
+        if detail["foreign_keys"]["missing"]:
+            for fk in detail["foreign_keys"]["missing"]:
+                lines.append(f"   Missing FK: {fk['from']} -> {fk['table']}.{fk['to']}")
+
+        if detail["unique_constraints"]["missing"]:
+            for uc in detail["unique_constraints"]["missing"]:
+                lines.append(f"   Missing unique: ({', '.join(uc)})")
+
+    if results["tables_missing"]:
+        lines.append("\n" + "-" * 80)
+        lines.append("Missing Tables:")
+        lines.append("-" * 80)
+        for table in results["tables_missing"]:
+            lines.append(f"  ✗ {table}")
+
+    if results["issues"]:
+        lines.append("\n" + "-" * 80)
+        lines.append("All Issues:")
+        lines.append("-" * 80)
+        for issue in results["issues"]:
+            lines.append(f"  • {issue}")
+
+    lines.append("\n" + "=" * 80)
+
+    print("\n".join(lines))
+
+    # Print summary
+    if results["valid"]:
+        print()
+        print("✅ Database schema matches ERD specification 100%")
+    else:
+        print()
+        print("❌ Database schema does NOT match ERD specification")
+        print(f"   Tables missing: {len(results['tables_missing'])}")
+        print(f"   Tables with issues: {results['tables_mismatched']}")
 
 
 def doctor_command(args: argparse.Namespace) -> int:

@@ -89,7 +89,18 @@
                 {% if entry.stable_id %}
                 <code style="background: var(--success-light); color: var(--success); padding: 0.25rem 0.5rem; border-radius: 4px;">✓ {{ entry.stable_id }}</code>
                 {% else %}
-                <span style="color: var(--warning);">⚠️ No stable ID assigned (entry may have been imported before CRUD schema)</span>
+                <span style="color: var(--warning);">⚠️ No stable ID assigned</span>
+                <div style="margin-top: 0.5rem;">
+                    <form action="{{ url_for('assign_stable_id_route', entry_id=entry.id) }}" method="post" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-primary" title="Create a new stable ID for this entry">
+                            🔖 Assign Stable ID
+                        </button>
+                    </form>
+                    <a href="{{ url_for('link_entries_route', entry_id=entry.id) }}" class="btn btn-sm btn-secondary" style="margin-left: 0.25rem;" title="Link with entries from other languages">
+                        🔗 Link with Other Languages
+                    </a>
+                </div>
                 {% endif %}
             </td>
         </tr>

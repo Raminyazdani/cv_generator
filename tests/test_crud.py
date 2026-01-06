@@ -738,3 +738,156 @@ class TestSyncIntegration:
         assert "de" in linked
         assert linked["en"]["id"] == en_entry_id
         assert linked["de"]["id"] == de_entry_id
+
+
+class TestStableIdManagement:
+    """Tests for stable ID assignment and merging."""
+
+    @pytest.fixture
+    def db_with_imported_entries(self, tmp_path):
+        """Create a database with imported entries that don't have stable IDs."""
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Import CVs for EN and DE (simulating pre-CRUD import)
+        for lang_suffix in ["", "_de"]:
+            cv = {
+                "basics": [{"fname": "Test", "lname": "User"}],
+                "education": [
+                    {"institution": "University A", "area": "Computer Science"}
+                ]
+            }
+            filename = f"testuser{lang_suffix}.json"
+            cv_path = tmp_path / "cvs" / filename
+            cv_path.parent.mkdir(parents=True, exist_ok=True)
+            cv_path.write_text(json.dumps(cv, ensure_ascii=False))
+            import_cv(cv_path, db_path)
+
+        return db_path
+
+    def test_get_entries_without_stable_ids(self, db_with_imported_entries):
+        """Test getting entries that don't have stable IDs assigned."""
+        from cv_generator.crud import get_entries_without_stable_ids
+
+        entries = get_entries_without_stable_ids(db_with_imported_entries)
+
+        # Should find entries without stable IDs
+        assert len(entries) > 0
+        for entry in entries:
+            assert entry["stable_id"] is None
+            assert "id" in entry
+            assert "section" in entry
+            assert "person_slug" in entry
+
+    def test_get_entries_without_stable_ids_filter_by_section(self, db_with_imported_entries):
+        """Test filtering entries without stable IDs by section."""
+        from cv_generator.crud import get_entries_without_stable_ids
+
+        entries = get_entries_without_stable_ids(
+            db_with_imported_entries, section="education"
+        )
+
+        assert len(entries) > 0
+        for entry in entries:
+            assert entry["section"] == "education"
+
+    def test_assign_stable_id(self, db_with_imported_entries):
+        """Test assigning a stable ID to an entry."""
+        from cv_generator.crud import assign_stable_id, get_entries_without_stable_ids
+
+        # Get an entry without stable ID
+        entries = get_entries_without_stable_ids(db_with_imported_entries)
+        entry_id = entries[0]["id"]
+
+        # Assign stable ID
+        result = assign_stable_id(entry_id, db_with_imported_entries)
+
+        assert "stable_id" in result
+        assert result["stable_id"] is not None
+        assert result["entry_id"] == entry_id
+
+    def test_assign_stable_id_prevents_duplicate(self, db_with_imported_entries):
+        """Test that assigning stable ID twice fails."""
+        from cv_generator.crud import assign_stable_id, get_entries_without_stable_ids
+        from cv_generator.errors import ValidationError
+
+        # Get an entry without stable ID
+        entries = get_entries_without_stable_ids(db_with_imported_entries)
+        entry_id = entries[0]["id"]
+
+        # Assign stable ID first time
+        assign_stable_id(entry_id, db_with_imported_entries)
+
+        # Try to assign again
+        with pytest.raises(ValidationError) as exc:
+            assign_stable_id(entry_id, db_with_imported_entries)
+
+        assert "already has stable ID" in str(exc.value)
+
+    def test_merge_entries_to_stable_id(self, db_with_imported_entries):
+        """Test merging entries from different languages to a stable ID."""
+        from cv_generator.crud import (
+            assign_stable_id,
+            get_entries_without_stable_ids,
+            merge_entries_to_stable_id,
+        )
+
+        # Get entries without stable IDs
+        entries = get_entries_without_stable_ids(db_with_imported_entries)
+
+        # Find EN and DE education entries
+        en_entry = next(
+            (e for e in entries if e["person_slug"] == "testuser" and e["section"] == "education"),
+            None
+        )
+        de_entry = next(
+            (e for e in entries if e["person_slug"] == "testuser_de" and e["section"] == "education"),
+            None
+        )
+
+        assert en_entry is not None, "EN entry not found"
+        assert de_entry is not None, "DE entry not found"
+
+        # Assign stable ID to EN entry
+        result = assign_stable_id(en_entry["id"], db_with_imported_entries)
+        stable_id = result["stable_id"]
+
+        # Merge DE entry to the same stable ID
+        merge_result = merge_entries_to_stable_id(
+            stable_id, {"de": de_entry["id"]}, db_with_imported_entries
+        )
+
+        assert merge_result["success"] is True
+        assert "de" in merge_result["merged_languages"]
+
+    def test_get_linked_entries_after_merge(self, db_with_imported_entries):
+        """Test that linked entries work after merging."""
+        from cv_generator.crud import (
+            assign_stable_id,
+            get_entries_without_stable_ids,
+            merge_entries_to_stable_id,
+        )
+
+        # Get and merge entries
+        entries = get_entries_without_stable_ids(db_with_imported_entries)
+        en_entry = next(
+            (e for e in entries if e["person_slug"] == "testuser" and e["section"] == "education"),
+            None
+        )
+        de_entry = next(
+            (e for e in entries if e["person_slug"] == "testuser_de" and e["section"] == "education"),
+            None
+        )
+
+        result = assign_stable_id(en_entry["id"], db_with_imported_entries)
+        merge_entries_to_stable_id(
+            result["stable_id"], {"de": de_entry["id"]}, db_with_imported_entries
+        )
+
+        # Get linked entries
+        linked = get_linked_entries(en_entry["id"], "education", db_with_imported_entries)
+
+        assert "en" in linked
+        assert "de" in linked
+        assert linked["en"]["id"] == en_entry["id"]
+        assert linked["de"]["id"] == de_entry["id"]

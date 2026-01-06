@@ -1109,6 +1109,14 @@ class ListSectionAdapter(SectionAdapter):
             if order_idx is None or not person_id:
                 return result
 
+            # Check if person_entity_variant table exists
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='person_entity_variant'"
+            )
+            if not cursor.fetchone():
+                # Table doesn't exist - return just current entry
+                return result
+
             # Find person_entity_id for this person via person_entity_variant table
             # This table links person records to person_entity by config.ID grouping
             cursor.execute(
@@ -1399,6 +1407,477 @@ def link_existing_entries(
 
         logger.info(f"Linked {len(entry_ids)} entries with stable_id: {stable_id}")
         return stable_id
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_entries_without_stable_ids(
+    db_path: Optional[Path] = None,
+    section: Optional[str] = None,
+    person_slug: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Get all entries that don't have stable IDs assigned.
+
+    These are typically entries imported before the CRUD schema was introduced.
+
+    Args:
+        db_path: Path to database
+        section: Optional section filter
+        person_slug: Optional person filter
+
+    Returns:
+        List of entries without stable IDs
+    """
+    db_path = get_db_path(db_path)
+    ensure_crud_schema(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        query = """
+            SELECT e.id, e.section, e.order_idx, e.data_json, e.identity_key, p.slug
+            FROM entry e
+            JOIN person p ON e.person_id = p.id
+            LEFT JOIN entry_lang_link ell ON e.id = ell.entry_id
+            WHERE ell.entry_id IS NULL
+            AND e.order_idx >= 0
+        """
+        params = []
+
+        if section:
+            query += " AND e.section = ?"
+            params.append(section)
+
+        if person_slug:
+            query += " AND p.slug = ?"
+            params.append(person_slug)
+
+        query += " ORDER BY p.slug, e.section, e.order_idx"
+
+        cursor.execute(query, params)
+        entries = []
+        for row in cursor.fetchall():
+            entry_id, section_name, order_idx, data_json, identity_key, slug = row
+            data = json.loads(data_json) if data_json else {}
+
+            # Get tags
+            cursor.execute(
+                """SELECT t.name FROM tag t
+                   JOIN entry_tag et ON t.id = et.tag_id
+                   WHERE et.entry_id = ?
+                   ORDER BY t.name""",
+                (entry_id,)
+            )
+            tags = [r[0] for r in cursor.fetchall()]
+
+            entries.append({
+                "id": entry_id,
+                "section": section_name,
+                "order_idx": order_idx,
+                "data": data,
+                "identity_key": identity_key,
+                "person_slug": slug,
+                "tags": tags,
+                "stable_id": None  # These entries don't have stable IDs
+            })
+
+        return entries
+    finally:
+        conn.close()
+
+
+def assign_stable_id(
+    entry_id: int,
+    db_path: Optional[Path] = None,
+    custom_stable_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Assign a stable ID to an entry that doesn't have one.
+
+    This creates a new stable_entry record and links it to the entry.
+
+    Args:
+        entry_id: Entry ID to assign stable ID to
+        db_path: Path to database
+        custom_stable_id: Optional custom stable ID to use (for merging)
+
+    Returns:
+        Dict with stable_id and entry info
+
+    Raises:
+        ValidationError: If entry already has a stable ID
+        ConfigurationError: If entry not found
+    """
+    db_path = get_db_path(db_path)
+    ensure_crud_schema(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Check if entry exists
+        cursor.execute(
+            """SELECT e.section, p.slug
+               FROM entry e
+               JOIN person p ON e.person_id = p.id
+               WHERE e.id = ?""",
+            (entry_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Entry not found: {entry_id}")
+
+        section, person_slug = row
+
+        # Check if entry already has stable ID
+        cursor.execute(
+            "SELECT stable_id FROM entry_lang_link WHERE entry_id = ?",
+            (entry_id,)
+        )
+        existing = cursor.fetchone()
+        if existing:
+            raise ValidationError(
+                f"Entry {entry_id} already has stable ID: {existing[0]}"
+            )
+
+        # Determine language from person slug
+        base_person = _get_base_person(person_slug)
+        language = DEFAULT_LANGUAGE
+        for lang in SUPPORTED_LANGUAGES:
+            if person_slug == _get_person_slug_for_lang(base_person, lang):
+                language = lang
+                break
+
+        # Generate or use provided stable ID
+        stable_id = custom_stable_id or generate_stable_id()
+        now = _utcnow()
+
+        # Check if stable_entry exists (for custom_stable_id case)
+        if custom_stable_id:
+            cursor.execute(
+                "SELECT id FROM stable_entry WHERE id = ?",
+                (stable_id,)
+            )
+            if not cursor.fetchone():
+                # Create stable_entry record
+                cursor.execute(
+                    """INSERT INTO stable_entry (id, section, base_person, created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    (stable_id, section, base_person, now, now)
+                )
+        else:
+            # Create stable_entry record
+            cursor.execute(
+                """INSERT INTO stable_entry (id, section, base_person, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (stable_id, section, base_person, now, now)
+            )
+
+        # Link entry to stable ID
+        cursor.execute(
+            """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (stable_id, language, entry_id, 0, now)
+        )
+
+        conn.commit()
+
+        logger.info(f"Assigned stable_id {stable_id[:8]}... to entry {entry_id}")
+
+        return {
+            "entry_id": entry_id,
+            "stable_id": stable_id,
+            "section": section,
+            "language": language,
+            "person_slug": person_slug
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def merge_entries_to_stable_id(
+    target_stable_id: str,
+    entry_ids: Dict[str, int],
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Merge entries from different languages into an existing stable ID group.
+
+    This is used to link entries that belong together but were imported
+    separately without stable ID linking.
+
+    Args:
+        target_stable_id: The stable ID to merge entries into
+        entry_ids: Dict mapping language codes to entry IDs to merge
+        db_path: Path to database
+
+    Returns:
+        Dict with merge result info
+
+    Raises:
+        ValidationError: If stable_id doesn't exist or entry already linked
+        ConfigurationError: If entry not found
+    """
+    db_path = get_db_path(db_path)
+    ensure_crud_schema(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    if not entry_ids:
+        raise ValidationError("At least one entry must be provided")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Verify stable_id exists
+        cursor.execute(
+            "SELECT section, base_person FROM stable_entry WHERE id = ?",
+            (target_stable_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ValidationError(f"Stable ID not found: {target_stable_id}")
+
+        expected_section, base_person = row
+        now = _utcnow()
+
+        merged_languages = []
+        skipped_languages = {}
+
+        for lang, entry_id in entry_ids.items():
+            # Verify entry exists and get its section
+            cursor.execute(
+                """SELECT e.section, p.slug
+                   FROM entry e
+                   JOIN person p ON e.person_id = p.id
+                   WHERE e.id = ?""",
+                (entry_id,)
+            )
+            entry_row = cursor.fetchone()
+            if not entry_row:
+                skipped_languages[lang] = f"Entry {entry_id} not found"
+                continue
+
+            entry_section, person_slug = entry_row
+
+            # Verify section matches
+            if entry_section != expected_section:
+                skipped_languages[lang] = (
+                    f"Section mismatch: entry is {entry_section}, "
+                    f"stable_id is {expected_section}"
+                )
+                continue
+
+            # Check if entry already has a stable ID
+            cursor.execute(
+                "SELECT stable_id FROM entry_lang_link WHERE entry_id = ?",
+                (entry_id,)
+            )
+            existing = cursor.fetchone()
+            if existing:
+                if existing[0] == target_stable_id:
+                    skipped_languages[lang] = "Already linked to this stable ID"
+                else:
+                    skipped_languages[lang] = f"Already linked to {existing[0][:8]}..."
+                continue
+
+            # Check if language already exists in this stable_id group
+            cursor.execute(
+                "SELECT entry_id FROM entry_lang_link WHERE stable_id = ? AND language = ?",
+                (target_stable_id, lang)
+            )
+            if cursor.fetchone():
+                skipped_languages[lang] = "Language already exists in group"
+                continue
+
+            # Link entry to stable ID
+            cursor.execute(
+                """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (target_stable_id, lang, entry_id, 0, now)
+            )
+            merged_languages.append(lang)
+
+        # Update stable_entry timestamp
+        cursor.execute(
+            "UPDATE stable_entry SET updated_at = ? WHERE id = ?",
+            (now, target_stable_id)
+        )
+
+        conn.commit()
+
+        logger.info(
+            f"Merged {len(merged_languages)} entries to stable_id {target_stable_id[:8]}..."
+        )
+
+        return {
+            "stable_id": target_stable_id,
+            "merged_languages": merged_languages,
+            "skipped_languages": skipped_languages,
+            "success": len(merged_languages) > 0
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def update_entry_stable_id(
+    entry_id: int,
+    new_stable_id: str,
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Update the stable ID for an entry, moving it to a different group.
+
+    This can be used to manually correct stable ID assignments.
+
+    Args:
+        entry_id: Entry ID to update
+        new_stable_id: New stable ID to assign
+        db_path: Path to database
+
+    Returns:
+        Dict with update result info
+
+    Raises:
+        ValidationError: If new stable_id doesn't exist
+        ConfigurationError: If entry not found
+    """
+    db_path = get_db_path(db_path)
+    ensure_crud_schema(db_path)
+
+    if not db_path.exists():
+        raise ConfigurationError(f"Database not found: {db_path}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Check if entry exists
+        cursor.execute(
+            """SELECT e.section, p.slug
+               FROM entry e
+               JOIN person p ON e.person_id = p.id
+               WHERE e.id = ?""",
+            (entry_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Entry not found: {entry_id}")
+
+        section, person_slug = row
+
+        # Verify new stable_id exists
+        cursor.execute(
+            "SELECT section FROM stable_entry WHERE id = ?",
+            (new_stable_id,)
+        )
+        stable_row = cursor.fetchone()
+        if not stable_row:
+            raise ValidationError(f"Stable ID not found: {new_stable_id}")
+
+        # Verify section matches
+        if stable_row[0] != section:
+            raise ValidationError(
+                f"Section mismatch: entry is {section}, stable_id is {stable_row[0]}"
+            )
+
+        # Determine language from person slug
+        base_person = _get_base_person(person_slug)
+        language = DEFAULT_LANGUAGE
+        for lang in SUPPORTED_LANGUAGES:
+            if person_slug == _get_person_slug_for_lang(base_person, lang):
+                language = lang
+                break
+
+        # Check if language already exists in target stable_id group
+        cursor.execute(
+            "SELECT entry_id FROM entry_lang_link WHERE stable_id = ? AND language = ?",
+            (new_stable_id, language)
+        )
+        existing_in_target = cursor.fetchone()
+        if existing_in_target and existing_in_target[0] != entry_id:
+            raise ValidationError(
+                f"Language {language} already exists in stable ID group "
+                f"(entry {existing_in_target[0]})"
+            )
+
+        # Get current stable_id if any
+        cursor.execute(
+            "SELECT stable_id FROM entry_lang_link WHERE entry_id = ?",
+            (entry_id,)
+        )
+        current = cursor.fetchone()
+        old_stable_id = current[0] if current else None
+
+        now = _utcnow()
+
+        if current:
+            # Update existing link
+            cursor.execute(
+                "UPDATE entry_lang_link SET stable_id = ? WHERE entry_id = ?",
+                (new_stable_id, entry_id)
+            )
+        else:
+            # Create new link
+            cursor.execute(
+                """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (new_stable_id, language, entry_id, 0, now)
+            )
+
+        # Update stable_entry timestamp
+        cursor.execute(
+            "UPDATE stable_entry SET updated_at = ? WHERE id = ?",
+            (now, new_stable_id)
+        )
+
+        # Clean up old stable_entry if empty
+        if old_stable_id and old_stable_id != new_stable_id:
+            cursor.execute(
+                "SELECT COUNT(*) FROM entry_lang_link WHERE stable_id = ?",
+                (old_stable_id,)
+            )
+            remaining = cursor.fetchone()[0]
+            if remaining == 0:
+                cursor.execute(
+                    "DELETE FROM stable_entry WHERE id = ?",
+                    (old_stable_id,)
+                )
+                logger.debug(f"Deleted empty stable_entry: {old_stable_id[:8]}...")
+
+        conn.commit()
+
+        logger.info(
+            f"Updated entry {entry_id} stable_id: "
+            f"{old_stable_id[:8] if old_stable_id else 'None'}... -> {new_stable_id[:8]}..."
+        )
+
+        return {
+            "entry_id": entry_id,
+            "old_stable_id": old_stable_id,
+            "new_stable_id": new_stable_id,
+            "language": language,
+            "section": section
+        }
     except Exception:
         conn.rollback()
         raise

@@ -104,6 +104,9 @@
         <div class="health-check-item">
             <span>Entries Without Stable IDs:</span>
             <span class="status-warning">{{ integrity.stats.entries_without_stable_ids }}</span>
+            <a href="{{ url_for('entries_without_stable_ids_route') }}" class="btn btn-sm btn-primary" style="margin-left: 0.5rem;">
+                View & Fix
+            </a>
         </div>
         {% endif %}
     </div>

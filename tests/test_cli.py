@@ -250,24 +250,28 @@ class TestBuildValidation:
 class TestLegacyScriptDeprecation:
     """Tests for the deprecated generate_cv.py script."""
 
-    def test_show_deprecation_warning_outputs_banner(self, capsys, monkeypatch):
-        """Test that show_deprecation_warning outputs a visible banner."""
-        # Mock time.sleep to avoid actual delay in tests
+    @pytest.fixture
+    def generate_cv_module(self, monkeypatch):
+        """Load the generate_cv.py script as a module."""
+        import importlib.util
         import time
+
+        # Mock time.sleep to avoid actual delay in tests
         monkeypatch.setattr(time, 'sleep', lambda x: None)
 
         # Import the function from the generate_cv module (not from package)
-        import importlib.util
         spec = importlib.util.spec_from_file_location(
-            "generate_cv",
+            "generate_cv_script",
             Path(__file__).parent.parent / "generate_cv.py"
         )
-        generate_cv_module = importlib.util.module_from_spec(spec)
-        sys.modules["generate_cv"] = generate_cv_module
-        spec.loader.exec_module(generate_cv_module)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
 
-        # Call the deprecation warning function
+    def test_show_deprecation_warning_outputs_banner(self, capsys, generate_cv_module):
+        """Test that show_deprecation_warning outputs a visible banner."""
         import warnings
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             generate_cv_module.show_deprecation_warning()
@@ -285,21 +289,10 @@ class TestLegacyScriptDeprecation:
         assert "v3.0.0" in captured.err
         assert "cvgen build" in captured.err
 
-    def test_deprecation_warning_mentions_migration_guide(self, capsys, monkeypatch):
+    def test_deprecation_warning_mentions_migration_guide(self, capsys, generate_cv_module):
         """Test that the deprecation warning mentions the migration guide."""
-        import time
-        monkeypatch.setattr(time, 'sleep', lambda x: None)
-
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "generate_cv",
-            Path(__file__).parent.parent / "generate_cv.py"
-        )
-        generate_cv_module = importlib.util.module_from_spec(spec)
-        sys.modules["generate_cv"] = generate_cv_module
-        spec.loader.exec_module(generate_cv_module)
-
         import warnings
+
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             generate_cv_module.show_deprecation_warning()

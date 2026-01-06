@@ -44,7 +44,8 @@ def show_deprecation_warning():
 ║    • Active development and support                            ║
 ║                                                                ║
 ║  Migration guide:                                              ║
-║  https://github.com/Raminyazdani/cv_generator/docs/MIGRATION.md║
+║  https://github.com/Raminyazdani/cv_generator/blob/main/docs/  ║
+║  MIGRATION.md                                                  ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 """

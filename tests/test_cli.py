@@ -245,3 +245,57 @@ class TestBuildValidation:
         """Test that nonexistent templates dir returns config error."""
         result = main(["build", "--templates-dir", "/nonexistent/path"])
         assert result == 2  # EXIT_CONFIG_ERROR
+
+
+class TestLegacyScriptDeprecation:
+    """Tests for the deprecated generate_cv.py script."""
+
+    @pytest.fixture
+    def generate_cv_module(self, monkeypatch):
+        """Load the generate_cv.py script as a module."""
+        import importlib.util
+        import time
+
+        # Mock time.sleep to avoid actual delay in tests
+        monkeypatch.setattr(time, 'sleep', lambda x: None)
+
+        # Import the function from the generate_cv module (not from package)
+        spec = importlib.util.spec_from_file_location(
+            "generate_cv_script",
+            Path(__file__).parent.parent / "generate_cv.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_show_deprecation_warning_outputs_banner(self, capsys, generate_cv_module):
+        """Test that show_deprecation_warning outputs a visible banner."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            generate_cv_module.show_deprecation_warning()
+
+            # Check that a DeprecationWarning was issued
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert "deprecated" in str(w[0].message).lower()
+            assert "cvgen build" in str(w[0].message)
+
+        # Check that the banner was printed to stderr
+        captured = capsys.readouterr()
+        assert "DEPRECATION WARNING" in captured.err
+        assert "generate_cv.py is DEPRECATED" in captured.err
+        assert "v3.0.0" in captured.err
+        assert "cvgen build" in captured.err
+
+    def test_deprecation_warning_mentions_migration_guide(self, capsys, generate_cv_module):
+        """Test that the deprecation warning mentions the migration guide."""
+        import warnings
+
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            generate_cv_module.show_deprecation_warning()
+
+        captured = capsys.readouterr()
+        assert "MIGRATION" in captured.err or "migration" in captured.err.lower()

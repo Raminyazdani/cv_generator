@@ -1,8 +1,60 @@
-# Migration Guide: Path Flexibility
+# Migration Guide
 
-This guide explains how to migrate from the hardcoded `data/` directory structure to the new flexible path configuration system.
+This guide explains migration paths for CV Generator, including deprecated scripts and configuration changes.
 
-## Overview
+---
+
+## Deprecated: generate_cv.py Script
+
+**⚠️ DEPRECATION NOTICE**: The `generate_cv.py` script is deprecated and will be removed in v3.0.0.
+
+### Why is it deprecated?
+
+The new `cvgen` CLI provides:
+- Better error messages
+- More features (variants, caching, incremental builds)
+- Improved performance
+- Active development and support
+
+### Migration Steps
+
+Replace your `generate_cv.py` commands with the `cvgen` CLI:
+
+| Old Command | New Command |
+|-------------|-------------|
+| `python generate_cv.py` | `cvgen build` |
+| `python generate_cv.py --name ramin` | `cvgen build --name ramin` |
+| `python generate_cv.py --help` | `cvgen build --help` |
+
+### Examples
+
+```bash
+# OLD (deprecated)
+python generate_cv.py --name ramin
+
+# NEW (recommended)
+cvgen build --name ramin --lang en
+```
+
+### What happens if I still use generate_cv.py?
+
+The script will continue to work but will display a deprecation warning at runtime. The warning includes:
+- A visual banner alerting you to the deprecation
+- A Python `DeprecationWarning` for programmatic detection
+- A 2-second pause to ensure visibility
+
+### Timeline
+
+- **v1.0.0 - v2.x.x**: `generate_cv.py` works with deprecation warning
+- **v3.0.0**: `generate_cv.py` will be removed
+
+---
+
+## Path Flexibility
+
+This section explains how to migrate from the hardcoded `data/` directory structure to the new flexible path configuration system.
+
+### Overview
 
 CV Generator v1.0+ introduces flexible path configuration, allowing you to:
 - Store CV data outside the repository

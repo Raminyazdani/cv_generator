@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-CV Generator - Compatibility wrapper script.
+Legacy entry point for CV Generator.
 
-This script provides backward compatibility with the original generate_cv.py usage.
-It delegates to the cv_generator package CLI.
+DEPRECATED: This script is deprecated and will be removed in v3.0.0.
+Use the `cvgen` CLI instead.
 
-Usage:
-    python generate_cv.py           # Generate all CVs (same as cvgen build)
-    python generate_cv.py --help    # Show help
+Migration:
+    OLD: python generate_cv.py --name ramin
+    NEW: cvgen build --name ramin --lang en
 
-For advanced usage, use the cvgen CLI directly:
-    cvgen build --name ramin        # Build only ramin's CV
-    cvgen build --dry-run           # Render LaTeX without compilation
+See: https://github.com/Raminyazdani/cv_generator/blob/main/docs/MIGRATION.md
 """
 
 import sys
+import time
+import warnings
 from pathlib import Path
 
 # Add the src directory to the path for development installations
@@ -22,9 +22,54 @@ _src_dir = Path(__file__).parent / "src"
 if _src_dir.exists():
     sys.path.insert(0, str(_src_dir))
 
-from cv_generator.cli import main
 
-if __name__ == "__main__":
+def show_deprecation_warning():
+    """Display deprecation warning to user."""
+    warning_message = """
+╔════════════════════════════════════════════════════════════════╗
+║                     DEPRECATION WARNING                        ║
+╠════════════════════════════════════════════════════════════════╣
+║                                                                ║
+║  generate_cv.py is DEPRECATED and will be removed in v3.0.0   ║
+║                                                                ║
+║  Please migrate to the new CLI:                                ║
+║                                                                ║
+║    OLD: python generate_cv.py --name ramin                     ║
+║    NEW: cvgen build --name ramin --lang en                     ║
+║                                                                ║
+║  The new CLI provides:                                         ║
+║    • Better error messages                                     ║
+║    • More features (variants, caching, etc.)                   ║
+║    • Improved performance                                      ║
+║    • Active development and support                            ║
+║                                                                ║
+║  Migration guide:                                              ║
+║  https://github.com/Raminyazdani/cv_generator/blob/main/docs/  ║
+║  MIGRATION.md                                                  ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+"""
+
+    print(warning_message, file=sys.stderr)
+
+    # Also issue Python warning for programmatic detection
+    warnings.warn(
+        "generate_cv.py is deprecated. Use 'cvgen build' instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
+    # Give user time to read
+    time.sleep(2)
+
+
+def main():
+    """Legacy entry point with deprecation warning."""
+    from cv_generator.cli import main as cli_main
+
+    # Show deprecation warning
+    show_deprecation_warning()
+
     # Default to 'build' command if no command specified
     # and no help flags are present
     args = sys.argv[1:]
@@ -44,4 +89,8 @@ if __name__ == "__main__":
                 idx += 1
             args = args[:idx] + ["build"] + args[idx:]
 
-    sys.exit(main(args))
+    return cli_main(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

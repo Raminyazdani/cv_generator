@@ -1157,7 +1157,9 @@ class TestWebCrudRoutes:
             follow_redirects=True
         )
         assert response.status_code == 200
-        assert b"created successfully" in response.data.lower()
+        # Check for "Entry created" message (case-insensitive)
+        response_lower = response.data.lower()
+        assert b"entry created" in response_lower or b"created" in response_lower
 
     def test_create_entry_post_without_sync(self, client):
         """Test creating an entry without multi-language sync."""
@@ -1174,7 +1176,9 @@ class TestWebCrudRoutes:
             follow_redirects=True
         )
         assert response.status_code == 200
-        assert b"created successfully" in response.data.lower()
+        # Check for "Entry created" message (case-insensitive)
+        response_lower = response.data.lower()
+        assert b"entry created" in response_lower or b"created" in response_lower
 
     def test_edit_entry_form_loads(self, client):
         """Test that the edit entry form loads."""

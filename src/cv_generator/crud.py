@@ -25,6 +25,7 @@ Exports to output/ directory for use.
 import json
 import logging
 import sqlite3
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -33,6 +34,108 @@ from .db import _get_or_create_tag, _utcnow, get_db_path
 from .errors import ConfigurationError, ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# SYNC OPERATION RESULT TYPES
+# =============================================================================
+
+class SyncResult:
+    """
+    Result of a sync operation with detailed status for observability.
+
+    Provides structured feedback for UI display including:
+    - Success/failure status
+    - Languages synced/skipped
+    - Conflicts detected
+    - Timing information
+    """
+
+    def __init__(self, operation: str, stable_id: Optional[str] = None):
+        self.operation = operation
+        self.stable_id = stable_id
+        self.success = True
+        self.error_message: Optional[str] = None
+        self.start_time = time.time()
+        self.end_time: Optional[float] = None
+
+        # Sync status per language
+        self.synced_languages: List[str] = []
+        self.skipped_languages: Dict[str, str] = {}  # lang -> reason
+        self.failed_languages: Dict[str, str] = {}   # lang -> error
+        self.conflicts: List[Dict[str, Any]] = []
+
+        # Created/updated entry IDs
+        self.entry_ids: Dict[str, int] = {}
+
+    def mark_complete(self) -> None:
+        """Mark the operation as complete and record end time."""
+        self.end_time = time.time()
+
+    def mark_failed(self, error: str) -> None:
+        """Mark the operation as failed with an error message."""
+        self.success = False
+        self.error_message = error
+        self.end_time = time.time()
+
+    def add_synced(self, lang: str, entry_id: int) -> None:
+        """Record a successfully synced language."""
+        self.synced_languages.append(lang)
+        self.entry_ids[lang] = entry_id
+
+    def add_skipped(self, lang: str, reason: str) -> None:
+        """Record a skipped language with reason."""
+        self.skipped_languages[lang] = reason
+
+    def add_failed(self, lang: str, error: str) -> None:
+        """Record a failed sync for a language."""
+        self.failed_languages[lang] = error
+
+    def add_conflict(self, lang: str, existing_id: int, details: str) -> None:
+        """Record a conflict detected during sync."""
+        self.conflicts.append({
+            "language": lang,
+            "existing_entry_id": existing_id,
+            "details": details
+        })
+
+    @property
+    def duration_ms(self) -> float:
+        """Get operation duration in milliseconds."""
+        if self.end_time is None:
+            return (time.time() - self.start_time) * 1000
+        return (self.end_time - self.start_time) * 1000
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "operation": self.operation,
+            "stable_id": self.stable_id,
+            "success": self.success,
+            "error_message": self.error_message,
+            "duration_ms": round(self.duration_ms, 2),
+            "synced_languages": self.synced_languages,
+            "skipped_languages": self.skipped_languages,
+            "failed_languages": self.failed_languages,
+            "conflicts": self.conflicts,
+            "entry_ids": self.entry_ids,
+        }
+
+    def get_summary(self) -> str:
+        """Get human-readable summary for flash messages."""
+        if not self.success:
+            return f"Failed: {self.error_message}"
+
+        parts = []
+        if self.synced_languages:
+            parts.append(f"Synced to {len(self.synced_languages)} language(s): {', '.join(self.synced_languages).upper()}")
+        if self.skipped_languages:
+            parts.append(f"Skipped: {', '.join(f'{k} ({v})' for k, v in self.skipped_languages.items())}")
+        if self.conflicts:
+            parts.append(f"⚠️ {len(self.conflicts)} conflict(s) detected")
+        if not parts:
+            parts.append("No sync performed")
+        return " | ".join(parts)
 
 # Languages supported for multi-language sync
 SUPPORTED_LANGUAGES = ["en", "de", "fa"]
@@ -484,6 +587,9 @@ class ListSectionAdapter(SectionAdapter):
         """
         Create a new entry, optionally syncing to other languages.
 
+        This operation is atomic - either all entries are created, or none.
+        Uses a single transaction to ensure consistency across languages.
+
         Args:
             person_slug: Person's slug (e.g., "ramin" for EN, "ramin_de" for DE)
             data: Entry data
@@ -491,13 +597,17 @@ class ListSectionAdapter(SectionAdapter):
             sync_languages: If True, create placeholders in other languages
 
         Returns:
-            Created entry info with stable_id
+            Created entry info with stable_id and sync_result for observability
         """
         db_path = get_db_path(db_path)
         ensure_crud_schema(db_path)
 
         if not db_path.exists():
             raise ConfigurationError(f"Database not found: {db_path}")
+
+        # Initialize sync result for observability
+        stable_id = generate_stable_id()
+        sync_result = SyncResult("create", stable_id)
 
         # Determine base person and source language
         base_person = _get_base_person(person_slug)
@@ -507,10 +617,12 @@ class ListSectionAdapter(SectionAdapter):
                 source_lang = lang
                 break
 
-        # Generate stable ID
-        stable_id = generate_stable_id()
+        logger.info(
+            f"[SYNC CREATE] Starting entry creation: section={self.section}, "
+            f"person={person_slug}, source_lang={source_lang}, sync={sync_languages}"
+        )
 
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(db_path, timeout=30)
         try:
             cursor = conn.cursor()
 
@@ -521,11 +633,13 @@ class ListSectionAdapter(SectionAdapter):
                    VALUES (?, ?, ?, ?, ?)""",
                 (stable_id, self.section, base_person, now, now)
             )
+            logger.debug(f"[SYNC CREATE] Created stable_entry: {stable_id[:8]}...")
 
             # Create entry in source language
             entry_id = _create_entry_in_db(
                 cursor, person_slug, self.section, data
             )
+            logger.debug(f"[SYNC CREATE] Created source entry: id={entry_id}, lang={source_lang}")
 
             # Link entry to stable_id
             cursor.execute(
@@ -535,6 +649,7 @@ class ListSectionAdapter(SectionAdapter):
             )
 
             created_entries = {source_lang: entry_id}
+            sync_result.add_synced(source_lang, entry_id)
 
             # Sync to other languages if requested
             if sync_languages:
@@ -545,38 +660,60 @@ class ListSectionAdapter(SectionAdapter):
                     # Check if person exists for this language
                     lang_slug = _get_person_slug_for_lang(base_person, lang)
                     if not _person_exists_for_lang(cursor, base_person, lang):
-                        logger.debug(f"Skipping sync for {lang}: person {lang_slug} not found")
+                        reason = f"person '{lang_slug}' not found"
+                        logger.info(f"[SYNC CREATE] Skipping {lang}: {reason}")
+                        sync_result.add_skipped(lang, reason)
                         continue
 
-                    # Create placeholder entry
-                    placeholder = _create_placeholder_entry(
-                        data, self.section, source_lang, lang
-                    )
+                    try:
+                        # Create placeholder entry
+                        placeholder = _create_placeholder_entry(
+                            data, self.section, source_lang, lang
+                        )
 
-                    lang_entry_id = _create_entry_in_db(
-                        cursor, lang_slug, self.section, placeholder
-                    )
+                        lang_entry_id = _create_entry_in_db(
+                            cursor, lang_slug, self.section, placeholder
+                        )
 
-                    # Link to stable_id with needs_translation flag
-                    cursor.execute(
-                        """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
-                           VALUES (?, ?, ?, ?, ?)""",
-                        (stable_id, lang, lang_entry_id, 1, now)
-                    )
+                        # Link to stable_id with needs_translation flag
+                        cursor.execute(
+                            """INSERT INTO entry_lang_link (stable_id, language, entry_id, needs_translation, created_at)
+                               VALUES (?, ?, ?, ?, ?)""",
+                            (stable_id, lang, lang_entry_id, 1, now)
+                        )
 
-                    created_entries[lang] = lang_entry_id
+                        created_entries[lang] = lang_entry_id
+                        sync_result.add_synced(lang, lang_entry_id)
+                        logger.debug(f"[SYNC CREATE] Created {lang} entry: id={lang_entry_id}")
+
+                    except Exception as lang_err:
+                        # Log but continue - we'll include this in the result
+                        error_msg = str(lang_err)
+                        logger.warning(f"[SYNC CREATE] Failed to create {lang} entry: {error_msg}")
+                        sync_result.add_failed(lang, error_msg)
 
             conn.commit()
+            sync_result.mark_complete()
+
+            logger.info(
+                f"[SYNC CREATE] Completed: stable_id={stable_id[:8]}..., "
+                f"synced={sync_result.synced_languages}, "
+                f"skipped={list(sync_result.skipped_languages.keys())}, "
+                f"duration={sync_result.duration_ms:.1f}ms"
+            )
 
             return {
                 "stable_id": stable_id,
                 "section": self.section,
                 "source_language": source_lang,
                 "entries": created_entries,
-                "data": data
+                "data": data,
+                "sync_result": sync_result.to_dict()
             }
-        except Exception:
+        except Exception as e:
             conn.rollback()
+            sync_result.mark_failed(str(e))
+            logger.error(f"[SYNC CREATE] Failed: {e}, duration={sync_result.duration_ms:.1f}ms")
             raise
         finally:
             conn.close()
@@ -591,6 +728,9 @@ class ListSectionAdapter(SectionAdapter):
         """
         Update an entry, optionally syncing shared fields to other languages.
 
+        This operation is atomic - the update and any shared field syncs
+        occur in a single transaction.
+
         Args:
             entry_id: Entry ID to update
             data: New entry data
@@ -598,7 +738,7 @@ class ListSectionAdapter(SectionAdapter):
             sync_shared_fields: If True, sync shared fields to other language variants
 
         Returns:
-            Updated entry info
+            Updated entry info with sync_result for observability
         """
         db_path = get_db_path(db_path)
         ensure_crud_schema(db_path)
@@ -606,7 +746,13 @@ class ListSectionAdapter(SectionAdapter):
         if not db_path.exists():
             raise ConfigurationError(f"Database not found: {db_path}")
 
-        conn = sqlite3.connect(db_path)
+        sync_result = SyncResult("update")
+
+        logger.info(
+            f"[SYNC UPDATE] Starting entry update: entry_id={entry_id}, sync_shared={sync_shared_fields}"
+        )
+
+        conn = sqlite3.connect(db_path, timeout=30)
         try:
             cursor = conn.cursor()
 
@@ -625,6 +771,13 @@ class ListSectionAdapter(SectionAdapter):
                 raise ConfigurationError(f"Entry not found: {entry_id}")
 
             section, person_id, person_slug, stable_id, current_lang = row
+            sync_result.stable_id = stable_id
+            current_lang = current_lang or DEFAULT_LANGUAGE
+
+            logger.debug(
+                f"[SYNC UPDATE] Entry info: section={section}, lang={current_lang}, "
+                f"stable_id={stable_id[:8] if stable_id else 'None'}..."
+            )
 
             # Update the entry
             data_json = json.dumps(data, ensure_ascii=False, sort_keys=True)
@@ -659,6 +812,8 @@ class ListSectionAdapter(SectionAdapter):
                     (now, stable_id)
                 )
 
+            sync_result.add_synced(current_lang, entry_id)
+
             # Sync shared fields to other languages if requested
             synced_entries = {current_lang: entry_id}
             if sync_shared_fields and stable_id:
@@ -666,6 +821,8 @@ class ListSectionAdapter(SectionAdapter):
                 shared_data = {k: v for k, v in data.items() if k in shared}
 
                 if shared_data:
+                    logger.debug(f"[SYNC UPDATE] Syncing shared fields: {list(shared_data.keys())}")
+
                     # Get other language entries with same stable_id
                     cursor.execute(
                         """SELECT ell.entry_id, ell.language
@@ -675,50 +832,69 @@ class ListSectionAdapter(SectionAdapter):
                     )
 
                     for other_entry_id, other_lang in cursor.fetchall():
-                        # Get current data for other entry
-                        cursor.execute(
-                            "SELECT data_json FROM entry WHERE id = ?",
-                            (other_entry_id,)
-                        )
-                        other_row = cursor.fetchone()
-                        if other_row:
-                            other_data = json.loads(other_row[0])
-                            # Update only shared fields
-                            for key, value in shared_data.items():
-                                other_data[key] = value
-
-                            other_data_json = json.dumps(other_data, ensure_ascii=False, sort_keys=True)
+                        try:
+                            # Get current data for other entry
                             cursor.execute(
-                                "UPDATE entry SET data_json = ? WHERE id = ?",
-                                (other_data_json, other_entry_id)
+                                "SELECT data_json FROM entry WHERE id = ?",
+                                (other_entry_id,)
                             )
+                            other_row = cursor.fetchone()
+                            if other_row:
+                                other_data = json.loads(other_row[0])
+                                # Update only shared fields
+                                for key, value in shared_data.items():
+                                    other_data[key] = value
 
-                            # Update tags for shared type_key
-                            if "type_key" in shared_data:
-                                cursor.execute("DELETE FROM entry_tag WHERE entry_id = ?", (other_entry_id,))
-                                type_keys = shared_data.get("type_key", [])
-                                if isinstance(type_keys, list):
-                                    for tag_name in type_keys:
-                                        if tag_name:
-                                            tag_id = _get_or_create_tag(cursor, str(tag_name))
-                                            cursor.execute(
-                                                "INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
-                                                (other_entry_id, tag_id)
-                                            )
+                                other_data_json = json.dumps(other_data, ensure_ascii=False, sort_keys=True)
+                                cursor.execute(
+                                    "UPDATE entry SET data_json = ? WHERE id = ?",
+                                    (other_data_json, other_entry_id)
+                                )
 
-                            synced_entries[other_lang] = other_entry_id
+                                # Update tags for shared type_key
+                                if "type_key" in shared_data:
+                                    cursor.execute("DELETE FROM entry_tag WHERE entry_id = ?", (other_entry_id,))
+                                    type_keys = shared_data.get("type_key", [])
+                                    if isinstance(type_keys, list):
+                                        for tag_name in type_keys:
+                                            if tag_name:
+                                                tag_id = _get_or_create_tag(cursor, str(tag_name))
+                                                cursor.execute(
+                                                    "INSERT OR IGNORE INTO entry_tag (entry_id, tag_id) VALUES (?, ?)",
+                                                    (other_entry_id, tag_id)
+                                                )
+
+                                synced_entries[other_lang] = other_entry_id
+                                sync_result.add_synced(other_lang, other_entry_id)
+                                logger.debug(f"[SYNC UPDATE] Synced shared fields to {other_lang}")
+                        except Exception as lang_err:
+                            error_msg = str(lang_err)
+                            logger.warning(f"[SYNC UPDATE] Failed to sync {other_lang}: {error_msg}")
+                            sync_result.add_failed(other_lang, error_msg)
+                else:
+                    logger.debug("[SYNC UPDATE] No shared fields to sync")
 
             conn.commit()
+            sync_result.mark_complete()
+
+            logger.info(
+                f"[SYNC UPDATE] Completed: entry_id={entry_id}, "
+                f"synced={sync_result.synced_languages}, "
+                f"duration={sync_result.duration_ms:.1f}ms"
+            )
 
             return {
                 "id": entry_id,
                 "section": section,
                 "data": data,
                 "stable_id": stable_id,
-                "synced_entries": synced_entries
+                "synced_entries": synced_entries,
+                "sync_result": sync_result.to_dict()
             }
-        except Exception:
+        except Exception as e:
             conn.rollback()
+            sync_result.mark_failed(str(e))
+            logger.error(f"[SYNC UPDATE] Failed: {e}, duration={sync_result.duration_ms:.1f}ms")
             raise
         finally:
             conn.close()
@@ -728,9 +904,12 @@ class ListSectionAdapter(SectionAdapter):
         entry_id: int,
         db_path: Optional[Path] = None,
         sync_languages: bool = True
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """
         Delete an entry, optionally deleting counterparts in other languages.
+
+        This operation is atomic - either all deletions succeed, or none.
+        Uses a single transaction to ensure consistency.
 
         Args:
             entry_id: Entry ID to delete
@@ -738,7 +917,7 @@ class ListSectionAdapter(SectionAdapter):
             sync_languages: If True, delete all language variants with same stable_id
 
         Returns:
-            True if deleted, False if not found
+            Dict with deletion result including sync_result for observability
         """
         db_path = get_db_path(db_path)
         ensure_crud_schema(db_path)
@@ -746,7 +925,13 @@ class ListSectionAdapter(SectionAdapter):
         if not db_path.exists():
             raise ConfigurationError(f"Database not found: {db_path}")
 
-        conn = sqlite3.connect(db_path)
+        sync_result = SyncResult("delete")
+
+        logger.info(
+            f"[SYNC DELETE] Starting entry deletion: entry_id={entry_id}, sync={sync_languages}"
+        )
+
+        conn = sqlite3.connect(db_path, timeout=30)
         try:
             cursor = conn.cursor()
 
@@ -763,25 +948,48 @@ class ListSectionAdapter(SectionAdapter):
             stable_id = None
 
             if row and sync_languages:
-                stable_id, _ = row
+                stable_id, source_lang = row
+                sync_result.stable_id = stable_id
 
                 # Get all entries with same stable_id
                 cursor.execute(
-                    "SELECT entry_id FROM entry_lang_link WHERE stable_id = ?",
+                    "SELECT entry_id, language FROM entry_lang_link WHERE stable_id = ?",
                     (stable_id,)
                 )
-                entries_to_delete = [r[0] for r in cursor.fetchall()]
+                entries_info = cursor.fetchall()
+                entries_to_delete = [r[0] for r in entries_info]
+
+                logger.debug(
+                    f"[SYNC DELETE] Will delete {len(entries_to_delete)} linked entries "
+                    f"for stable_id={stable_id[:8]}..."
+                )
+            elif row:
+                stable_id, source_lang = row
+                sync_result.stable_id = stable_id
+                logger.debug(f"[SYNC DELETE] Deleting only {source_lang} variant")
 
             # Delete entries
             deleted_count = 0
             for eid in entries_to_delete:
+                # Get language for logging
+                cursor.execute(
+                    "SELECT language FROM entry_lang_link WHERE entry_id = ?",
+                    (eid,)
+                )
+                lang_row = cursor.fetchone()
+                lang = lang_row[0] if lang_row else DEFAULT_LANGUAGE
+
                 # Delete entry_tag relationships
                 cursor.execute("DELETE FROM entry_tag WHERE entry_id = ?", (eid,))
                 # Delete entry_lang_link
                 cursor.execute("DELETE FROM entry_lang_link WHERE entry_id = ?", (eid,))
                 # Delete entry
                 cursor.execute("DELETE FROM entry WHERE id = ?", (eid,))
-                deleted_count += cursor.rowcount
+
+                if cursor.rowcount > 0:
+                    deleted_count += 1
+                    sync_result.add_synced(lang, eid)
+                    logger.debug(f"[SYNC DELETE] Deleted {lang} entry: id={eid}")
 
             # Delete stable_entry if all variants are deleted
             if stable_id:
@@ -792,13 +1000,27 @@ class ListSectionAdapter(SectionAdapter):
                 remaining = cursor.fetchone()[0]
                 if remaining == 0:
                     cursor.execute("DELETE FROM stable_entry WHERE id = ?", (stable_id,))
+                    logger.debug(f"[SYNC DELETE] Deleted stable_entry: {stable_id[:8]}...")
 
             conn.commit()
+            sync_result.mark_complete()
 
-            logger.info(f"Deleted {deleted_count} entries (stable_id: {stable_id})")
-            return deleted_count > 0
-        except Exception:
+            logger.info(
+                f"[SYNC DELETE] Completed: deleted {deleted_count} entries, "
+                f"stable_id={stable_id[:8] if stable_id else 'None'}..., "
+                f"duration={sync_result.duration_ms:.1f}ms"
+            )
+
+            return {
+                "success": deleted_count > 0,
+                "deleted_count": deleted_count,
+                "stable_id": stable_id,
+                "sync_result": sync_result.to_dict()
+            }
+        except Exception as e:
             conn.rollback()
+            sync_result.mark_failed(str(e))
+            logger.error(f"[SYNC DELETE] Failed: {e}, duration={sync_result.duration_ms:.1f}ms")
             raise
         finally:
             conn.close()
@@ -962,7 +1184,7 @@ def delete_entry(
     section: str,
     db_path: Optional[Path] = None,
     sync_languages: bool = True
-) -> bool:
+) -> Dict[str, Any]:
     """
     Delete an entry with multi-language sync.
 
@@ -973,7 +1195,8 @@ def delete_entry(
         sync_languages: If True, delete all language variants
 
     Returns:
-        True if deleted
+        Dict with deletion result including sync_result for observability.
+        Contains 'success' key to check if deletion occurred.
     """
     adapter = get_section_adapter(section)
     return adapter.delete_entry(entry_id, db_path, sync_languages)

@@ -137,6 +137,7 @@ def build_command(args: argparse.Namespace) -> int:
             cvs_dir=cvs_dir,
             templates_dir=templates_dir,
             output_dir=output_dir,
+            pics_dir=pics_dir,
             name_filter=name_filter,
             dry_run=args.dry_run,
             keep_latex=args.keep_latex,
@@ -235,6 +236,7 @@ def _run_watch_mode(
     cvs_dir: Optional[Path],
     templates_dir: Optional[Path],
     output_dir: Optional[Path],
+    pics_dir: Optional[Path],
     name_filter: Optional[str],
     dry_run: bool,
     keep_latex: bool,
@@ -247,6 +249,7 @@ def _run_watch_mode(
         cvs_dir: Directory containing CV JSON files.
         templates_dir: Templates directory.
         output_dir: Output directory.
+        pics_dir: Profile pictures directory.
         name_filter: Name filter for CVs.
         dry_run: Dry run mode.
         keep_latex: Keep LaTeX files.

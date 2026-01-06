@@ -325,7 +325,6 @@ class SyncEngine:
             List of conflicts needing resolution
         """
         conflicts: List[FieldConflict] = []
-        now = datetime.now(timezone.utc)
 
         logger.info(f"[SYNC] Scanning for conflicts: resume_key={resume_key}")
 

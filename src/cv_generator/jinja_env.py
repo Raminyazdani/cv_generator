@@ -17,8 +17,8 @@ from typing import Any, Callable, Dict, Optional
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from jinja2.bccache import FileSystemBytecodeCache
 
-from .paths import get_default_templates_path, get_repo_root
 from .languages_config import is_rtl as language_is_rtl
+from .paths import get_default_templates_path, get_repo_root
 
 logger = logging.getLogger(__name__)
 
@@ -318,11 +318,11 @@ def cblock(s: Any) -> str:
 def find_pic(opt_name: str, pics_dir: Optional[Path] = None) -> bool:
     """
     Check if a profile picture exists for the given name.
-    
+
     Args:
         opt_name: Picture filename without extension
         pics_dir: Directory containing pictures (defaults to data/pics for backward compatibility)
-    
+
     Returns:
         True if picture exists, False otherwise
     """
@@ -334,7 +334,7 @@ def find_pic(opt_name: str, pics_dir: Optional[Path] = None) -> bool:
         else:
             # Fallback to home directory
             pics_dir = Path.home() / ".cvgen" / "pics"
-    
+
     pic_path = pics_dir / f"{opt_name}.jpg"
     return pic_path.exists()
 
@@ -342,11 +342,11 @@ def find_pic(opt_name: str, pics_dir: Optional[Path] = None) -> bool:
 def get_pic(opt_name: str, pics_dir: Optional[Path] = None) -> str:
     """
     Get the path to the profile picture for the given name.
-    
+
     Args:
         opt_name: Picture filename without extension
         pics_dir: Directory containing pictures (defaults to data/pics for backward compatibility)
-    
+
     Returns:
         String path to the picture
     """
@@ -358,7 +358,7 @@ def get_pic(opt_name: str, pics_dir: Optional[Path] = None) -> str:
         else:
             # Fallback to home directory
             pics_dir = Path.home() / ".cvgen" / "pics"
-    
+
     pic_path = pics_dir / f"{opt_name}.jpg"
     return str(pic_path)
 

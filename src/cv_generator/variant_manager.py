@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .db import get_db_path
-from .errors import ConfigurationError, ValidationError
+from .errors import ConfigurationError
 
 logger = logging.getLogger(__name__)
 

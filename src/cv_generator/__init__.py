@@ -27,8 +27,8 @@ from .db import (
     update_tag,
 )
 from .ensure import EnsureIssue, EnsureReport, run_ensure
+from .export_verify import ExportVerifier, RoundTripResult, VerificationResult
 from .exporter_v2 import CVExporter, ExportBatchResult, ExportResult
-from .export_verify import ExportVerifier, VerificationResult, RoundTripResult
 from .generator import generate_all_cvs, generate_cv
 
 # Registry and plugin system

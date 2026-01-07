@@ -574,6 +574,56 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     def basename_filter(path):
         return os.path.basename(path) if path else ''
 
+    @app.template_filter('format_location')
+    def format_location_filter(location_value):
+        """
+        Format location data for display in forms.
+        
+        Location can be:
+        - A string (simple location)
+        - A dict with city/country/address keys
+        - A list of location dicts
+        
+        Returns a human-readable string representation.
+        """
+        if not location_value:
+            return ''
+        
+        if isinstance(location_value, str):
+            return location_value
+        
+        if isinstance(location_value, list):
+            # Handle list of location objects - take the first one
+            if len(location_value) > 0 and isinstance(location_value[0], dict):
+                location_value = location_value[0]
+            else:
+                return str(location_value)
+        
+        if isinstance(location_value, dict):
+            # Format as "City, Region, Country"
+            parts = []
+            if location_value.get('city'):
+                parts.append(location_value['city'])
+            if location_value.get('region'):
+                parts.append(location_value['region'])
+            if location_value.get('country'):
+                parts.append(location_value['country'])
+            
+            if parts:
+                return ', '.join(parts)
+            
+            # Fallback to address if no city/region/country
+            if location_value.get('address'):
+                return location_value['address']
+            
+            # Last resort - if it has postalCode only
+            if location_value.get('postalCode'):
+                return location_value['postalCode']
+            
+            return ''
+        
+        return str(location_value)
+
     @app.context_processor
     def inject_helpers():
         """Inject helper functions into templates."""
@@ -725,6 +775,34 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
         return redirect(url_for("person_entity_detail", person_entity_id=person_entity_id))
 
+    @app.route("/persons/<person_entity_id>/create-variant", methods=["POST"])
+    @requires_auth
+    def create_variant_for_person(person_entity_id: str):
+        """Create a new language variant for a person entity."""
+        from .person import create_variant_for_entity
+
+        language = request.form.get("language", DEFAULT_LANGUAGE)
+
+        if language not in SUPPORTED_LANGUAGES:
+            flash(f"Unsupported language: {language}", "error")
+            return redirect(url_for("person_entity_detail", person_entity_id=person_entity_id))
+
+        try:
+            result = create_variant_for_entity(
+                person_entity_id=person_entity_id,
+                language=language,
+                db_path=app.config["DB_PATH"]
+            )
+            flash(
+                f"✓ Created {language.upper()} variant for {result['display_name']}. "
+                f"You can now add entries.",
+                "success"
+            )
+        except (ConfigurationError, ValidationError) as e:
+            flash(str(e), "error")
+
+        return redirect(url_for("person_entity_detail", person_entity_id=person_entity_id))
+
     @app.route("/persons/auto-group", methods=["POST"])
     @requires_auth
     def auto_group_route():
@@ -848,7 +926,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
     @app.route("/entry/<int:entry_id>/tags", methods=["POST"])
     @requires_auth
     def update_entry_tags_route(entry_id: int):
-        """Update tags for an entry."""
+        """Update tags for an entry with optional sync to other languages."""
         try:
             entry = get_entry(entry_id, app.config["DB_PATH"])
             if not entry:
@@ -857,10 +935,34 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
             # Get selected tags from form
             selected_tags = request.form.getlist("tags")
+            
+            # Check if sync to other languages is requested
+            sync_to_other_langs = request.form.get("sync_tags_to_languages") == "on"
 
-            # Update tags
+            # Update tags for current entry
             update_entry_tags(entry_id, selected_tags, app.config["DB_PATH"])
-            flash("Tags updated successfully", "success")
+            
+            # Sync tags to other language variants if requested
+            synced_langs = []
+            if sync_to_other_langs and entry.get("stable_id"):
+                try:
+                    linked = get_linked_entries(entry_id, entry["section"], app.config["DB_PATH"])
+                    for lang, linked_entry in linked.items():
+                        if linked_entry["id"] != entry_id:
+                            # Update tags for linked entry
+                            update_entry_tags(
+                                linked_entry["id"], 
+                                selected_tags, 
+                                app.config["DB_PATH"]
+                            )
+                            synced_langs.append(lang)
+                except Exception as sync_err:
+                    logger.warning(f"Failed to sync tags to other languages: {sync_err}")
+            
+            if synced_langs:
+                flash(f"Tags updated and synced to {len(synced_langs)} language(s): {', '.join(s.upper() for s in synced_langs)}", "success")
+            else:
+                flash("Tags updated successfully", "success")
 
         except (ConfigurationError, ValidationError) as e:
             flash(str(e), "error")

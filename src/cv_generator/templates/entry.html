@@ -61,6 +61,18 @@
             </div>
         </div>
         
+        {% if entry.stable_id %}
+        <div class="form-group" style="margin-top: 1rem; padding: 0.75rem; background: var(--gray-50); border-radius: 4px;">
+            <label class="checkbox-item" style="margin: 0;">
+                <input type="checkbox" name="sync_tags_to_languages" checked>
+                🌐 Sync tags to all language variants
+            </label>
+            <p style="font-size: 0.8rem; color: var(--gray-600); margin: 0.5rem 0 0 0;">
+                When enabled, the same tags will be applied to EN, DE, and FA versions of this entry.
+            </p>
+        </div>
+        {% endif %}
+        
         <div class="actions">
             <button type="submit" class="btn btn-primary">💾 Save Tags</button>
             <a href="{{ url_for('create_tag_route') }}" class="btn btn-secondary">+ New Tag</a>

@@ -1057,3 +1057,140 @@ def delete_person_entity(
         raise ConfigurationError(f"Failed to delete person entity: {e}") from e
     finally:
         conn.close()
+
+
+def create_variant_for_entity(
+    person_entity_id: str,
+    language: str,
+    db_path: Optional[Path] = None
+) -> Dict[str, Any]:
+    """
+    Create a new language variant for an existing person entity.
+
+    This creates a new person record (slug) for the specified language and links
+    it to the person entity. Also creates an initial 'basics' entry with the
+    person's name from the entity.
+
+    Args:
+        person_entity_id: Person entity ID
+        language: Language code (en, de, fa)
+        db_path: Path to database
+
+    Returns:
+        Dict with created variant info
+
+    Raises:
+        ValidationError: If language is not supported or variant already exists
+        ConfigurationError: If person entity not found
+    """
+    import re
+
+    db_path = get_db_path(db_path)
+    ensure_person_entity_schema(db_path)
+
+    if language not in SUPPORTED_LANGUAGES:
+        raise ValidationError(f"Unsupported language: {language}")
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Get person entity
+        cursor.execute(
+            """SELECT id, first_name, last_name, display_name, name_key
+               FROM person_entity WHERE id = ?""",
+            (person_entity_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise ConfigurationError(f"Person entity not found: {person_entity_id}")
+
+        _, first_name, last_name, display_name, name_key = row
+
+        # Check if variant already exists for this language
+        cursor.execute(
+            """SELECT p.id, p.slug FROM person_entity_variant pev
+               JOIN person p ON pev.person_id = p.id
+               WHERE pev.person_entity_id = ? AND pev.language = ?""",
+            (person_entity_id, language)
+        )
+        existing = cursor.fetchone()
+        if existing:
+            raise ValidationError(
+                f"A {language.upper()} variant already exists for this person (slug: {existing[1]})"
+            )
+
+        # Generate slug for the new variant
+        # Use the name_key to create a base slug
+        base_slug = name_key.replace("|", "_").replace(" ", "_").lower() if name_key else "new_person"
+        # Remove special characters
+        base_slug = re.sub(r'[^a-z0-9_]', '', base_slug)
+
+        if language == DEFAULT_LANGUAGE:
+            slug = base_slug
+        else:
+            slug = f"{base_slug}_{language}"
+
+        # Check for slug collision and make unique
+        cursor.execute("SELECT id FROM person WHERE slug = ?", (slug,))
+        if cursor.fetchone():
+            # Add a unique suffix
+            slug = f"{slug}_{uuid.uuid4().hex[:6]}"
+
+        now = _utcnow()
+
+        # Create person record
+        cursor.execute(
+            """INSERT INTO person (slug, display_name, created_at)
+               VALUES (?, ?, ?)""",
+            (slug, display_name, now)
+        )
+        person_id = cursor.lastrowid
+
+        # Create initial basics entry with name info
+        basics_data = {
+            "fname": first_name or "",
+            "lname": last_name or ""
+        }
+        basics_json = json.dumps(basics_data, ensure_ascii=False, sort_keys=True)
+
+        cursor.execute(
+            """INSERT INTO entry (person_id, section, order_idx, data_json, identity_key, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (person_id, "basics", 0, basics_json, f"basics:{first_name}-{last_name}", now)
+        )
+
+        # Link variant to person entity
+        cursor.execute(
+            """INSERT INTO person_entity_variant
+               (person_entity_id, person_id, language, is_primary, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (person_entity_id, person_id, language, 0, now)
+        )
+
+        # Update person entity timestamp
+        cursor.execute(
+            "UPDATE person_entity SET updated_at = ? WHERE id = ?",
+            (now, person_entity_id)
+        )
+
+        conn.commit()
+
+        logger.info(
+            f"Created {language.upper()} variant for person entity {person_entity_id[:8]}... "
+            f"(slug: {slug}, person_id: {person_id})"
+        )
+
+        return {
+            "person_id": person_id,
+            "slug": slug,
+            "language": language,
+            "display_name": display_name,
+            "person_entity_id": person_entity_id
+        }
+    except sqlite3.Error as e:
+        conn.rollback()
+        logger.error(f"Database error creating variant: {e}")
+        raise ConfigurationError(f"Failed to create variant: {e}") from e
+    finally:
+        conn.close()

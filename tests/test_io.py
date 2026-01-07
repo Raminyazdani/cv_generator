@@ -1,7 +1,7 @@
 """
 Unit tests for cv_generator.io module.
 
-Tests CV file discovery, JSON loading, and language map loading.
+Tests CV file discovery and JSON loading.
 """
 
 import json
@@ -16,7 +16,6 @@ from cv_generator.errors import ConfigurationError, ValidationError
 from cv_generator.io import (
     discover_cv_files,
     load_cv_json,
-    load_lang_map,
     parse_cv_filename,
     validate_cv_data,
 )
@@ -230,24 +229,3 @@ class TestIsValidLanguageCode:
         assert is_valid_language_code("") is False
         assert is_valid_language_code("1") is False
 
-
-class TestLoadLangMap:
-    """Tests for load_lang_map function."""
-
-    def test_load_lang_map(self, tmp_path):
-        """Test loading language map."""
-        lang_data = {
-            "education": {"en": "Education", "de": "Ausbildung"},
-            "skills": {"en": "Skills", "de": "Fähigkeiten"}
-        }
-        lang_file = tmp_path / "lang.json"
-        lang_file.write_text(json.dumps(lang_data))
-
-        loaded = load_lang_map(tmp_path)
-
-        assert loaded == lang_data
-
-    def test_load_lang_map_missing(self, tmp_path):
-        """Test that missing lang.json raises error."""
-        with pytest.raises(ConfigurationError):
-            load_lang_map(tmp_path)

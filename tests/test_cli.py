@@ -33,15 +33,15 @@ class TestCLI:
         captured = capsys.readouterr()
         assert "cvgen" in captured.out
 
-    def test_build_help(self, capsys):
-        """Test that build --help works."""
+    def test_web_help(self, capsys):
+        """Test that web --help works."""
         with pytest.raises(SystemExit) as exc_info:
-            main(["build", "--help"])
+            main(["web", "--help"])
 
         assert exc_info.value.code == 0
         captured = capsys.readouterr()
-        assert "--name" in captured.out
-        assert "--dry-run" in captured.out
+        assert "--host" in captured.out
+        assert "--port" in captured.out
 
 
 class TestCreateParser:
@@ -52,42 +52,28 @@ class TestCreateParser:
         parser = create_parser()
         assert parser is not None
 
-    def test_parser_build_command(self):
-        """Test parsing build command arguments."""
+    def test_parser_web_command(self):
+        """Test parsing web command arguments."""
         parser = create_parser()
-        args = parser.parse_args(["build", "--name", "test", "--dry-run"])
+        args = parser.parse_args(["web", "--port", "8080"])
 
-        assert args.command == "build"
-        assert args.name == "test"
-        assert args.dry_run is True
+        assert args.command == "web"
+        assert args.port == 8080
 
     def test_parser_verbose_flag(self):
         """Test parsing verbose flag."""
         parser = create_parser()
-        args = parser.parse_args(["-v", "build"])
+        args = parser.parse_args(["-v", "web"])
 
         assert args.verbose is True
 
     def test_parser_debug_flag(self):
         """Test parsing debug flag."""
         parser = create_parser()
-        args = parser.parse_args(["--debug", "build"])
+        # Use db command which doesn't have a --debug flag
+        args = parser.parse_args(["--debug", "db"])
 
         assert args.debug is True
-
-    def test_parser_directory_options(self):
-        """Test parsing directory options."""
-        parser = create_parser()
-        args = parser.parse_args([
-            "build",
-            "--input-dir", "/path/to/cvs",
-            "--output-dir", "/path/to/output",
-            "--templates-dir", "/path/to/templates"
-        ])
-
-        assert args.input_dir == "/path/to/cvs"
-        assert args.output_dir == "/path/to/output"
-        assert args.templates_dir == "/path/to/templates"
 
 
 class TestDBCommands:
@@ -103,7 +89,6 @@ class TestDBCommands:
         assert "init" in captured.out
         assert "import" in captured.out
         assert "export" in captured.out
-        assert "diff" in captured.out
 
     def test_db_init_help(self, capsys):
         """Test that db init --help works."""
@@ -134,17 +119,6 @@ class TestDBCommands:
         assert exc_info.value.code == 0
         captured = capsys.readouterr()
         assert "--output-dir" in captured.out
-        assert "--name" in captured.out
-        assert "--format" in captured.out
-
-    def test_db_diff_help(self, capsys):
-        """Test that db diff --help works."""
-        with pytest.raises(SystemExit) as exc_info:
-            main(["db", "diff", "--help"])
-
-        assert exc_info.value.code == 0
-        captured = capsys.readouterr()
-        assert "--input-dir" in captured.out
         assert "--name" in captured.out
         assert "--format" in captured.out
 
@@ -190,112 +164,12 @@ class TestDBCommands:
         assert args.name == "ramin"
         assert args.format == "min"
 
-
-class TestExportCommands:
-    """Tests for export CLI commands."""
-
-    def test_export_help(self, capsys):
-        """Test that export --help works."""
-        with pytest.raises(SystemExit) as exc_info:
-            main(["export", "--help"])
-
-        assert exc_info.value.code == 0
-        captured = capsys.readouterr()
-        assert "--name" in captured.out
-        assert "--format" in captured.out
-        assert "html" in captured.out
-        assert "md" in captured.out
-
-    def test_parser_export_command(self):
-        """Test parsing export command."""
+    def test_parser_db_list_command(self):
+        """Test parsing db list command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "export",
-            "--name", "ramin",
-            "--lang", "en",
-            "--format", "html"
-        ])
+        args = parser.parse_args(["db", "list", "--what", "tags", "--format", "json"])
 
-        assert args.command == "export"
-        assert args.name == "ramin"
-        assert args.lang == "en"
-        assert args.format == "html"
-
-    def test_parser_export_md_format(self):
-        """Test parsing export command with markdown format."""
-        parser = create_parser()
-        args = parser.parse_args([
-            "export",
-            "--format", "md"
-        ])
-
-        assert args.command == "export"
-        assert args.format == "md"
-
-
-class TestBuildValidation:
-    """Tests for build command input validation."""
-
-    def test_nonexistent_input_dir(self):
-        """Test that nonexistent input dir returns config error."""
-        result = main(["build", "--input-dir", "/nonexistent/path"])
-        assert result == 2  # EXIT_CONFIG_ERROR
-
-    def test_nonexistent_templates_dir(self):
-        """Test that nonexistent templates dir returns config error."""
-        result = main(["build", "--templates-dir", "/nonexistent/path"])
-        assert result == 2  # EXIT_CONFIG_ERROR
-
-
-class TestLegacyScriptDeprecation:
-    """Tests for the deprecated generate_cv.py script."""
-
-    @pytest.fixture
-    def generate_cv_module(self, monkeypatch):
-        """Load the generate_cv.py script as a module."""
-        import importlib.util
-        import time
-
-        # Mock time.sleep to avoid actual delay in tests
-        monkeypatch.setattr(time, 'sleep', lambda x: None)
-
-        # Import the function from the generate_cv module (not from package)
-        spec = importlib.util.spec_from_file_location(
-            "generate_cv_script",
-            Path(__file__).parent.parent / "generate_cv.py"
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    def test_show_deprecation_warning_outputs_banner(self, capsys, generate_cv_module):
-        """Test that show_deprecation_warning outputs a visible banner."""
-        import warnings
-
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            generate_cv_module.show_deprecation_warning()
-
-            # Check that a DeprecationWarning was issued
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "deprecated" in str(w[0].message).lower()
-            assert "cvgen build" in str(w[0].message)
-
-        # Check that the banner was printed to stderr
-        captured = capsys.readouterr()
-        assert "DEPRECATION WARNING" in captured.err
-        assert "generate_cv.py is DEPRECATED" in captured.err
-        assert "v3.0.0" in captured.err
-        assert "cvgen build" in captured.err
-
-    def test_deprecation_warning_mentions_migration_guide(self, capsys, generate_cv_module):
-        """Test that the deprecation warning mentions the migration guide."""
-        import warnings
-
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            generate_cv_module.show_deprecation_warning()
-
-        captured = capsys.readouterr()
-        assert "MIGRATION" in captured.err or "migration" in captured.err.lower()
+        assert args.command == "db"
+        assert args.db_command == "list"
+        assert args.what == "tags"
+        assert args.format == "json"

@@ -1154,10 +1154,13 @@ def create_variant_for_entity(
         }
         basics_json = json.dumps(basics_data, ensure_ascii=False, sort_keys=True)
 
+        # Construct identity_key with proper null handling
+        identity_key = f"basics:{first_name or ''}-{last_name or ''}"
+
         cursor.execute(
             """INSERT INTO entry (person_id, section, order_idx, data_json, identity_key, created_at)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (person_id, "basics", 0, basics_json, f"basics:{first_name}-{last_name}", now)
+            (person_id, "basics", 0, basics_json, identity_key, now)
         )
 
         # Link variant to person entity

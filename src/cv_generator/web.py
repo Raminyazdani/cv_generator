@@ -781,7 +781,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         """Create a new language variant for a person entity."""
         from .person import create_variant_for_entity
 
-        language = request.form.get("language", "en")
+        language = request.form.get("language", DEFAULT_LANGUAGE)
 
         if language not in SUPPORTED_LANGUAGES:
             flash(f"Unsupported language: {language}", "error")

@@ -119,6 +119,79 @@ CSRF_SESSION_KEY = "_csrf_token"
 CSRF_FORM_FIELD = "csrf_token"
 
 
+def list_resume_sets_v2(db_path: Path) -> list[dict[str, Any]]:
+    """
+    List resume sets from v2 schema (resume_sets + persons tables).
+    
+    This provides a fallback for the Home page when v1 person table is empty
+    but CVs have been imported via CVImporter (which uses v2 schema).
+    
+    Args:
+        db_path: Path to the database file.
+        
+    Returns:
+        List of resume set records with variant info, suitable for display.
+    """
+    import sqlite3
+    
+    resume_sets = []
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Check if resume_sets table exists (v2 schema)
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='resume_sets'"
+        )
+        if not cursor.fetchone():
+            return resume_sets
+        
+        # Get resume_sets with their variants and display info
+        cursor.execute(
+            """SELECT rs.resume_key, rs.base_lang_code, rs.created_at,
+                      p.id as person_id, pi.fname, pi.lname
+               FROM resume_sets rs
+               LEFT JOIN persons p ON rs.resume_key = p.resume_key
+               LEFT JOIN resume_versions rv ON rs.resume_key = rv.resume_key AND rv.is_base = 1
+               LEFT JOIN person_i18n pi ON p.id = pi.person_id AND pi.resume_version_id = rv.id
+               ORDER BY rs.resume_key"""
+        )
+        
+        for row in cursor.fetchall():
+            resume_key, base_lang, created_at, person_id, fname, lname = row
+            
+            # Build display name
+            display_name = f"{fname or ''} {lname or ''}".strip()
+            if not display_name:
+                # Use resume_key as fallback, converting underscores to spaces and title casing
+                display_name = resume_key.replace("_", " ").title()
+            
+            # Get available language variants
+            cursor.execute(
+                """SELECT lang_code FROM resume_versions WHERE resume_key = ?""",
+                (resume_key,)
+            )
+            variants = {row2[0]: {"language": row2[0]} for row2 in cursor.fetchall()}
+            
+            resume_sets.append({
+                "id": resume_key,  # Use resume_key as id for template compatibility
+                "resume_key": resume_key,
+                "display_name": display_name,
+                "base_lang_code": base_lang,
+                "created_at": created_at,
+                "variants": variants,
+                "person_id": person_id,
+                "is_v2": True,  # Flag to distinguish from v1 person_entities
+            })
+        
+        conn.close()
+    except Exception as e:
+        logger.warning(f"Failed to list v2 resume_sets: {e}")
+    
+    return resume_sets
+
+
 def generate_csrf_token() -> str:
     """
     Generate or retrieve a CSRF token from the session.
@@ -683,17 +756,23 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
             # Also get legacy persons list for backward compatibility
             persons = list_persons(app.config["DB_PATH"])
+            
+            # Get v2 resume_sets (from CVImporter imports)
+            # These are shown when v1 person_entities/unlinked is empty
+            resume_sets_v2 = list_resume_sets_v2(app.config["DB_PATH"])
         except ConfigurationError as e:
             flash(str(e), "error")
             person_entities = []
             unlinked = []
             persons = []
+            resume_sets_v2 = []
 
         return render_template(
             "index.html",
             person_entities=person_entities,
             unlinked_variants=unlinked,
             persons=persons,
+            resume_sets_v2=resume_sets_v2,
             supported_languages=SUPPORTED_LANGUAGES
         )
 

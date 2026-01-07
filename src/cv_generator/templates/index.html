@@ -47,6 +47,34 @@
 </div>
 {% endif %}
 
+{% if resume_sets_v2 %}
+<h3 style="margin-top: 2rem; margin-bottom: 1rem;">Imported CVs</h3>
+<p style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
+    These CVs were imported via the Import feature.
+</p>
+<div class="card-grid">
+    {% for rs in resume_sets_v2 %}
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <a href="{{ url_for('variant_status_route', resume_key=rs.resume_key) }}" class="card-link">
+            <h3>{{ rs.display_name }}</h3>
+            <div style="margin-top: 0.5rem;">
+                {% for lang in supported_languages %}
+                    {% if lang in rs.variants %}
+                        <span class="tag" style="background: var(--success);">{{ lang|upper }}</span>
+                    {% else %}
+                        <span class="tag tag-count" style="opacity: 0.5;">{{ lang|upper }}</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <p style="margin-top: 0.5rem; color: var(--gray-500); font-size: 0.85rem;">
+                {{ rs.variants|length }} language variant(s)
+            </p>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% if unlinked_variants %}
 <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Unlinked Variants</h3>
 <p style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
@@ -73,7 +101,7 @@
 </div>
 {% endif %}
 
-{% if not person_entities and not unlinked_variants %}
+{% if not person_entities and not unlinked_variants and not resume_sets_v2 %}
 <div class="card empty-state">
     <p>No persons found in database.</p>
     <p style="margin-top: 1rem;">

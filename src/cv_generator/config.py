@@ -42,7 +42,6 @@ class ProjectConfig:
 
     name: str = ""
     default_lang: str = "en"
-    variants: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -50,18 +49,8 @@ class PathsConfig:
     """Path configuration."""
 
     cvs: Optional[str] = None
-    templates: Optional[str] = None
     output: Optional[str] = None
     db: Optional[str] = None
-
-
-@dataclass
-class BuildConfig:
-    """Build configuration."""
-
-    latex_engine: str = "xelatex"
-    keep_latex: bool = False
-    dry_run: bool = False
 
 
 @dataclass
@@ -73,13 +62,22 @@ class LoggingConfig:
 
 
 @dataclass
+class WebConfig:
+    """Web server configuration."""
+
+    host: str = "127.0.0.1"
+    port: int = 5000
+    debug: bool = False
+
+
+@dataclass
 class Config:
     """Complete configuration for CV Generator."""
 
     project: ProjectConfig = field(default_factory=ProjectConfig)
     paths: PathsConfig = field(default_factory=PathsConfig)
-    build: BuildConfig = field(default_factory=BuildConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    web: WebConfig = field(default_factory=WebConfig)
     config_path: Optional[Path] = None
 
     @classmethod
@@ -87,29 +85,27 @@ class Config:
         """Create Config from a dictionary (parsed TOML)."""
         project_data = data.get("project", {})
         paths_data = data.get("paths", {})
-        build_data = data.get("build", {})
         logging_data = data.get("logging", {})
+        web_data = data.get("web", {})
 
         return cls(
             project=ProjectConfig(
                 name=project_data.get("name", ""),
                 default_lang=project_data.get("default_lang", "en"),
-                variants=project_data.get("variants", []),
             ),
             paths=PathsConfig(
                 cvs=paths_data.get("cvs"),
-                templates=paths_data.get("templates"),
                 output=paths_data.get("output"),
                 db=paths_data.get("db"),
-            ),
-            build=BuildConfig(
-                latex_engine=build_data.get("latex_engine", "xelatex"),
-                keep_latex=build_data.get("keep_latex", False),
-                dry_run=build_data.get("dry_run", False),
             ),
             logging=LoggingConfig(
                 level=logging_data.get("level", "WARNING"),
                 log_file=logging_data.get("log_file"),
+            ),
+            web=WebConfig(
+                host=web_data.get("host", "127.0.0.1"),
+                port=web_data.get("port", 5000),
+                debug=web_data.get("debug", False),
             ),
             config_path=config_path,
         )

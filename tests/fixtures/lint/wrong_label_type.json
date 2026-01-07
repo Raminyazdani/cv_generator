@@ -1,9 +1,0 @@
-{
-  "basics": [
-    {
-      "fname": "Test",
-      "lname": "Person",
-      "label": "Should be array not string"
-    }
-  ]
-}

@@ -1979,6 +1979,132 @@ class TestImportV2Schema:
         assert result is not None, "resume_sets table should exist after migration"
 
 
+class TestWebImportV1SchemaEditing:
+    """Tests that web-imported CVs can be edited via v1 schema.
+    
+    This test class verifies the fix for the issue where CVs imported via
+    the web interface could not be edited in the UI.
+    """
+
+    @pytest.fixture
+    def app_with_cv_file(self, tmp_path):
+        """Create a test app with a CV file ready for import."""
+        from cv_generator.web import create_app
+
+        db_path = tmp_path / "test.db"
+        init_db(db_path)
+
+        # Create CV JSON file
+        cv_data = {
+            "config": {"lang": "en", "ID": "webuser"},
+            "basics": [{"fname": "Web", "lname": "Imported"}],
+            "projects": [
+                {"title": "Web Project 1", "url": "https://example.com/1"},
+                {"title": "Web Project 2", "description": "Test project"}
+            ]
+        }
+        cv_path = tmp_path / "webuser.json"
+        cv_path.write_text(json.dumps(cv_data, ensure_ascii=False))
+
+        app = create_app(db_path)
+        app.config["TESTING"] = True
+        
+        return app, cv_path, db_path
+
+    def test_web_import_populates_v1_schema(self, app_with_cv_file):
+        """Test that web import also populates v1 schema for editing."""
+        app, cv_path, db_path = app_with_cv_file
+        client = app.test_client()
+
+        # Get CSRF token
+        form_response = client.get("/import")
+        csrf_token = get_csrf_token(form_response)
+
+        # Upload the file
+        with open(cv_path, 'rb') as f:
+            response = client.post(
+                "/import/upload",
+                data={
+                    "csrf_token": csrf_token,
+                    "import_mode": "merge",
+                    "files": (f, "webuser.json"),
+                },
+                content_type='multipart/form-data',
+            )
+        assert response.status_code == 200
+
+        # Extract session ID from response
+        session_match = re.search(
+            rb'/import/confirm/([a-f0-9]+)', 
+            response.data
+        )
+        assert session_match, "Session ID not found in upload response"
+        session_id = session_match.group(1).decode()
+
+        # Extract CSRF token from preview page
+        csrf_match = re.search(
+            rb'name="csrf_token"[^>]*value="([^"]*)"',
+            response.data
+        )
+        csrf_token = csrf_match.group(1).decode() if csrf_match else csrf_token
+
+        # Confirm the import
+        response = client.post(
+            f"/import/confirm/{session_id}",
+            data={"csrf_token": csrf_token}
+        )
+        assert response.status_code == 200
+
+        # Verify v1 schema was populated
+        persons = list_persons(db_path)
+        person_slugs = [p["slug"] for p in persons]
+        assert "webuser" in person_slugs, \
+            f"webuser should be in v1 schema after import. Found: {person_slugs}"
+
+    def test_web_imported_entry_can_be_edited(self, app_with_cv_file):
+        """Test that entries from web import can be accessed via edit route."""
+        app, cv_path, db_path = app_with_cv_file
+        client = app.test_client()
+
+        # Get CSRF token and upload
+        form_response = client.get("/import")
+        csrf_token = get_csrf_token(form_response)
+
+        with open(cv_path, 'rb') as f:
+            response = client.post(
+                "/import/upload",
+                data={
+                    "csrf_token": csrf_token,
+                    "import_mode": "merge",
+                    "files": (f, "webuser.json"),
+                },
+                content_type='multipart/form-data',
+            )
+
+        # Confirm import
+        session_match = re.search(rb'/import/confirm/([a-f0-9]+)', response.data)
+        session_id = session_match.group(1).decode()
+        csrf_match = re.search(rb'name="csrf_token"[^>]*value="([^"]*)"', response.data)
+        csrf_token = csrf_match.group(1).decode() if csrf_match else csrf_token
+
+        client.post(f"/import/confirm/{session_id}", data={"csrf_token": csrf_token})
+
+        # Get entries from v1 schema
+        entries = get_section_entries("webuser", "projects", db_path)
+        assert len(entries) >= 1, "Should have project entries after import"
+
+        # Try to access the edit route
+        entry_id = entries[0]["id"]
+        response = client.get(f"/entry/{entry_id}")
+        assert response.status_code == 200
+        assert b"Edit Entry" in response.data, "Edit Entry button should be present"
+
+        # Try to access the edit form
+        response = client.get(f"/entry/{entry_id}/edit")
+        assert response.status_code == 200
+        assert b"Save Entry" in response.data, "Edit form should be accessible"
+
+
 class TestExportUIRoutes:
     """Tests for the Export UI routes."""
 

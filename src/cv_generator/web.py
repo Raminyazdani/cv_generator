@@ -77,6 +77,8 @@ from .db import (
     get_person_sections,
     get_section_entries,
     get_tag_by_name,
+    import_cv,
+    init_db,
     list_persons,
     list_tags,
     update_entry_tags,
@@ -2123,6 +2125,12 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
             flash("No valid files to import.", "error")
             return redirect(url_for("import_page"))
 
+        # Ensure v1 schema also exists (for editing support)
+        try:
+            init_db(app.config["DB_PATH"])
+        except Exception:
+            pass  # Database may already exist, which is fine
+
         # Perform the import
         importer = CVImporter(app.config["DB_PATH"])
         results = []
@@ -2131,10 +2139,21 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
 
         for file_path in files:
             try:
+                # Import into v2 schema for structured data storage
                 result = importer.import_file(Path(file_path), dry_run=False, overwrite=overwrite)
                 results.append(result.to_dict())
                 if result.success:
                     success_count += 1
+                    
+                    # Also import into v1 schema for UI editing support
+                    # This populates the 'person' and 'entry' tables that the
+                    # edit functionality relies on
+                    try:
+                        import_cv(Path(file_path), app.config["DB_PATH"], overwrite=overwrite)
+                        logger.info(f"[IMPORT] Also imported into v1 schema: {file_path}")
+                    except Exception as v1_err:
+                        # Log but don't fail - v2 import succeeded
+                        logger.warning(f"[IMPORT] v1 schema import failed for {file_path}: {v1_err}")
                 else:
                     error_count += 1
             except Exception as e:

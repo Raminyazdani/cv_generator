@@ -2128,8 +2128,9 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
         # Ensure v1 schema also exists (for editing support)
         try:
             init_db(app.config["DB_PATH"])
-        except Exception:
-            pass  # Database may already exist, which is fine
+        except ConfigurationError:
+            # Database already exists with schema, which is fine
+            logger.debug("[IMPORT] v1 schema already initialized")
 
         # Perform the import
         importer = CVImporter(app.config["DB_PATH"])
@@ -2151,7 +2152,7 @@ def create_app(db_path: Optional[Path] = None) -> Flask:
                     try:
                         import_cv(Path(file_path), app.config["DB_PATH"], overwrite=overwrite)
                         logger.info(f"[IMPORT] Also imported into v1 schema: {file_path}")
-                    except Exception as v1_err:
+                    except (ConfigurationError, ValidationError) as v1_err:
                         # Log but don't fail - v2 import succeeded
                         logger.warning(f"[IMPORT] v1 schema import failed for {file_path}: {v1_err}")
                 else:

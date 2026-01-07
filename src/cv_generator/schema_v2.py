@@ -12,7 +12,7 @@ Key concepts:
 - tag_codes: Stable tag identifiers with i18n support
 
 Non-negotiable constraints:
-- LaTeX JSON contract is LOCKED: Export must produce exact JSON structure for LaTeX
+- JSON contract is LOCKED: Export must produce exact JSON structure
 - Zero data loss: Migration must preserve all existing data
 - ERD compliance: Every table/column/index from erd.txt is implemented exactly
 """

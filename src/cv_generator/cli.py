@@ -15,7 +15,6 @@ from typing import List, Optional
 
 from . import __version__
 from .errors import (
-    EXIT_CONFIG_ERROR,
     EXIT_ERROR,
     EXIT_SUCCESS,
 )

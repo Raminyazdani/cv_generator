@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .errors import ConfigurationError, ValidationError
-from .paths import get_default_cvs_path, get_lang_engine_path
+from .paths import get_default_cvs_path
 
 logger = logging.getLogger(__name__)
 
@@ -238,43 +238,3 @@ def validate_cv_data(data: Dict[str, Any], filename: str) -> bool:
 
     return True
 
-
-def load_lang_map(lang_engine_path: Optional[Path] = None) -> Dict[str, Dict[str, str]]:
-    """
-    Load the translation mapping from lang_engine/lang.json.
-
-    Expected format:
-    {
-      "education": { "en": "Education", "de": "Ausbildung", "fa": "تحصیلات" },
-      ...
-    }
-
-    Args:
-        lang_engine_path: Path to the lang_engine directory.
-
-    Returns:
-        Translation mapping dictionary.
-
-    Raises:
-        ConfigurationError: If the translation file is not found.
-    """
-    if lang_engine_path is None:
-        lang_engine_path = get_lang_engine_path()
-
-    lang_file = lang_engine_path / "lang.json"
-
-    if not lang_file.exists():
-        raise ConfigurationError(
-            f"Translation file not found at: {lang_file}\n"
-            f"Expected format:\n"
-            f'{{\n'
-            f'  "education": {{ "en": "Education", "de": "Ausbildung", "fa": "تحصیلات" }},\n'
-            f'  "email": {{ "en": "Email", "de": "E-Mail", "fa": "ایمیل" }}\n'
-            f'}}'
-        )
-
-    with open(lang_file, encoding="utf-8") as f:
-        lang_map = json.load(f)
-
-    logger.debug(f"Loaded language map with {len(lang_map)} entries")
-    return lang_map

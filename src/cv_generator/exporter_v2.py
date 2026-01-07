@@ -3,7 +3,7 @@ Lossless DB to JSON export engine for CV Generator.
 
 This module implements a precision JSON export engine that reconstructs CV JSON
 files from the normalized database. The exported JSON must exactly match the
-original schema that LaTeX templates consume — same field names, same nesting,
+original schema that was imported — same field names, same nesting,
 same array structures, same key ordering.
 
 Key features:

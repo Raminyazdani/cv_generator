@@ -2,7 +2,7 @@
 Field mapping configuration for DB to JSON export.
 
 This module defines exact JSON field names for each DB column,
-ensuring exported JSON matches the exact structure that LaTeX templates expect.
+ensuring exported JSON matches the exact structure that was imported.
 
 Key principles:
 - Field names match JSON exactly (case-sensitive): fname, Pictures, startDate

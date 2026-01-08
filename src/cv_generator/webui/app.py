@@ -38,6 +38,7 @@ def create_app(*, repo_root: Path) -> Flask:
 
     # Config
     db_path = repo_root / "data" / "db" / "cv_database.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     app.config["SECRET_KEY"] = "dev-local-only-change-me"
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path.as_posix()}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False

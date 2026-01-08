@@ -75,6 +75,113 @@
     </div>
 </div>
 
+<!-- Export by Tags -->
+{% if all_tags %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>🏷️ Export by Tags</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Export entries filtered by selected tags. Only entries containing <strong>all selected tags</strong> will be included.
+        The exported entries will only show the selected tags in their <code>type_key</code> field.
+    </p>
+
+    <form id="export-by-tags-form" action="{{ url_for('export_by_tags') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="tag_person">Person</label>
+            <select name="person" id="tag_person" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px;" onchange="updateEntryCount()">
+                <option value="">-- Select a person --</option>
+                {% for person in persons %}
+                    <option value="{{ person.slug }}">{{ person.display_name or person.slug }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tag_language">Language</label>
+            <select name="language" id="tag_language" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px;" onchange="updateEntryCount()">
+                {% for lang in supported_languages %}
+                    <option value="{{ lang }}" {% if lang == current_language %}selected{% endif %}>{{ lang | upper }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Select Tags (entries must have ALL selected tags)</label>
+            <div class="checkbox-list" style="max-height: 200px;">
+                {% for tag in all_tags %}
+                <div class="checkbox-item" style="cursor: pointer;">
+                    <input type="checkbox" name="tag_ids" value="{{ tag.id }}" id="tag_{{ tag.id }}" onchange="updateEntryCount()">
+                    <label for="tag_{{ tag.id }}">{{ tag.label }} <span class="entry-meta">({{ tag.slug }})</span></label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="custom_filename">Custom Filename (optional)</label>
+            <input type="text" name="custom_filename" id="custom_filename" 
+                   placeholder="e.g., bio_academic_export.json" 
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+            <span class="entry-meta">Leave blank for auto-generated filename with timestamp.</span>
+        </div>
+
+        <div id="entry-count-display" style="margin: 1rem 0; padding: 0.75rem; background: var(--gray-100); border-radius: 6px; display: none;">
+            <strong>Matching entries:</strong> <span id="entry-count">0</span>
+        </div>
+
+        <div class="actions" style="margin-top: 1rem;">
+            <button type="submit" class="btn btn-success">🏷️ Export by Tags</button>
+            <button type="submit" formaction="{{ url_for('export_by_tags_preview') }}" class="btn btn-secondary">👁️ Preview</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateEntryCount() {
+    const form = document.getElementById('export-by-tags-form');
+    const person = document.getElementById('tag_person').value;
+    const language = document.getElementById('tag_language').value;
+    const tagCheckboxes = document.querySelectorAll('input[name="tag_ids"]:checked');
+    const countDisplay = document.getElementById('entry-count-display');
+    const countSpan = document.getElementById('entry-count');
+    
+    if (!person || tagCheckboxes.length === 0) {
+        countDisplay.style.display = 'none';
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('person', person);
+    formData.append('language', language);
+    tagCheckboxes.forEach(cb => formData.append('tag_ids', cb.value));
+    
+    fetch('{{ url_for("export_by_tags_count") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        countSpan.textContent = data.count;
+        countDisplay.style.display = 'block';
+        if (data.count === 0) {
+            countDisplay.style.background = 'var(--danger-50)';
+            countDisplay.style.color = 'var(--danger-700)';
+        } else {
+            countDisplay.style.background = 'var(--gray-100)';
+            countDisplay.style.color = 'inherit';
+        }
+    })
+    .catch(err => {
+        console.error('Error fetching entry count:', err);
+    });
+}
+</script>
+{% endif %}
+
 {% if available_variants %}
 <div class="card" style="margin-top: 1rem;">
     <h3>Available Variants (v2 Database)</h3>

@@ -332,3 +332,221 @@ def write_export_file(repo_root: Path, resume_key: str, lang_code: str, export_l
     out_path = out_dir / f"{resume_key}_{lang_code}_export_{export_language}_{ts}.json"
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return out_path
+
+
+def _get_entries_with_all_tags(person_id: int, lang_code: str, tag_ids: List[int]) -> Dict[Tuple[str, str], Entry]:
+    """
+    Get entries that have ALL the specified tags (AND logic).
+    Returns {(section, stable_id): Entry} for matching entries.
+    """
+    if not tag_ids:
+        return {}
+
+    # Find stable_ids that have ALL the required tags
+    from sqlalchemy import func
+
+    # Query for (section, stable_id) that appear with each of the required tag_ids
+    # Group by section+stable_id and count distinct tag_ids - must equal len(tag_ids)
+    matching_groups = (
+        db.session.query(EntityTag.section, EntityTag.stable_id)
+        .filter(EntityTag.person_id == person_id, EntityTag.tag_id.in_(tag_ids))
+        .group_by(EntityTag.section, EntityTag.stable_id)
+        .having(func.count(func.distinct(EntityTag.tag_id)) == len(tag_ids))
+        .all()
+    )
+
+    if not matching_groups:
+        return {}
+
+    # Fetch entries for these groups
+    result: Dict[Tuple[str, str], Entry] = {}
+    for section, stable_id in matching_groups:
+        entry = Entry.query.filter_by(
+            person_id=person_id,
+            lang_code=lang_code,
+            section=section,
+            stable_id=stable_id
+        ).first()
+        if entry:
+            result[(section, stable_id)] = entry
+
+    return result
+
+
+def count_entries_with_tags(resume_key: str, lang_code: str, tag_ids: List[int]) -> int:
+    """
+    Count entries that have ALL the specified tags.
+    """
+    person = PersonEntity.query.filter_by(slug=resume_key).first()
+    if not person:
+        return 0
+    matching = _get_entries_with_all_tags(person.id, lang_code, tag_ids)
+    return len(matching)
+
+
+def _tag_map_for_entries_filtered(person_id: int, tag_ids: List[int], export_language: str) -> Dict[Tuple[str, str], List[str]]:
+    """
+    Like _tag_map_for_person, but only includes the selected tags (not all tags on entry).
+    Returns {(section, stable_id): [labels for selected tags only...]}.
+    """
+    if not tag_ids:
+        return {}
+
+    # Get translation labels for the selected tag_ids
+    tr_cache: Dict[int, str] = {}
+    for tag_id in tag_ids:
+        tr = TagTranslation.query.filter_by(tag_id=tag_id, lang_code=export_language).first()
+        if tr:
+            tr_cache[tag_id] = tr.label
+        else:
+            t = Tag.query.get(tag_id)
+            if t:
+                tr_cache[tag_id] = t.slug
+            else:
+                tr_cache[tag_id] = "tag"
+
+    # Get all entity-tag links for this person with the selected tags
+    links = EntityTag.query.filter(
+        EntityTag.person_id == person_id,
+        EntityTag.tag_id.in_(tag_ids)
+    ).all()
+
+    tag_map: Dict[Tuple[str, str], List[str]] = {}
+    for link in links:
+        k = (link.section, link.stable_id)
+        label = tr_cache.get(link.tag_id, "tag")
+        tag_map.setdefault(k, []).append(label)
+
+    # Normalize ordering
+    for k in list(tag_map.keys()):
+        tag_map[k] = sorted(set(tag_map[k]), key=lambda x: x.lower())
+
+    return tag_map
+
+
+def export_variant_by_tags_to_json(
+    resume_key: str,
+    lang_code: str,
+    export_language: str,
+    tag_ids: List[int]
+) -> Dict[str, Any]:
+    """
+    Export CV JSON filtered by tags.
+    - Only entries with ALL selected tags are included
+    - type_key in output only includes selected tags (not other tags the entry had)
+    """
+    person = PersonEntity.query.filter_by(slug=resume_key).first()
+    if not person:
+        raise ValueError(f"Unknown person: {resume_key}")
+
+    variant = CVVariant.query.filter_by(person_id=person.id, lang_code=lang_code).first()
+    config = variant.config if variant else None
+
+    out: Dict[str, Any] = {}
+    if config is not None:
+        out["config"] = config
+
+    # Get entries matching all tags
+    matching_entries = _get_entries_with_all_tags(person.id, lang_code, tag_ids)
+    if not matching_entries:
+        return out
+
+    # Get tag map with only selected tags
+    tag_map = _tag_map_for_entries_filtered(person.id, tag_ids, export_language)
+
+    # Group entries by section
+    from collections import defaultdict
+    entries_by_section: Dict[str, List[Entry]] = defaultdict(list)
+    for (section, stable_id), entry in matching_entries.items():
+        entries_by_section[section].append(entry)
+
+    # Sort entries within each section by sort_order
+    for section in entries_by_section:
+        entries_by_section[section].sort(key=lambda e: (e.sort_order, e.id))
+
+    # Build output
+    from .fields import SECTION_ORDER
+
+    for section in SECTION_ORDER:
+        entries = entries_by_section.get(section, [])
+        if not entries:
+            continue
+
+        if section == "skills":
+            skills_obj: Dict[str, Dict[str, List[dict]]] = {}
+            for e in entries:
+                d = dict(e.data or {})
+                d["type_key"] = tag_map.get((section, e.stable_id), [])
+                parent = d.pop("parent_category", "Other")
+                sub = d.pop("sub_category", "Other")
+                skills_obj.setdefault(parent, {}).setdefault(sub, []).append(d)
+            out["skills"] = skills_obj
+            continue
+
+        if section == "workshop_and_certifications":
+            blocks: Dict[str, List[dict]] = {}
+            order: List[str] = []
+            for e in entries:
+                d = dict(e.data or {})
+                d["type_key"] = tag_map.get((section, e.stable_id), [])
+                issuer = d.pop("issuer", "") or "Unknown"
+                if issuer not in blocks:
+                    blocks[issuer] = []
+                    order.append(issuer)
+                blocks[issuer].append(d)
+            out_list: List[dict] = []
+            for issuer in order:
+                out_list.append({"issuer": issuer, "certifications": blocks[issuer]})
+            out[section] = out_list
+            continue
+
+        if section == "basics":
+            items = []
+            for e in entries:
+                d = dict(e.data or {})
+                items.append(d)
+            out["basics"] = items
+            continue
+
+        # All other sections
+        items = []
+        for e in entries:
+            d = dict(e.data or {})
+            d["type_key"] = tag_map.get((section, e.stable_id), [])
+            items.append(d)
+        out[section] = items
+
+    return out
+
+
+def write_export_file_by_tags(
+    repo_root: Path,
+    resume_key: str,
+    lang_code: str,
+    export_language: str,
+    tag_ids: List[int],
+    custom_filename: Optional[str] = None,
+    *,
+    out_dir: Optional[Path] = None
+) -> Path:
+    """
+    Write an exported JSON file filtered by tags with optional custom filename.
+    """
+    out_dir = out_dir or (repo_root / "output" / "json")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = export_variant_by_tags_to_json(resume_key, lang_code, export_language, tag_ids)
+
+    if custom_filename:
+        # Sanitize filename - remove path separators and ensure .json extension
+        filename = custom_filename.strip()
+        filename = filename.replace("/", "_").replace("\\", "_")
+        if not filename.lower().endswith(".json"):
+            filename += ".json"
+        out_path = out_dir / filename
+    else:
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        out_path = out_dir / f"{resume_key}_{lang_code}_tags_export_{ts}.json"
+
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return out_path

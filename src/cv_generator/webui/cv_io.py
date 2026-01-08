@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -17,6 +18,8 @@ from .fields import (
     skills_group,
 )
 from .tagging import resolve_or_create_tag, attach_tag
+
+logger = logging.getLogger(__name__)
 
 
 def ensure_person(resume_key: str) -> PersonEntity:
@@ -40,10 +43,35 @@ def upsert_variant(person: PersonEntity, resume_key: str, lang_code: str, source
     return v
 
 
+def cleanup_orphaned_entity_tags(person_id: int, section: str, stable_id: str) -> bool:
+    """
+    Clean up EntityTag links for a (person, section, stable_id) if no entries remain.
+    Returns True if EntityTags were deleted, False otherwise.
+    """
+    # Check if any entries with this stable_id still exist
+    remaining = Entry.query.filter_by(
+        person_id=person_id, section=section, stable_id=stable_id
+    ).first()
+    if remaining is None:
+        # No entries with this stable_id remain; delete associated EntityTag links
+        count = EntityTag.query.filter_by(
+            person_id=person_id, section=section, stable_id=stable_id
+        ).delete(synchronize_session=False)
+        return count > 0
+    return False
+
+
 def _wipe_variant_entries(person_id: int, lang_code: str) -> None:
+    # Collect stable_ids being deleted in this language
+    entries_to_delete = Entry.query.filter_by(person_id=person_id, lang_code=lang_code).all()
+    stable_ids_to_check = {(e.section, e.stable_id) for e in entries_to_delete}
+    
+    # Delete the entries
     Entry.query.filter_by(person_id=person_id, lang_code=lang_code).delete(synchronize_session=False)
-    # Note: tags are attached to stable_id; we don't auto-delete tags on overwrite
-    # because stable_id may exist across languages. If you want a full wipe, do it from UI.
+    
+    # Clean up orphaned EntityTag links for stable_ids that no longer exist in ANY language
+    for section, stable_id in stable_ids_to_check:
+        cleanup_orphaned_entity_tags(person_id, section, stable_id)
 
 
 def import_cv_json_bytes(
@@ -89,7 +117,9 @@ def import_cv_json_bytes(
             db.session.add(e)
             entry_count += 1
         e.sort_order = sort_order
-        e.data = payload or {}
+        # Strip type_key from stored data - tags are managed via EntityTag links
+        clean_payload = {k: v for k, v in (payload or {}).items() if k != "type_key"}
+        e.data = clean_payload
         e.summary = summarize_entry(section, e.data)
         return e
 
@@ -202,8 +232,8 @@ def export_variant_to_json(resume_key: str, lang_code: str, export_language: str
             skills_obj: Dict[str, Dict[str, List[dict]]] = {}
             for e in entries:
                 d = dict(e.data or {})
-                # inject exported tags
-                d["type_key"] = tag_map.get((section, e.stable_id), d.get("type_key") or [])
+                # inject exported tags - always use tag_map, never fallback to raw type_key
+                d["type_key"] = tag_map.get((section, e.stable_id), [])
                 parent = d.pop("parent_category", "Other")
                 sub = d.pop("sub_category", "Other")
                 skills_obj.setdefault(parent, {}).setdefault(sub, []).append(d)
@@ -216,7 +246,8 @@ def export_variant_to_json(resume_key: str, lang_code: str, export_language: str
             order: List[str] = []
             for e in entries:
                 d = dict(e.data or {})
-                d["type_key"] = tag_map.get((section, e.stable_id), d.get("type_key") or [])
+                # always use tag_map, never fallback to raw type_key
+                d["type_key"] = tag_map.get((section, e.stable_id), [])
                 issuer = d.pop("issuer", "") or "Unknown"
                 if issuer not in blocks:
                     blocks[issuer] = []
@@ -242,7 +273,8 @@ def export_variant_to_json(resume_key: str, lang_code: str, export_language: str
         items = []
         for e in entries:
             d = dict(e.data or {})
-            d["type_key"] = tag_map.get((section, e.stable_id), d.get("type_key") or [])
+            # always use tag_map, never fallback to raw type_key
+            d["type_key"] = tag_map.get((section, e.stable_id), [])
             items.append(d)
         out[section] = items
 
@@ -269,8 +301,13 @@ def _tag_map_for_person(person_id: int, export_language: str) -> Dict[Tuple[str,
             tr_cache[key] = tr.label
             return tr.label
         t = Tag.query.get(tag_id)
-        tr_cache[key] = t.slug if t else "tag"
-        return tr_cache[key]
+        if t:
+            logger.debug(f"Missing translation for tag '{t.slug}' (id={tag_id}) in language '{export_language}', using slug as fallback")
+            tr_cache[key] = t.slug
+            return t.slug
+        logger.warning(f"Tag with id={tag_id} not found during export, returning generic fallback 'tag'")
+        tr_cache[key] = "tag"
+        return "tag"
 
     tag_map: Dict[Tuple[str, str], List[str]] = {}
     for l in links:

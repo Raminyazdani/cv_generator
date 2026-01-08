@@ -69,6 +69,18 @@
     <pre class="json-preview">{{ json_pretty }}</pre>
 </div>
 
+<div class="card" style="border-color: var(--danger-300); background: var(--danger-50);">
+    <h3 style="color: var(--danger-700);">🗑️ Delete Entry</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        This will permanently delete this language version of the entry. If this is the only language version, associated tags will also be removed.
+    </p>
+    <form action="{{ url_for('delete_entry_route', entry_id=entry.id) }}" method="post" 
+          onsubmit="return confirm('Are you sure you want to delete this entry? This action cannot be undone.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">🗑️ Delete This Entry</button>
+    </form>
+</div>
+
 <script>
 // Load existing tags for autocomplete
 (function() {

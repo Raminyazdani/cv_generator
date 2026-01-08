@@ -30,7 +30,7 @@ from .fields import (
     default_entry_data,
     skills_group,
 )
-from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file
+from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file, cleanup_orphaned_entity_tags
 from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags, delete_all_tags, import_tags_from_csv, get_all_tags_for_autocomplete
 
 
@@ -355,6 +355,9 @@ def create_app(*, repo_root: Path) -> Flask:
                 parsed = json.loads(raw)
                 if not isinstance(parsed, dict):
                     raise ValueError("JSON must be an object (dict).")
+                # Strip type_key from raw JSON - tags should be managed via the tag interface
+                if "type_key" in parsed:
+                    del parsed["type_key"]
                 e.data = parsed
                 e.summary = summarize_entry(e.section, e.data)
                 db.session.commit()
@@ -370,6 +373,30 @@ def create_app(*, repo_root: Path) -> Flask:
             person=p,
             raw_json=json.dumps(e.data, ensure_ascii=False, indent=2),
         )
+
+    @app.route("/entry/<int:entry_id>/delete", methods=["POST"])
+    def delete_entry_route(entry_id: int):
+        e = Entry.query.get_or_404(entry_id)
+        p = PersonEntity.query.get_or_404(e.person_id)
+        section = e.section
+        stable_id = e.stable_id
+        person_slug = p.slug
+
+        try:
+            # Delete the entry
+            db.session.delete(e)
+            
+            # Clean up orphaned EntityTag links if no entries with this stable_id remain
+            cleanup_orphaned_entity_tags(p.id, section, stable_id)
+            
+            db.session.commit()
+            flash("Entry deleted successfully.", "success")
+        except Exception as ex:
+            db.session.rollback()
+            flash(f"Failed to delete entry: {ex}", "error")
+            return redirect(url_for("entry_detail", entry_id=entry_id))
+        
+        return redirect(url_for("section_entries", person=person_slug, section=section))
 
     @app.route("/entry/<int:entry_id>/cross-language", methods=["GET", "POST"])
     def cross_language_editor(entry_id: int):

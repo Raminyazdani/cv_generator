@@ -180,7 +180,7 @@ def infer_resume_key_from_filename(name: str) -> str:
     base = name
     if base.lower().endswith(".json"):
         base = base[:-5]
-    base = re.sub(r"(_fa|_de)$", "", base, flags=re.IGNORECASE)
+    base = re.sub(r"(_fa|_de|_en)$", "", base, flags=re.IGNORECASE)
     base = re.sub(r"\s+", "_", base.strip())
     return base
 

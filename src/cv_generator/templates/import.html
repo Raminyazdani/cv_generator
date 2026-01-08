@@ -62,6 +62,20 @@
     </form>
 </div>
 
+<div class="card" style="margin-top: 1rem;">
+    <h3>Quick Import (from data/cvs)</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Imports all <code>.json</code> files from <code>data/cvs/</code> without uploading.
+    </p>
+    <form action="{{ url_for('import_from_disk') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-secondary"
+                onclick="return confirm('Import all JSON files from data/cvs/?');">
+            ⚡ Import from Disk
+        </button>
+    </form>
+</div>
+
 {% if existing_persons %}
 <div class="card" style="margin-top: 1rem;">
     <h3>Existing Persons in Database</h3>

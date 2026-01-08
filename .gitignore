@@ -129,3 +129,4 @@ data/db/
 
 # MkDocs build output
 site/
+/data/temp/

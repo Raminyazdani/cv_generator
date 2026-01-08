@@ -1,1 +1,0 @@
-"""CV Generator test suite."""

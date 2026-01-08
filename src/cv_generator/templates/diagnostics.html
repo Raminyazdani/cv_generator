@@ -7,221 +7,71 @@
     <a href="{{ url_for('index') }}">Home</a> &rsaquo; Diagnostics
 </div>
 
-<h2>🔍 Diagnostics Panel</h2>
+<h2>🩺 Diagnostics</h2>
 
-<div class="card-grid">
-    <!-- Database Health -->
-    <div class="card">
-        <h3>Database Health</h3>
-        <div class="health-check-item">
-            <span>Status:</span>
-            {% if health.healthy %}
-                <span class="status-ok">✓ Healthy</span>
-            {% else %}
-                <span class="status-error">✗ Issues Found</span>
-            {% endif %}
-        </div>
-        <div class="health-check-item">
-            <span>Persons:</span>
-            <span>{{ health.stats.persons }}</span>
-        </div>
-        <div class="health-check-item">
-            <span>Entries:</span>
-            <span>{{ health.stats.entries }}</span>
-        </div>
-        <div class="health-check-item">
-            <span>Tags:</span>
-            <span>{{ health.stats.tags }}</span>
-        </div>
-        <div class="health-check-item">
-            <span>Tag Assignments:</span>
-            <span>{{ health.stats.tag_assignments }}</span>
-        </div>
-        {% if health.stats.stable_entries is defined %}
-        <div class="health-check-item">
-            <span>Stable Entries:</span>
-            <span>{{ health.stats.stable_entries }}</span>
-        </div>
-        {% endif %}
-    </div>
+<div class="card">
+    <h3>Missing Entry Translations</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        These stable groups exist in at least one language but are missing in others.
+        Click to open the Cross-Language Editor and create missing language variants.
+    </p>
 
-    <!-- Issues -->
-    <div class="card">
-        <h3>Issues ({{ health.issues|length }})</h3>
-        {% if health.issues %}
-            <ul class="issue-list">
-                {% for issue in health.issues %}
-                    <li class="status-warning">{{ issue }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="status-ok">No issues detected.</p>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Reference Integrity -->
-{% if integrity_error %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>🔗 Reference Integrity</h3>
-    <div class="health-check-item">
-        <span>Status:</span>
-        <span class="status-error">✗ Check failed: {{ integrity_error }}</span>
-    </div>
-</div>
-{% elif integrity %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>🔗 Reference Integrity</h3>
-    <div class="health-check-item">
-        <span>Status:</span>
-        {% if integrity.is_healthy %}
-            <span class="status-ok">✓ All references valid</span>
-        {% else %}
-            <span class="status-error">✗ Issues Found ({{ integrity.error_count }} errors, {{ integrity.warning_count }} warnings)</span>
-        {% endif %}
-    </div>
-    {% if integrity.stats %}
-    <div style="margin-top: 0.5rem;">
-        {% if integrity.stats.stable_entries is defined %}
-        <div class="health-check-item">
-            <span>Stable Entries:</span>
-            <span>{{ integrity.stats.stable_entries }}</span>
-        </div>
-        {% endif %}
-        {% if integrity.stats.entry_lang_links is defined %}
-        <div class="health-check-item">
-            <span>Entry-Language Links:</span>
-            <span>{{ integrity.stats.entry_lang_links }}</span>
-        </div>
-        {% endif %}
-        {% if integrity.stats.person_entities is defined %}
-        <div class="health-check-item">
-            <span>Person Entities:</span>
-            <span>{{ integrity.stats.person_entities }}</span>
-        </div>
-        {% endif %}
-        {% if integrity.stats.entries_without_stable_ids is defined and integrity.stats.entries_without_stable_ids > 0 %}
-        <div class="health-check-item">
-            <span>Entries Without Stable IDs:</span>
-            <span class="status-warning">{{ integrity.stats.entries_without_stable_ids }}</span>
-            <a href="{{ url_for('entries_without_stable_ids_route') }}" class="btn btn-sm btn-primary" style="margin-left: 0.5rem;">
-                View & Fix
-            </a>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-    {% if integrity.issues %}
-    <details style="margin-top: 1rem;">
-        <summary style="cursor: pointer; color: var(--primary);">Show {{ integrity.issues|length }} issue(s)</summary>
-        <ul class="issue-list" style="margin-top: 0.5rem;">
-            {% for issue in integrity.issues[:20] %}
-                <li class="{% if issue.severity.value == 'error' %}status-error{% elif issue.severity.value == 'warning' %}status-warning{% else %}status-ok{% endif %}">
-                    <strong>[{{ issue.category }}]</strong> {{ issue.message }}
-                </li>
-            {% endfor %}
-            {% if integrity.issues|length > 20 %}
-                <li>... and {{ integrity.issues|length - 20 }} more issues</li>
-            {% endif %}
-        </ul>
-    </details>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- Orphan Tags Section -->
-{% if health.checks.orphaned_tags and health.checks.orphaned_tags.count > 0 %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>🏷️ Unused Tags ({{ health.checks.orphaned_tags.count }})</h3>
-    <p>These tags are not assigned to any entries:</p>
-    <div style="margin: 1rem 0;">
-        {% for tag_name in health.checks.orphaned_tags.names %}
-            <span class="tag tag-count">{{ tag_name }}</span>
-        {% endfor %}
-        {% if health.checks.orphaned_tags.count > health.checks.orphaned_tags.names|length %}
-            <span>... and {{ health.checks.orphaned_tags.count - health.checks.orphaned_tags.names|length }} more</span>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-<!-- Missing Tag Translations -->
-{% if missing_translations %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>🌐 Missing Tag Translations ({{ current_language|upper }})</h3>
-    <p>These tags don't have translations for the current display language:</p>
-    <div style="margin: 1rem 0;">
-        {% for tag_id in missing_translations %}
-            <span class="tag tag-count">{{ tag_id }}</span>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
-<!-- Entries Needing Translation -->
-{% if entries_needing_translation %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>📝 Entries Needing Translation ({{ entries_needing_translation|length }})</h3>
-    <p>These entries were auto-created and need translation:</p>
-    <div class="list-item-container">
-        {% for entry in entries_needing_translation[:10] %}
+    {% if missing_translations %}
+        <div class="list-item-container">
+        {% for row in missing_translations %}
             <div class="list-item">
-                <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
-                    <strong>{{ entry.section }}</strong> - {{ entry.summary }}
-                    <span class="entry-meta">{{ entry.person_slug }} ({{ entry.language|upper }})</span>
-                </a>
-            </div>
-        {% endfor %}
-        {% if entries_needing_translation|length > 10 %}
-            <p class="entry-meta">... and {{ entries_needing_translation|length - 10 }} more</p>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-<!-- Missing Language Counterparts -->
-{% if missing_counterparts %}
-<div class="card" style="margin-top: 1rem;">
-    <h3>🔗 Entries Missing Language Variants ({{ missing_counterparts|length }})</h3>
-    <p>These entries don't have counterparts in all supported languages:</p>
-    <div class="list-item-container">
-        {% for entry in missing_counterparts[:10] %}
-            <div class="list-item">
-                <div>
-                    <strong>{{ entry.section }}</strong> ({{ entry.base_person }})
-                    <span class="entry-meta">
-                        Has: {{ entry.existing_languages|join(', ')|upper }}
-                        | Missing: <span class="status-warning">{{ entry.missing_languages|join(', ')|upper }}</span>
+                <div style="flex:1;">
+                    <strong>{{ row.person }}</strong>
+                    <span class="tag tag-count">{{ row.section }}</span>
+                    <span class="entry-meta" style="display:block;">
+                        Missing:
+                        {% for l in row.missing %}
+                            <span class="tag" style="background: var(--warning);">{{ l|upper }}</span>
+                        {% endfor %}
                     </span>
                 </div>
+                <a href="{{ url_for('cross_language_editor', entry_id=row.entry_id) }}" class="btn btn-sm btn-secondary">Open</a>
             </div>
         {% endfor %}
-        {% if missing_counterparts|length > 10 %}
-            <p class="entry-meta">... and {{ missing_counterparts|length - 10 }} more</p>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-<!-- Actions -->
-<div class="card" style="margin-top: 1rem;">
-    <h3>🛠️ Actions</h3>
-    <form id="cleanup-form" action="{{ url_for('cleanup_orphans') }}" method="post" style="display: inline;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="button" class="btn btn-secondary"
-                onclick="return confirmAction('cleanup-form', 'This will remove orphan tag references from entries. Continue?')">
-            Clean Up Orphan Tag References
-        </button>
-    </form>
-    <a href="{{ url_for('variant_diagnostics_route') }}" class="btn btn-primary" style="margin-left: 0.5rem;">
-        🌐 Variant Diagnostics
-    </a>
+        </div>
+    {% else %}
+        <p style="color: var(--success);">✓ No missing translations detected.</p>
+    {% endif %}
 </div>
 
-{% if not health.issues and not missing_translations and not entries_needing_translation and not missing_counterparts %}
-<div class="card" style="margin-top: 1rem; text-align: center;">
-    <p class="status-ok" style="font-size: 1.2rem;">✓ Everything looks good!</p>
-    <p>No issues detected. Your CV data is in sync.</p>
+<div class="card">
+    <h3>Tags Missing Translations</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Export falls back to slug when a tag translation is missing.
+    </p>
+
+    {% if tags_missing_translations %}
+        <div class="list-item-container">
+        {% for t in tags_missing_translations %}
+            <div class="list-item">
+                <div style="flex:1;">
+                    <strong>{{ t.slug }}</strong>
+                    <span class="entry-meta" style="display:block;">
+                        Missing:
+                        {% for l in t.missing %}
+                            <span class="tag" style="background: var(--warning);">{{ l|upper }}</span>
+                        {% endfor %}
+                    </span>
+                </div>
+                <a href="{{ url_for('tags_list') }}" class="btn btn-sm btn-secondary">Fix in Tags</a>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--success);">✓ All tags have translations in all languages.</p>
+    {% endif %}
 </div>
-{% endif %}
+
+<div class="card" style="background: var(--gray-50);">
+    <h3>ℹ️ What this checks</h3>
+    <ul style="margin-left: 1.5rem; color: var(--gray-700); line-height: 1.8;">
+        <li><strong>Entry translation coverage</strong>: for each (person, section, stable_id), all supported languages should exist.</li>
+        <li><strong>Tag translation coverage</strong>: for each tag, all supported languages should have a label.</li>
+    </ul>
+</div>
 {% endblock %}

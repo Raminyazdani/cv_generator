@@ -267,13 +267,7 @@
             {% else %}
             <div class="lang-pane-body missing">
                 <p>Entry not available in {{ lang | upper }}</p>
-                <form action="{{ url_for('create_missing_lang_entry_route', entry_id=entry.id) }}" method="post" style="display: inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="target_lang" value="{{ lang }}">
-                    <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">
-                        ➕ Create {{ lang | upper }} Entry
-                    </button>
-                </form>
+                <a href="{{ url_for(\'create_missing_lang_entry_route\', entry_id=entry.id, target_lang=lang) }}" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; display: inline-block;">➕ Create {{ lang | upper }} Entry</a>
             </div>
             {% endif %}
         </div>
@@ -313,10 +307,7 @@ function copyField(fromLang, toLang, fieldName) {
 
 // Copy all fields from one language to another
 function copyAllFields(fromLang, toLang) {
-    const toPane = document.querySelector(`[data-lang="${toLang}"]`);
-    if (!toPane) return;
-    
-    const allInputs = document.querySelectorAll(`[data-lang="${toLang}"]`);
+        const allInputs = document.querySelectorAll(`[data-lang="${toLang}"]`);
     allInputs.forEach(toInput => {
         const fieldName = toInput.dataset.field;
         const fromInput = document.getElementById(`field_${fromLang}_${fieldName}`);

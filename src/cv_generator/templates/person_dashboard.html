@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.display_name or person.slug }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    {{ person.display_name or person.slug }}
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h2 style="margin-bottom: 0.25rem;">👤 {{ person.display_name or person.slug }}</h2>
+        <p class="entry-meta">
+            Variants:
+            {% for lang in supported_languages %}
+                {% if variants.get(lang) %}
+                    <span class="tag" style="background: var(--success);">{{ lang|upper }}</span>
+                {% else %}
+                    <span class="tag tag-count" style="opacity: 0.6;">{{ lang|upper }}</span>
+                {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+    <div class="actions">
+        <a href="{{ url_for('import_page') }}" class="btn btn-secondary">📥 Import</a>
+        <a href="{{ url_for('export_page') }}" class="btn btn-success">📤 Export</a>
+    </div>
+</div>
+
+<div class="card-grid">
+    {% for sec in section_cards %}
+    <div class="card">
+        <a href="{{ url_for('section_entries', person=person.slug, section=sec.key) }}" class="card-link">
+            <h3>{{ sec.icon }} {{ sec.label }}</h3>
+            <p style="margin-top: 0.5rem;">
+                <span class="tag tag-count">{{ sec.count }}</span>
+                entries in <strong>{{ current_language|upper }}</strong>
+            </p>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card" style="margin-top: 1.5rem; background: var(--gray-50);">
+    <h3>ℹ️ Tips</h3>
+    <ul style="margin-left: 1.25rem; color: var(--gray-700); line-height: 1.8;">
+        <li>Use the language selector in the header to switch the UI language.</li>
+        <li>Tags are shared across languages for the same <code>stable_id</code> group.</li>
+        <li>Use “Cross-Language Editor” on an entry to edit multiple languages side-by-side.</li>
+    </ul>
+</div>
+{% endblock %}

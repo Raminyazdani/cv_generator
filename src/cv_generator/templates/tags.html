@@ -3,90 +3,114 @@
 {% block title %}Tags{% endblock %}
 
 {% block content %}
-<h2>Tags</h2>
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo; Tags
+</div>
 
-<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <a href="{{ url_for('create_tag_route') }}" class="btn btn-primary">+ Create Tag</a>
-    
-    <div class="language-selector">
-        <span style="color: var(--gray-500); font-size: 0.9rem;">Display language: </span>
-        {% for lang in supported_languages %}
-        <a href="{{ url_for('set_language', lang=lang) }}" 
-           class="btn btn-sm {% if current_language == lang %}btn-primary{% else %}btn-secondary{% endif %}"
-           style="margin-left: 0.25rem;">
-            {{ lang | upper }}
-        </a>
-        {% endfor %}
-    </div>
+<h2>🏷️ Tags</h2>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>Create a Tag</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Create a new tag using the current UI language (<strong>{{ current_language|upper }}</strong>).
+        This will also create an alias in the same language.
+    </p>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="create_tag">
+        <div class="form-group">
+            <label for="label">Tag label</label>
+            <input type="text" name="label" id="label" placeholder="e.g., Full CV / رزومه کامل / Academic">
+        </div>
+        <button type="submit" class="btn btn-success">➕ Create</button>
+    </form>
 </div>
 
 {% if tags %}
 <div class="card">
-    <div style="margin-bottom: 1rem;">
-        <input type="text" id="search-input" placeholder="Search tags..." 
-               style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px;">
-    </div>
-    
-    <div id="tags-list">
-    {% for tag in tags %}
-    <div class="list-item tag-item" data-search="{{ tag.name | lower }} {{ tag.display_label | lower }} {{ tag.description | default('') | lower }}">
-        <div style="flex: 1;">
-            <strong>{{ tag.display_label }}</strong>
-            {% if tag.display_label != tag.name and current_language != 'en' %}
-            <span style="color: var(--gray-400); font-size: 0.85rem;">({{ tag.name }})</span>
-            {% endif %}
-            {% if not tag.has_translation and current_language != 'en' %}
-            <span class="tag" style="background: var(--warning); font-size: 0.7rem;">no translation</span>
-            {% endif %}
-            {% if tag.description %}
-            <p style="color: var(--gray-500); font-size: 0.9rem;">{{ tag.description }}</p>
-            {% endif %}
+    <h3>All Tags</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Manage translations and aliases. Export uses tag translations in the selected export language.
+    </p>
+
+    <div class="list-item-container">
+        {% for t in tags %}
+        <div class="list-item" style="align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="display:flex; align-items:center; gap: 0.5rem; flex-wrap: wrap;">
+                    <strong>{{ t.slug }}</strong>
+                    <span class="tag tag-count">ID {{ t.id }}</span>
+                </div>
+
+                <div style="margin-top: 0.5rem;">
+                    <strong style="font-size: 0.85rem; color: var(--gray-700);">Translations</strong>
+                    <div style="margin-top: 0.25rem;">
+                        {% for lang in supported_languages %}
+                            {% set label = t.translations.get(lang) %}
+                            {% if label %}
+                                <span class="tag" style="background: var(--primary);">{{ lang|upper }}: {{ label }}</span>
+                            {% else %}
+                                <span class="tag tag-count">{{ lang|upper }}: —</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div style="margin-top: 0.75rem;">
+                    <strong style="font-size: 0.85rem; color: var(--gray-700);">Add / Update Translation</strong>
+                    <form method="post" style="margin-top: 0.5rem; display:flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add_translation">
+                        <input type="hidden" name="tag_id" value="{{ t.id }}">
+                        <select name="tr_lang" style="padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                            {% for lang in supported_languages %}
+                                <option value="{{ lang }}">{{ lang|upper }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="tr_label" placeholder="Translation label..." style="flex:1; min-width: 220px;">
+                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                    </form>
+                </div>
+
+                <div style="margin-top: 0.75rem;">
+                    <strong style="font-size: 0.85rem; color: var(--gray-700);">Aliases</strong>
+                    <div class="entry-meta" style="margin-top: 0.25rem;">
+                        {% for lang in supported_languages %}
+                            <span class="tag tag-count">{{ lang|upper }}</span>
+                            {% set als = t.aliases.get(lang, []) %}
+                            {% if als %}
+                                {% for a in als %}
+                                    <span class="tag">{{ a }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="entry-meta">—</span>
+                            {% endif %}
+                            <br>
+                        {% endfor %}
+                    </div>
+
+                    <form method="post" style="margin-top: 0.5rem; display:flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add_alias">
+                        <input type="hidden" name="tag_id" value="{{ t.id }}">
+                        <select name="al_lang" style="padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                            {% for lang in supported_languages %}
+                                <option value="{{ lang }}">{{ lang|upper }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="al_label" placeholder="Alias label..." style="flex:1; min-width: 220px;">
+                        <button type="submit" class="btn btn-sm btn-secondary">Add Alias</button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <span class="tag tag-count">{{ tag.usage_count }} entries</span>
-        <div class="actions" style="margin-left: 1rem;">
-            <a href="{{ url_for('edit_tag_route', name=tag.name) }}" class="btn btn-secondary btn-sm">Edit</a>
-            <form action="{{ url_for('delete_tag_route', name=tag.name) }}" method="post" 
-                  onsubmit="return confirm('Delete tag &quot;{{ tag.name }}&quot;? It will be removed from all entries.');"
-                  style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
-        </div>
-    </div>
-    {% endfor %}
-    </div>
-    
-    <div id="no-results" style="display: none; text-align: center; padding: 1rem; color: var(--gray-500);">
-        No tags match your search.
+        {% endfor %}
     </div>
 </div>
-
-<script>
-document.getElementById('search-input').addEventListener('input', function() {
-    const query = this.value.toLowerCase().trim();
-    const tags = document.querySelectorAll('.tag-item');
-    const noResults = document.getElementById('no-results');
-    let visibleCount = 0;
-    
-    tags.forEach(function(tag) {
-        const searchText = tag.getAttribute('data-search');
-        if (query === '' || searchText.includes(query)) {
-            tag.style.display = 'flex';
-            visibleCount++;
-        } else {
-            tag.style.display = 'none';
-        }
-    });
-    
-    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-});
-</script>
 {% else %}
 <div class="card empty-state">
-    <p>No tags created yet.</p>
-    <p style="margin-top: 1rem;">
-        <a href="{{ url_for('create_tag_route') }}" class="btn btn-primary">Create your first tag</a>
-    </p>
+    <p>No tags yet.</p>
+    <p style="margin-top: 0.5rem;">Import a CV file (type_key) or create tags above.</p>
 </div>
 {% endif %}
 {% endblock %}

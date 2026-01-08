@@ -26,6 +26,39 @@
     </form>
 </div>
 
+{% if tags|length > 1 %}
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>🔗 Merge / Link Tags</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Link translation-equivalent tags across languages. Select a target tag and one or more source tags to merge.
+        All entity associations, translations, and aliases from source tags will be transferred to the target tag.
+        Source tags will be deleted after merging.
+    </p>
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="merge_tags">
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="target_tag_id"><strong>Target Tag</strong> (keep this tag)</label>
+            <select name="target_tag_id" id="target_tag_id" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                {% for t in tags %}
+                    <option value="{{ t.id }}">{{ t.slug }} (ID {{ t.id }}) — {% for lang, label in t.translations.items() %}{{ lang|upper }}: {{ label }}{% if not loop.last %}, {% endif %}{% endfor %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="source_tag_ids"><strong>Source Tags</strong> (merge into target, then delete)</label>
+            <p class="entry-meta" style="margin-bottom: 0.5rem;">Hold Ctrl/Cmd to select multiple tags.</p>
+            <select name="source_tag_ids" id="source_tag_ids" multiple size="5" style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                {% for t in tags %}
+                    <option value="{{ t.id }}">{{ t.slug }} (ID {{ t.id }}) — {% for lang, label in t.translations.items() %}{{ lang|upper }}: {{ label }}{% if not loop.last %}, {% endif %}{% endfor %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">🔗 Merge Tags</button>
+    </form>
+</div>
+{% endif %}
+
 {% if tags %}
 <div class="card">
     <h3>All Tags</h3>
@@ -40,6 +73,7 @@
                 <div style="display:flex; align-items:center; gap: 0.5rem; flex-wrap: wrap;">
                     <strong>{{ t.slug }}</strong>
                     <span class="tag tag-count">ID {{ t.id }}</span>
+                    <span class="tag tag-count">Used {{ t.usage_count }}×</span>
                 </div>
 
                 <div style="margin-top: 0.5rem;">
@@ -100,6 +134,15 @@
                         </select>
                         <input type="text" name="al_label" placeholder="Alias label..." style="flex:1; min-width: 220px;">
                         <button type="submit" class="btn btn-sm btn-secondary">Add Alias</button>
+                    </form>
+                </div>
+
+                <div style="margin-top: 0.75rem;">
+                    <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this tag? This will remove all associations with CV entries.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="delete_tag">
+                        <input type="hidden" name="tag_id" value="{{ t.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger">🗑️ Delete Tag</button>
                     </form>
                 </div>
             </div>

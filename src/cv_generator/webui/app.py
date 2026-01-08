@@ -30,7 +30,7 @@ from .fields import (
     skills_group,
 )
 from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file
-from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table
+from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags
 
 
 def create_app(*, repo_root: Path) -> Flask:
@@ -762,6 +762,27 @@ def create_app(*, repo_root: Path) -> Flask:
                         db.session.add(TagAlias(tag_id=tag_id, lang_code=al_lang, alias_label=al_label))
                     db.session.commit()
                     flash("Alias added.", "success")
+                    return redirect(url_for("tags_list"))
+
+                if action == "delete_tag":
+                    tag_id = int(request.form.get("tag_id") or "0")
+                    if delete_tag(tag_id):
+                        db.session.commit()
+                        flash("Tag deleted.", "success")
+                    else:
+                        flash("Tag not found.", "warning")
+                    return redirect(url_for("tags_list"))
+
+                if action == "merge_tags":
+                    target_tag_id = int(request.form.get("target_tag_id") or "0")
+                    source_tag_ids_str = request.form.getlist("source_tag_ids")
+                    source_tag_ids = [int(s) for s in source_tag_ids_str if s.strip().isdigit()]
+                    success, message = merge_tags(target_tag_id, source_tag_ids)
+                    if success:
+                        db.session.commit()
+                        flash(message, "success")
+                    else:
+                        flash(message, "warning")
                     return redirect(url_for("tags_list"))
 
             except Exception as ex:

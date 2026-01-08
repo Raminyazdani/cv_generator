@@ -97,10 +97,109 @@ def get_tag_table(lang_code: str) -> List[dict]:
         alias_rows = TagAlias.query.filter_by(tag_id=t.id).all()
         for a in alias_rows:
             aliases.setdefault(a.lang_code, []).append(a.alias_label)
+        # count how many entities use this tag
+        usage_count = EntityTag.query.filter_by(tag_id=t.id).count()
         rows.append({
             "id": t.id,
             "slug": t.slug,
             "translations": translations,
             "aliases": aliases,
+            "usage_count": usage_count,
         })
     return rows
+
+
+def delete_tag(tag_id: int) -> bool:
+    """
+    Delete a tag entirely, including all translations, aliases, and entity associations.
+    Returns True if the tag was deleted, False if the tag was not found.
+    """
+    tag = Tag.query.get(tag_id)
+    if not tag:
+        return False
+    # Delete all associated entity tags (cascade should handle this, but be explicit)
+    EntityTag.query.filter_by(tag_id=tag_id).delete(synchronize_session=False)
+    # Delete all aliases
+    TagAlias.query.filter_by(tag_id=tag_id).delete(synchronize_session=False)
+    # Delete all translations
+    TagTranslation.query.filter_by(tag_id=tag_id).delete(synchronize_session=False)
+    # Delete the tag itself
+    db.session.delete(tag)
+    return True
+
+
+def merge_tags(target_tag_id: int, source_tag_ids: List[int]) -> Tuple[bool, str]:
+    """
+    Merge one or more source tags into a target tag.
+    This will:
+    - Transfer all entity associations from source tags to target tag
+    - Transfer all translations (if target doesn't have that language)
+    - Transfer all aliases (if not conflicting)
+    - Delete the source tags
+
+    Returns (success, message).
+    """
+    target = Tag.query.get(target_tag_id)
+    if not target:
+        return False, "Target tag not found."
+
+    if not source_tag_ids:
+        return False, "No source tags provided."
+
+    # Filter out target from source list and invalid IDs
+    source_tag_ids = [s for s in source_tag_ids if s != target_tag_id]
+    source_tags = [Tag.query.get(sid) for sid in source_tag_ids]
+    source_tags = [s for s in source_tags if s is not None]
+
+    if not source_tags:
+        return False, "No valid source tags to merge."
+
+    merged_count = 0
+    for source in source_tags:
+        # Transfer entity associations
+        entity_links = EntityTag.query.filter_by(tag_id=source.id).all()
+        for link in entity_links:
+            # Check if target already has this association
+            existing = EntityTag.query.filter_by(
+                person_id=link.person_id,
+                section=link.section,
+                stable_id=link.stable_id,
+                tag_id=target.id
+            ).first()
+            if not existing:
+                # Update the link to point to target
+                link.tag_id = target.id
+            else:
+                # Remove duplicate link
+                db.session.delete(link)
+
+        # Transfer translations (only if target doesn't have that language)
+        for tr in TagTranslation.query.filter_by(tag_id=source.id).all():
+            existing_tr = TagTranslation.query.filter_by(
+                tag_id=target.id, lang_code=tr.lang_code
+            ).first()
+            if not existing_tr:
+                tr.tag_id = target.id
+            else:
+                db.session.delete(tr)
+
+        # Transfer aliases (only if no conflict)
+        for alias in TagAlias.query.filter_by(tag_id=source.id).all():
+            existing_alias = TagAlias.query.filter_by(
+                lang_code=alias.lang_code, alias_label=alias.alias_label
+            ).first()
+            if existing_alias and existing_alias.tag_id != target.id:
+                # Conflict with another tag - skip but keep the alias pointing to target
+                db.session.delete(alias)
+            elif existing_alias and existing_alias.tag_id == target.id:
+                # Already exists for target - delete source's
+                db.session.delete(alias)
+            else:
+                # No conflict - transfer
+                alias.tag_id = target.id
+
+        # Delete the source tag
+        db.session.delete(source)
+        merged_count += 1
+
+    return True, f"Merged {merged_count} tag(s) into '{target.slug}'."

@@ -30,7 +30,7 @@ from .fields import (
     default_entry_data,
     skills_group,
 )
-from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file, cleanup_orphaned_entity_tags
+from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file, cleanup_orphaned_entity_tags, export_variant_by_tags_to_json, write_export_file_by_tags, count_entries_with_tags
 from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags, delete_all_tags, import_tags_from_csv, get_all_tags_for_autocomplete
 
 
@@ -633,12 +633,17 @@ def create_app(*, repo_root: Path) -> Flask:
                 if v:
                     available_variants.append((p.slug, lang))
 
+        # Get all tags for the tag filter dropdown
+        lang = current_language()
+        all_tags = get_all_tags_for_autocomplete(lang)
+
         return render_template(
             "export.html",
             persons=persons,
             export_history=export_history,
             available_variants=available_variants,
             current_language=current_language(),
+            all_tags=all_tags,
         )
 
     @app.route("/export/preview", methods=["POST"])
@@ -777,6 +782,141 @@ def create_app(*, repo_root: Path) -> Flask:
         db.session.commit()
 
         flash(f"Batch export done: {success} succeeded, {failed} failed.", "success" if failed == 0 else "warning")
+        return redirect(url_for("export_page"))
+
+    # -------------------------
+    # Export by Tags
+    # -------------------------
+    @app.route("/export/by-tags/count", methods=["POST"])
+    def export_by_tags_count():
+        """AJAX endpoint to get count of entries matching selected tags."""
+        resume_key = request.form.get("person") or ""
+        lang_code = request.form.get("language") or current_language()
+        tag_ids_raw = request.form.getlist("tag_ids")
+
+        tag_ids = []
+        for tid in tag_ids_raw:
+            try:
+                tag_ids.append(int(tid))
+            except ValueError:
+                continue
+
+        if not resume_key or not tag_ids:
+            return jsonify({"count": 0})
+
+        count = count_entries_with_tags(resume_key, lang_code, tag_ids)
+        return jsonify({"count": count})
+
+    @app.route("/export/by-tags/preview", methods=["POST"])
+    def export_by_tags_preview():
+        """Preview the filtered export JSON."""
+        resume_key = request.form.get("person") or ""
+        lang_code = request.form.get("language") or current_language()
+        tag_ids_raw = request.form.getlist("tag_ids")
+
+        tag_ids = []
+        for tid in tag_ids_raw:
+            try:
+                tag_ids.append(int(tid))
+            except ValueError:
+                continue
+
+        if not resume_key:
+            flash("Select a person first.", "warning")
+            return redirect(url_for("export_page"))
+
+        if not tag_ids:
+            flash("Select at least one tag.", "warning")
+            return redirect(url_for("export_page"))
+
+        if lang_code not in SUPPORTED_LANGUAGES:
+            lang_code = "en"
+
+        try:
+            json_payload = export_variant_by_tags_to_json(resume_key, lang_code, lang_code, tag_ids)
+        except Exception as ex:
+            flash(f"Preview failed: {ex}", "error")
+            return redirect(url_for("export_page"))
+
+        # Get tag labels for display
+        tag_labels = []
+        for tid in tag_ids:
+            tag = Tag.query.get(tid)
+            if tag:
+                tag_labels.append(tag.slug)
+
+        # lightweight summary object for template
+        cv_data = type("CVD", (), {})()
+        cv_data.name = resume_key
+        for sec in ["projects", "experiences", "publications", "education", "skills"]:
+            setattr(cv_data, sec, json_payload.get(sec))
+
+        return render_template(
+            "preview.html",
+            person=resume_key,
+            export_language=lang_code,
+            json_preview=json.dumps(json_payload, ensure_ascii=False, indent=2),
+            cv_data=cv_data,
+            supported_languages=SUPPORTED_LANGUAGES,
+            filter_tags=tag_labels,
+        )
+
+    @app.route("/export/by-tags", methods=["POST"])
+    def export_by_tags():
+        """Export CV filtered by tags with optional custom filename."""
+        resume_key = request.form.get("person") or ""
+        lang_code = request.form.get("language") or current_language()
+        tag_ids_raw = request.form.getlist("tag_ids")
+        custom_filename = (request.form.get("custom_filename") or "").strip()
+
+        tag_ids = []
+        for tid in tag_ids_raw:
+            try:
+                tag_ids.append(int(tid))
+            except ValueError:
+                continue
+
+        if not resume_key:
+            flash("Select a person first.", "warning")
+            return redirect(url_for("export_page"))
+
+        if not tag_ids:
+            flash("Select at least one tag.", "warning")
+            return redirect(url_for("export_page"))
+
+        if lang_code not in SUPPORTED_LANGUAGES:
+            lang_code = "en"
+
+        repo_root = Path(app.config["REPO_ROOT"])
+        try:
+            out_path = write_export_file_by_tags(
+                repo_root, resume_key, lang_code, lang_code, tag_ids, custom_filename
+            )
+
+            # Get tag slugs for history
+            tag_slugs = []
+            for tid in tag_ids:
+                tag = Tag.query.get(tid)
+                if tag:
+                    tag_slugs.append(tag.slug)
+
+            h = ExportHistory(
+                batch=False,
+                resume_key=resume_key,
+                persons_count=1,
+                language=lang_code,
+                output_dir=str(out_path.parent),
+                output_path=str(out_path),
+                success=True,
+                success_count=1,
+                failed_count=0,
+            )
+            db.session.add(h)
+            db.session.commit()
+            flash(f"Exported to {out_path} (filtered by tags: {', '.join(tag_slugs)})", "success")
+        except Exception as ex:
+            db.session.rollback()
+            flash(f"Export failed: {ex}", "error")
         return redirect(url_for("export_page"))
 
     # -------------------------

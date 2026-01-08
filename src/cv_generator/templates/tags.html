@@ -26,6 +26,22 @@
     </form>
 </div>
 
+<div class="card" style="margin-bottom: 1rem;">
+    <h3>📥 Import Tags from CSV</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Upload a CSV file to bulk import tags. The CSV should have headers like <code>en_tag</code>, <code>de_tag</code>, <code>fa_tag</code> for each language.
+        Each row represents a tag with its translations.
+    </p>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="import_csv">
+        <div class="form-group" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="file" name="csv_file" accept=".csv" style="flex: 1; min-width: 200px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+            <button type="submit" class="btn btn-primary">📥 Import CSV</button>
+        </div>
+    </form>
+</div>
+
 {% if tags|length > 1 %}
 <div class="card" style="margin-bottom: 1rem;">
     <h3>🔗 Merge / Link Tags</h3>
@@ -61,10 +77,19 @@
 
 {% if tags %}
 <div class="card">
-    <h3>All Tags</h3>
-    <p class="entry-meta" style="margin-bottom: 1rem;">
-        Manage translations and aliases. Export uses tag translations in the selected export language.
-    </p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <h3 style="margin-bottom: 0;">All Tags</h3>
+            <p class="entry-meta">
+                Manage translations and aliases. Export uses tag translations in the selected export language.
+            </p>
+        </div>
+        <form method="post" style="display: inline;" onsubmit="return confirm('⚠️ Are you sure you want to DELETE ALL TAGS? This action cannot be undone and will remove all tag associations from CV entries.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="delete_all_tags">
+            <button type="submit" class="btn btn-danger">🗑️ Delete All Tags</button>
+        </form>
+    </div>
 
     <div class="list-item-container">
         {% for t in tags %}

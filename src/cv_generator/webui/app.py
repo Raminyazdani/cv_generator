@@ -9,6 +9,7 @@ from flask import (
     Flask,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -30,7 +31,7 @@ from .fields import (
     skills_group,
 )
 from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file
-from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags
+from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags, delete_all_tags, import_tags_from_csv, get_all_tags_for_autocomplete
 
 
 def create_app(*, repo_root: Path) -> Flask:
@@ -790,6 +791,35 @@ def create_app(*, repo_root: Path) -> Flask:
                         flash(message, "warning")
                     return redirect(url_for("tags_list"))
 
+                if action == "delete_all_tags":
+                    count = delete_all_tags()
+                    db.session.commit()
+                    if count > 0:
+                        flash(f"Deleted all {count} tag(s).", "success")
+                    else:
+                        flash("No tags to delete.", "warning")
+                    return redirect(url_for("tags_list"))
+
+                if action == "import_csv":
+                    csv_file = request.files.get("csv_file")
+                    if not csv_file or not csv_file.filename:
+                        flash("No CSV file selected.", "warning")
+                        return redirect(url_for("tags_list"))
+                    try:
+                        csv_content = csv_file.read()
+                        created_count, warnings = import_tags_from_csv(csv_content, csv_file.filename)
+                        db.session.commit()
+                        if created_count > 0:
+                            flash(f"Created {created_count} new tag(s) from CSV.", "success")
+                        else:
+                            flash("No new tags created from CSV.", "warning")
+                        for w in warnings[-5:]:  # Show last 5 warnings
+                            flash(w, "warning")
+                    except Exception as ex:
+                        db.session.rollback()
+                        flash(f"CSV import failed: {ex}", "error")
+                    return redirect(url_for("tags_list"))
+
             except Exception as ex:
                 db.session.rollback()
                 flash(f"Tag update failed: {ex}", "error")
@@ -797,6 +827,13 @@ def create_app(*, repo_root: Path) -> Flask:
 
         tags = get_tag_table(lang)
         return render_template("tags.html", tags=tags)
+
+    @app.route("/api/tags")
+    def api_tags():
+        """JSON API endpoint for tag autocomplete."""
+        lang = current_language()
+        tags = get_all_tags_for_autocomplete(lang)
+        return jsonify(tags)
 
     # -------------------------
     # Diagnostics

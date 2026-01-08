@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 from typing import Dict, List, Optional, Tuple
 
 from .models import db, Tag, TagAlias, TagTranslation, EntityTag
 from .fields import slugify, SUPPORTED_LANGUAGES
+
+logger = logging.getLogger(__name__)
 
 
 def get_all_tags_for_autocomplete(lang_code: str) -> List[Dict[str, any]]:
@@ -31,7 +34,11 @@ def get_tag_label(tag_id: int, lang_code: str) -> str:
     if tr:
         return tr.label
     tag = Tag.query.get(tag_id)
-    return tag.slug if tag else "tag"
+    if tag:
+        logger.debug(f"Missing translation for tag '{tag.slug}' (id={tag_id}) in language '{lang_code}', using slug as fallback")
+        return tag.slug
+    logger.warning(f"Tag with id={tag_id} not found, returning generic fallback 'tag'")
+    return "tag"
 
 
 def list_entity_tags(person_id: int, section: str, stable_id: str, lang_code: str) -> List[str]:

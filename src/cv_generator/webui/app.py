@@ -355,6 +355,9 @@ def create_app(*, repo_root: Path) -> Flask:
                 parsed = json.loads(raw)
                 if not isinstance(parsed, dict):
                     raise ValueError("JSON must be an object (dict).")
+                # Strip type_key from raw JSON - tags should be managed via the tag interface
+                if "type_key" in parsed:
+                    del parsed["type_key"]
                 e.data = parsed
                 e.summary = summarize_entry(e.section, e.data)
                 db.session.commit()
@@ -370,6 +373,37 @@ def create_app(*, repo_root: Path) -> Flask:
             person=p,
             raw_json=json.dumps(e.data, ensure_ascii=False, indent=2),
         )
+
+    @app.route("/entry/<int:entry_id>/delete", methods=["POST"])
+    def delete_entry_route(entry_id: int):
+        e = Entry.query.get_or_404(entry_id)
+        p = PersonEntity.query.get_or_404(e.person_id)
+        section = e.section
+        stable_id = e.stable_id
+        person_slug = p.slug
+
+        try:
+            # Delete the entry
+            db.session.delete(e)
+            
+            # Check if this stable_id still exists in other languages
+            remaining = Entry.query.filter_by(
+                person_id=p.id, section=section, stable_id=stable_id
+            ).first()
+            if remaining is None:
+                # No entries with this stable_id remain; delete associated EntityTag links
+                EntityTag.query.filter_by(
+                    person_id=p.id, section=section, stable_id=stable_id
+                ).delete(synchronize_session=False)
+            
+            db.session.commit()
+            flash("Entry deleted successfully.", "success")
+        except Exception as ex:
+            db.session.rollback()
+            flash(f"Failed to delete entry: {ex}", "error")
+            return redirect(url_for("entry_detail", entry_id=entry_id))
+        
+        return redirect(url_for("section_entries", person=person_slug, section=section))
 
     @app.route("/entry/<int:entry_id>/cross-language", methods=["GET", "POST"])
     def cross_language_editor(entry_id: int):

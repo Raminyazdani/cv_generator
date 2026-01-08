@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import uuid
 from dataclasses import dataclass
@@ -143,13 +144,20 @@ def get_section_icon(section: str) -> str:
     return SECTION_ICONS.get(section, "📄")
 
 
+
 def slugify(text: str) -> str:
-    text = text.strip().lower()
+    original = text.strip()
+    text = original.lower()
     # replace Persian/Arabic spaces etc with dash
     text = re.sub(r"\s+", "-", text)
     text = re.sub(r"[^a-z0-9\-\_]+", "", text)
     text = re.sub(r"-{2,}", "-", text).strip("-")
-    return text or "tag"
+    # If the result is empty or just "tag" (non-Latin scripts), use a hash to make unique
+    if not text or text == "tag":
+        # Use a short hash of the original text to make it unique
+        hash_suffix = hashlib.md5(original.encode("utf-8")).hexdigest()[:8]
+        return f"tag-{hash_suffix}"
+    return text
 
 
 _NS = uuid.UUID("f23a5c6e-2c60-44f8-8e8b-2d3a2f1d4b7a")

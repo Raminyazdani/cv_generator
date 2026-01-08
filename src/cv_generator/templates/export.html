@@ -129,7 +129,7 @@
                 {% if entry.batch %}
                     <strong>Batch Export ({{ entry.persons_count }} person(s))</strong>
                     <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
-                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        {{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC
                         •
                         {% if entry.failed_count == 0 %}
                             <span class="status-ok">{{ entry.success_count }} exported</span>
@@ -142,7 +142,7 @@
                     <strong>{{ entry.resume_key }}</strong>
                     <span class="tag tag-count">{{ entry.language | upper }}</span>
                     <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
-                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        {{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC
                         {% if entry.success %}
                             • <span class="status-ok">Exported</span>
                         {% endif %}

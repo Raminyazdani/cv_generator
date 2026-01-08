@@ -267,7 +267,7 @@
             {% else %}
             <div class="lang-pane-body missing">
                 <p>Entry not available in {{ lang | upper }}</p>
-                <a href="{{ url_for(\'create_missing_lang_entry_route\', entry_id=entry.id, target_lang=lang) }}" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; display: inline-block;">➕ Create {{ lang | upper }} Entry</a>
+                <a href="{{ url_for('create_missing_lang_entry_route', entry_id=entry.id, target_lang=lang) }}" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; display: inline-block;">➕ Create {{ lang | upper }} Entry</a>
             </div>
             {% endif %}
         </div>

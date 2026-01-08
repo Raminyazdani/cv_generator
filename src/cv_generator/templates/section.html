@@ -1,52 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_section_label(section) }} - {{ person.slug }}<script>
-(function() {
-  const input = document.getElementById('search-input');
-  if (!input) return;
-
-  input.addEventListener('input', function() {
-    const query = this.value.toLowerCase().trim();
-    const items = document.querySelectorAll('.entry-item');
-    const noResults = document.getElementById('no-results');
-    let visibleCount = 0;
-
-    items.forEach(function(item) {
-      const searchText = (item.getAttribute('data-search') || '').toLowerCase();
-      const isVisible = (query === '') || searchText.includes(query);
-      item.style.display = isVisible ? 'flex' : 'none';
-      item.dataset.visible = isVisible ? 'true' : 'false';
-      if (isVisible) visibleCount++;
-    });
-
-    // Hide/show skill category groups based on visible children (skills view)
-    const parentCats = document.querySelectorAll('.skill-parent-category');
-    parentCats.forEach(function(parent) {
-      const children = parent.querySelectorAll('.entry-item');
-      let hasVisible = false;
-      children.forEach(function(ch) {
-        if (ch.dataset.visible === 'true') hasVisible = true;
-      });
-      parent.style.display = (query === '' || hasVisible) ? 'block' : 'none';
-    });
-
-    const subCats = document.querySelectorAll('.skill-sub-category');
-    subCats.forEach(function(sub) {
-      const children = sub.querySelectorAll('.entry-item');
-      let hasVisible = false;
-      children.forEach(function(ch) {
-        if (ch.dataset.visible === 'true') hasVisible = true;
-      });
-      sub.style.display = (query === '' || hasVisible) ? 'block' : 'none';
-    });
-
-    if (noResults) {
-      noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
-    }
-  });
-})();
-</script>
-{% endblock %}
+{% block title %}{{ get_section_label(section) }} - {{ person.slug }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb">

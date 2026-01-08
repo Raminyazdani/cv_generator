@@ -129,6 +129,15 @@ def create_app(*, repo_root: Path) -> Flask:
     def person_dashboard(person: str):
         p = PersonEntity.query.filter_by(slug=person).first_or_404()
         lang = current_language()
+        
+        # Get view mode from query param (default to tile)
+        view_mode = request.args.get("view", session.get("person_view_mode", "tile"))
+        if view_mode not in ("tile", "list"):
+            view_mode = "tile"
+        session["person_view_mode"] = view_mode
+        
+        # Get tag filter from query param
+        filter_tag_id = request.args.get("tag_filter", type=int)
 
         # compute section counts
         section_cards = []
@@ -143,12 +152,45 @@ def create_app(*, repo_root: Path) -> Flask:
 
         # variants summary
         variants = {l: (CVVariant.query.filter_by(person_id=p.id, lang_code=l).first() is not None) for l in SUPPORTED_LANGUAGES}
+        
+        # For list view, gather entries per section with tags
+        section_entries = {}
+        if view_mode == "list":
+            for sec in SECTION_ORDER:
+                entries = Entry.query.filter_by(person_id=p.id, lang_code=lang, section=sec).order_by(Entry.sort_order.asc(), Entry.id.asc()).all()
+                entries_with_tags = []
+                for e in entries:
+                    entry_tags = list_entity_tags(p.id, sec, e.stable_id, lang)
+                    entry_tag_ids = [link.tag_id for link in EntityTag.query.filter_by(person_id=p.id, section=sec, stable_id=e.stable_id).all()]
+                    
+                    # If filtering by tag, check if this entry has the tag
+                    if filter_tag_id:
+                        if filter_tag_id not in entry_tag_ids:
+                            continue
+                    
+                    entries_with_tags.append({
+                        "id": e.id,
+                        "stable_id": e.stable_id,
+                        "summary": e.summary,
+                        "section": sec,
+                        "tags": entry_tags,
+                        "tag_ids": entry_tag_ids,
+                        "data": e.data,
+                    })
+                section_entries[sec] = entries_with_tags
+        
+        # Get all tags for dropdown
+        all_tags = get_all_tags_for_autocomplete(lang)
 
         return render_template(
             "person_dashboard.html",
             person=p,
             section_cards=section_cards,
             variants=variants,
+            view_mode=view_mode,
+            section_entries=section_entries,
+            all_tags=all_tags,
+            filter_tag_id=filter_tag_id,
         )
 
     @app.route("/person-entity/<int:person_entity_id>")
@@ -834,6 +876,46 @@ def create_app(*, repo_root: Path) -> Flask:
         lang = current_language()
         tags = get_all_tags_for_autocomplete(lang)
         return jsonify(tags)
+
+    @app.route("/person/<person>/batch-tag", methods=["POST"])
+    def batch_tag_assign(person: str):
+        """Batch assign a tag to multiple entries."""
+        p = PersonEntity.query.filter_by(slug=person).first_or_404()
+        lang = current_language()
+        
+        tag_id = request.form.get("tag_id", type=int)
+        entry_keys = request.form.getlist("entry_keys")  # Format: "section:stable_id"
+        
+        if not tag_id:
+            flash("Please select a tag.", "warning")
+            return redirect(url_for("person_dashboard", person=person, view="list"))
+        
+        if not entry_keys:
+            flash("No entries selected.", "warning")
+            return redirect(url_for("person_dashboard", person=person, view="list"))
+        
+        # Verify tag exists
+        tag = Tag.query.get(tag_id)
+        if not tag:
+            flash("Tag not found.", "error")
+            return redirect(url_for("person_dashboard", person=person, view="list"))
+        
+        count = 0
+        for key in entry_keys:
+            if ":" not in key:
+                continue
+            section, stable_id = key.split(":", 1)
+            if attach_tag(p.id, section, stable_id, tag_id):
+                count += 1
+        
+        db.session.commit()
+        
+        if count > 0:
+            flash(f"Tag '{tag.slug}' assigned to {count} entries.", "success")
+        else:
+            flash("No new tag assignments (entries may already have this tag).", "info")
+        
+        return redirect(url_for("person_dashboard", person=person, view="list"))
 
     # -------------------------
     # Diagnostics

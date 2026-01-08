@@ -52,7 +52,12 @@
         <input type="hidden" name="action" value="add_tag">
         <div class="form-group">
             <label for="tag_input">Add Tag</label>
-            <input type="text" name="tag_input" id="tag_input" placeholder="Type a tag label or slug (e.g., Full CV / رزومه کامل / Vollständiger Lebenslauf)">
+            <input type="text" name="tag_input" id="tag_input" list="existing_tags" autocomplete="off"
+                   placeholder="Type or select a tag (e.g., Full CV / رزومه کامل)">
+            <datalist id="existing_tags"></datalist>
+            <p class="entry-meta" style="margin-top: 0.25rem;">
+                Start typing to see existing tags. If the tag doesn't exist, a new one will be created.
+            </p>
         </div>
         <button type="submit" class="btn btn-success">➕ Add Tag</button>
     </form>
@@ -63,4 +68,22 @@
     <p class="entry-meta" style="margin-bottom: 1rem;">This is the stored per-language JSON payload for this entry.</p>
     <pre class="json-preview">{{ json_pretty }}</pre>
 </div>
+
+<script>
+// Load existing tags for autocomplete
+(function() {
+    fetch('{{ url_for("api_tags") }}')
+        .then(response => response.json())
+        .then(tags => {
+            const datalist = document.getElementById('existing_tags');
+            tags.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag.label;
+                option.setAttribute('data-slug', tag.slug);
+                datalist.appendChild(option);
+            });
+        })
+        .catch(err => console.error('Failed to load tags:', err));
+})();
+</script>
 {% endblock %}

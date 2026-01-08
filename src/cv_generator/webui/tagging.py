@@ -1,9 +1,29 @@
 from __future__ import annotations
 
+import csv
+import io
 from typing import Dict, List, Optional, Tuple
 
 from .models import db, Tag, TagAlias, TagTranslation, EntityTag
 from .fields import slugify, SUPPORTED_LANGUAGES
+
+
+def get_all_tags_for_autocomplete(lang_code: str) -> List[Dict[str, any]]:
+    """
+    Return all tags with their labels for autocomplete/selection.
+    Each tag includes id, slug, and label in the specified language.
+    """
+    tags = Tag.query.order_by(Tag.slug.asc()).all()
+    results = []
+    for t in tags:
+        tr = TagTranslation.query.filter_by(tag_id=t.id, lang_code=lang_code).first()
+        label = tr.label if tr else t.slug
+        results.append({
+            "id": t.id,
+            "slug": t.slug,
+            "label": label,
+        })
+    return results
 
 
 def get_tag_label(tag_id: int, lang_code: str) -> str:
@@ -30,6 +50,7 @@ def resolve_or_create_tag(input_text: str, lang_code: str) -> Tag:
     input_text can be:
       - a slug
       - a localized label (via TagAlias)
+      - an existing translation label
     If it doesn't exist, create a new Tag with translation + alias in that language.
     """
     raw = (input_text or "").strip()
@@ -48,7 +69,14 @@ def resolve_or_create_tag(input_text: str, lang_code: str) -> Tag:
         if t2:
             return t2
 
-    # 3) create
+    # 3) translation label hit (lang-specific) - prevents duplicate tag creation
+    existing_translation = TagTranslation.query.filter_by(lang_code=lang_code, label=raw).first()
+    if existing_translation:
+        t3 = Tag.query.get(existing_translation.tag_id)
+        if t3:
+            return t3
+
+    # 4) create
     slug = slugify(raw)
     # ensure uniqueness
     base = slug
@@ -203,3 +231,137 @@ def merge_tags(target_tag_id: int, source_tag_ids: List[int]) -> Tuple[bool, str
         merged_count += 1
 
     return True, f"Merged {merged_count} tag(s) into '{target.slug}'."
+
+
+def delete_all_tags() -> int:
+    """
+    Delete all tags from the database, including all translations, aliases, and entity associations.
+    Returns the number of tags deleted.
+    """
+    # Get count before deletion
+    count = Tag.query.count()
+    if count == 0:
+        return 0
+
+    # Delete all entity tags first
+    EntityTag.query.delete(synchronize_session=False)
+    # Delete all aliases
+    TagAlias.query.delete(synchronize_session=False)
+    # Delete all translations
+    TagTranslation.query.delete(synchronize_session=False)
+    # Delete all tags
+    Tag.query.delete(synchronize_session=False)
+
+    return count
+
+
+def import_tags_from_csv(csv_content: bytes, filename: str) -> Tuple[int, List[str]]:
+    """
+    Import tags from a CSV file.
+    The CSV should have headers like 'en_tag', 'de_tag', 'fa_tag' for each supported language.
+    Each row represents a tag set with translations in multiple languages.
+
+    Returns (number of tags created, list of warnings/messages).
+    """
+    warnings: List[str] = []
+    created_count = 0
+
+    try:
+        # Try to decode as UTF-8 first, then fall back to other encodings
+        try:
+            text = csv_content.decode("utf-8-sig")  # Handle BOM
+        except UnicodeDecodeError:
+            text = csv_content.decode("latin-1")
+
+        reader = csv.DictReader(io.StringIO(text))
+        headers = reader.fieldnames or []
+
+        # Find language columns
+        lang_columns: Dict[str, str] = {}
+        for lang in SUPPORTED_LANGUAGES:
+            possible_headers = [f"{lang}_tag", f"{lang.upper()}_tag", f"tag_{lang}", lang, lang.upper()]
+            for h in headers:
+                if h.strip().lower() in [p.lower() for p in possible_headers]:
+                    lang_columns[lang] = h
+                    break
+
+        if not lang_columns:
+            warnings.append(f"No valid language columns found. Expected headers like: en_tag, de_tag, fa_tag")
+            return 0, warnings
+
+        warnings.append(f"Found language columns: {lang_columns}")
+
+        for row_num, row in enumerate(reader, start=2):  # Start at 2 because row 1 is header
+            # Get the first non-empty label to use as base for slug
+            first_label = None
+            first_lang = None
+            labels: Dict[str, str] = {}
+
+            for lang, col in lang_columns.items():
+                val = (row.get(col) or "").strip()
+                if val:
+                    labels[lang] = val
+                    if first_label is None:
+                        first_label = val
+                        first_lang = lang
+
+            if not first_label:
+                warnings.append(f"Row {row_num}: skipped (no labels found)")
+                continue
+
+            # Check if tag with this label already exists
+            existing_tag = None
+            for lang, label in labels.items():
+                # Check by translation
+                existing_tr = TagTranslation.query.filter_by(lang_code=lang, label=label).first()
+                if existing_tr:
+                    existing_tag = Tag.query.get(existing_tr.tag_id)
+                    break
+                # Check by alias
+                existing_alias = TagAlias.query.filter_by(lang_code=lang, alias_label=label).first()
+                if existing_alias:
+                    existing_tag = Tag.query.get(existing_alias.tag_id)
+                    break
+                # Check by slug
+                slug_check = slugify(label)
+                existing_tag = Tag.query.filter_by(slug=slug_check).first()
+                if existing_tag:
+                    break
+
+            if existing_tag:
+                # Update existing tag with any missing translations
+                for lang, label in labels.items():
+                    existing_tr = TagTranslation.query.filter_by(tag_id=existing_tag.id, lang_code=lang).first()
+                    if not existing_tr:
+                        db.session.add(TagTranslation(tag_id=existing_tag.id, lang_code=lang, label=label))
+                        # Also add alias
+                        existing_alias = TagAlias.query.filter_by(lang_code=lang, alias_label=label).first()
+                        if not existing_alias:
+                            db.session.add(TagAlias(tag_id=existing_tag.id, lang_code=lang, alias_label=label))
+                warnings.append(f"Row {row_num}: updated existing tag '{existing_tag.slug}'")
+            else:
+                # Create new tag
+                slug = slugify(first_label)
+                base = slug
+                i = 2
+                while Tag.query.filter_by(slug=slug).first() is not None:
+                    slug = f"{base}-{i}"
+                    i += 1
+
+                tag = Tag(slug=slug)
+                db.session.add(tag)
+                db.session.flush()
+
+                for lang, label in labels.items():
+                    db.session.add(TagTranslation(tag_id=tag.id, lang_code=lang, label=label))
+                    # Also add alias for lookup
+                    db.session.add(TagAlias(tag_id=tag.id, lang_code=lang, alias_label=label))
+
+                created_count += 1
+                warnings.append(f"Row {row_num}: created tag '{slug}'")
+
+    except Exception as e:
+        warnings.append(f"Error parsing CSV: {e}")
+        return 0, warnings
+
+    return created_count, warnings

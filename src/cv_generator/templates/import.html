@@ -102,7 +102,7 @@
                         <span class="tag" style="background: var(--warning);">Overwrite</span>
                     {% endif %}
                     <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
-                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        {{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }} UTC
                         •
                         {% if entry.error_count == 0 %}
                             <span class="status-ok">All successful</span>

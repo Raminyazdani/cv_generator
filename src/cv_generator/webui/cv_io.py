@@ -43,6 +43,24 @@ def upsert_variant(person: PersonEntity, resume_key: str, lang_code: str, source
     return v
 
 
+def cleanup_orphaned_entity_tags(person_id: int, section: str, stable_id: str) -> bool:
+    """
+    Clean up EntityTag links for a (person, section, stable_id) if no entries remain.
+    Returns True if EntityTags were deleted, False otherwise.
+    """
+    # Check if any entries with this stable_id still exist
+    remaining = Entry.query.filter_by(
+        person_id=person_id, section=section, stable_id=stable_id
+    ).first()
+    if remaining is None:
+        # No entries with this stable_id remain; delete associated EntityTag links
+        count = EntityTag.query.filter_by(
+            person_id=person_id, section=section, stable_id=stable_id
+        ).delete(synchronize_session=False)
+        return count > 0
+    return False
+
+
 def _wipe_variant_entries(person_id: int, lang_code: str) -> None:
     # Collect stable_ids being deleted in this language
     entries_to_delete = Entry.query.filter_by(person_id=person_id, lang_code=lang_code).all()
@@ -53,15 +71,7 @@ def _wipe_variant_entries(person_id: int, lang_code: str) -> None:
     
     # Clean up orphaned EntityTag links for stable_ids that no longer exist in ANY language
     for section, stable_id in stable_ids_to_check:
-        # Check if this stable_id still exists in other languages
-        remaining = Entry.query.filter_by(
-            person_id=person_id, section=section, stable_id=stable_id
-        ).first()
-        if remaining is None:
-            # No entries with this stable_id remain; delete associated EntityTag links
-            EntityTag.query.filter_by(
-                person_id=person_id, section=section, stable_id=stable_id
-            ).delete(synchronize_session=False)
+        cleanup_orphaned_entity_tags(person_id, section, stable_id)
 
 
 def import_cv_json_bytes(

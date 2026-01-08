@@ -30,7 +30,7 @@ from .fields import (
     default_entry_data,
     skills_group,
 )
-from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file
+from .cv_io import import_cv_json_bytes, export_variant_to_json, write_export_file, cleanup_orphaned_entity_tags
 from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_tags, get_tag_table, delete_tag, merge_tags, delete_all_tags, import_tags_from_csv, get_all_tags_for_autocomplete
 
 
@@ -386,15 +386,8 @@ def create_app(*, repo_root: Path) -> Flask:
             # Delete the entry
             db.session.delete(e)
             
-            # Check if this stable_id still exists in other languages
-            remaining = Entry.query.filter_by(
-                person_id=p.id, section=section, stable_id=stable_id
-            ).first()
-            if remaining is None:
-                # No entries with this stable_id remain; delete associated EntityTag links
-                EntityTag.query.filter_by(
-                    person_id=p.id, section=section, stable_id=stable_id
-                ).delete(synchronize_session=False)
+            # Clean up orphaned EntityTag links if no entries with this stable_id remain
+            cleanup_orphaned_entity_tags(p.id, section, stable_id)
             
             db.session.commit()
             flash("Entry deleted successfully.", "success")

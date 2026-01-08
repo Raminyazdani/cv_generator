@@ -776,7 +776,12 @@ def create_app(*, repo_root: Path) -> Flask:
                 if action == "merge_tags":
                     target_tag_id = int(request.form.get("target_tag_id") or "0")
                     source_tag_ids_str = request.form.getlist("source_tag_ids")
-                    source_tag_ids = [int(s) for s in source_tag_ids_str if s.strip().isdigit()]
+                    source_tag_ids = []
+                    for s in source_tag_ids_str:
+                        try:
+                            source_tag_ids.append(int(s))
+                        except ValueError:
+                            continue
                     success, message = merge_tags(target_tag_id, source_tag_ids)
                     if success:
                         db.session.commit()

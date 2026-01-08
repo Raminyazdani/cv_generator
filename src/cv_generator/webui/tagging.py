@@ -189,13 +189,13 @@ def merge_tags(target_tag_id: int, source_tag_ids: List[int]) -> Tuple[bool, str
                 lang_code=alias.lang_code, alias_label=alias.alias_label
             ).first()
             if existing_alias and existing_alias.tag_id != target.id:
-                # Conflict with another tag - skip but keep the alias pointing to target
+                # Conflict with another tag - delete source alias to avoid uniqueness violation
                 db.session.delete(alias)
             elif existing_alias and existing_alias.tag_id == target.id:
-                # Already exists for target - delete source's
+                # Already exists for target - delete source's duplicate
                 db.session.delete(alias)
             else:
-                # No conflict - transfer
+                # No conflict - transfer alias to target
                 alias.tag_id = target.id
 
         # Delete the source tag

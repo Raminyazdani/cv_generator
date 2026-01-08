@@ -3,6 +3,144 @@
 {% block title %}{{ person.display_name or person.slug }}{% endblock %}
 
 {% block content %}
+<style>
+    .view-toggle {
+        display: inline-flex;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .view-toggle a {
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        color: var(--gray-700);
+        background: white;
+        border-right: 1px solid var(--gray-300);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .view-toggle a:last-child {
+        border-right: none;
+    }
+    .view-toggle a:hover {
+        background: var(--gray-100);
+    }
+    .view-toggle a.active {
+        background: var(--primary);
+        color: white;
+    }
+    .filter-bar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 1rem;
+        background: var(--gray-100);
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+    .filter-bar label {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+    .filter-bar select {
+        padding: 0.5rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 4px;
+        min-width: 200px;
+    }
+    .batch-tag-bar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 1rem;
+        background: var(--primary);
+        color: white;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+    .batch-tag-bar label {
+        font-weight: 500;
+    }
+    .batch-tag-bar select {
+        padding: 0.5rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 4px;
+        min-width: 200px;
+    }
+    .batch-tag-bar .btn {
+        background: white;
+        color: var(--primary);
+    }
+    .batch-tag-bar .btn:hover {
+        background: var(--gray-100);
+    }
+    .section-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+    .section-table th,
+    .section-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    .section-table th {
+        background: var(--gray-100);
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    .section-table tr:hover {
+        background: var(--gray-50);
+    }
+    .section-table .checkbox-cell {
+        width: 40px;
+        text-align: center;
+    }
+    .section-table input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .section-header h3 {
+        margin: 0;
+    }
+    .select-all-btn {
+        font-size: 0.85rem;
+        color: var(--primary);
+        cursor: pointer;
+        background: none;
+        border: none;
+        text-decoration: underline;
+    }
+    .select-all-btn:hover {
+        color: var(--primary-dark);
+    }
+    .entry-link {
+        color: var(--gray-900);
+        text-decoration: none;
+    }
+    .entry-link:hover {
+        color: var(--primary);
+        text-decoration: underline;
+    }
+    .selected-count {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+    }
+</style>
+
 <div class="breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &rsaquo;
     {{ person.display_name or person.slug }}
@@ -10,7 +148,7 @@
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
     <div>
-        <h2 style="margin-bottom: 0.25rem;">👤 {{ person.display_name or person.slug }}</h2>
+        <h2 style="margin-bottom: 0.25rem;">&#128100; {{ person.display_name or person.slug }}</h2>
         <p class="entry-meta">
             Variants:
             {% for lang in supported_languages %}
@@ -23,11 +161,21 @@
         </p>
     </div>
     <div class="actions">
-        <a href="{{ url_for('import_page') }}" class="btn btn-secondary">📥 Import</a>
-        <a href="{{ url_for('export_page') }}" class="btn btn-success">📤 Export</a>
+        <div class="view-toggle">
+            <a href="{{ url_for('person_dashboard', person=person.slug, view='tile') }}" class="{{ 'active' if view_mode == 'tile' else '' }}" title="Tile View">
+                &#128306; Tiles
+            </a>
+            <a href="{{ url_for('person_dashboard', person=person.slug, view='list') }}" class="{{ 'active' if view_mode == 'list' else '' }}" title="List/Detail View">
+                &#128203; List
+            </a>
+        </div>
+        <a href="{{ url_for('import_page') }}" class="btn btn-secondary">&#128229; Import</a>
+        <a href="{{ url_for('export_page') }}" class="btn btn-success">&#128228; Export</a>
     </div>
 </div>
 
+{% if view_mode == 'tile' %}
+{# --- TILE VIEW --- #}
 <div class="card-grid">
     {% for sec in section_cards %}
     <div class="card">
@@ -42,12 +190,160 @@
     {% endfor %}
 </div>
 
+{% else %}
+{# --- LIST/DETAIL VIEW --- #}
+
+{# Tag Filter Bar #}
+<div class="filter-bar">
+    <label for="tag-filter">&#127991; Filter by Tag:</label>
+    <select id="tag-filter" onchange="applyTagFilter(this.value)">
+        <option value="">All entries</option>
+        {% for tag in all_tags %}
+            <option value="{{ tag.id }}" {{ 'selected' if filter_tag_id == tag.id else '' }}>{{ tag.label }}</option>
+        {% endfor %}
+    </select>
+    {% if filter_tag_id %}
+        <a href="{{ url_for('person_dashboard', person=person.slug, view='list') }}" class="btn btn-secondary btn-sm">&#10005; Clear Filter</a>
+    {% endif %}
+</div>
+
+{# Batch Tag Assignment Form #}
+<form id="batch-tag-form" action="{{ url_for('batch_tag_assign', person=person.slug) }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="batch-tag-bar">
+        <label>&#127991; Batch Tag Assignment:</label>
+        <select name="tag_id" required>
+            <option value="">Select a tag to assign...</option>
+            {% for tag in all_tags %}
+                <option value="{{ tag.id }}">{{ tag.label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn">&#10133; Assign to Selected</button>
+        <span class="selected-count" id="selected-count">0 entries selected</span>
+    </div>
+
+    {# Sections with Entry Tables #}
+    {% for sec in section_cards %}
+    {% set entries = section_entries.get(sec.key, []) %}
+    <div class="card" style="margin-bottom: 1rem;">
+        <div class="section-header">
+            <h3>{{ sec.icon }} {{ sec.label }}</h3>
+            {% if entries %}
+            <button type="button" class="select-all-btn" onclick="toggleSelectAll('{{ sec.key }}')">
+                Select All
+            </button>
+            {% endif %}
+        </div>
+        
+        {% if entries %}
+        <table class="section-table">
+            <thead>
+                <tr>
+                    <th class="checkbox-cell">
+                        <input type="checkbox" class="section-select-all" data-section="{{ sec.key }}" onchange="toggleSectionCheckboxes('{{ sec.key }}', this.checked)">
+                    </th>
+                    <th>Entry</th>
+                    <th>Tags</th>
+                    <th style="width: 100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" name="entry_keys" value="{{ entry.section }}:{{ entry.stable_id }}" class="entry-checkbox section-{{ sec.key }}" onchange="updateSelectedCount()">
+                    </td>
+                    <td>
+                        <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="entry-link">
+                            {{ entry.summary }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if entry.tags %}
+                            {% for tag in entry.tags %}
+                            <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span style="color: var(--gray-500); font-style: italic;">No tags</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--gray-500); font-style: italic; padding: 1rem 0;">
+            {% if filter_tag_id %}
+                No entries with selected tag in this section.
+            {% else %}
+                No entries in this section.
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</form>
+{% endif %}
+
 <div class="card" style="margin-top: 1.5rem; background: var(--gray-50);">
-    <h3>ℹ️ Tips</h3>
+    <h3>&#8505;&#65039; Tips</h3>
     <ul style="margin-left: 1.25rem; color: var(--gray-700); line-height: 1.8;">
         <li>Use the language selector in the header to switch the UI language.</li>
         <li>Tags are shared across languages for the same <code>stable_id</code> group.</li>
-        <li>Use “Cross-Language Editor” on an entry to edit multiple languages side-by-side.</li>
+        <li>Use "Cross-Language Editor" on an entry to edit multiple languages side-by-side.</li>
+        {% if view_mode == 'list' %}
+        <li><strong>List View:</strong> Use the tag filter to show only entries with a specific tag.</li>
+        <li><strong>Batch Tagging:</strong> Select entries using checkboxes, choose a tag, and click "Assign to Selected" to tag multiple entries at once.</li>
+        {% endif %}
     </ul>
 </div>
+
+<script>
+function applyTagFilter(tagId) {
+    const url = new URL(window.location.href);
+    if (tagId) {
+        url.searchParams.set('tag_filter', tagId);
+    } else {
+        url.searchParams.delete('tag_filter');
+    }
+    url.searchParams.set('view', 'list');
+    window.location.href = url.toString();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.entry-checkbox:checked');
+    const countEl = document.getElementById('selected-count');
+    if (countEl) {
+        countEl.textContent = checkboxes.length + ' entries selected';
+    }
+}
+
+function toggleSectionCheckboxes(section, checked) {
+    const escapedSection = CSS.escape(section);
+    const checkboxes = document.querySelectorAll('.section-' + escapedSection);
+    checkboxes.forEach(cb => {
+        cb.checked = checked;
+    });
+    updateSelectedCount();
+}
+
+function toggleSelectAll(section) {
+    const escapedSection = CSS.escape(section);
+    const checkboxes = document.querySelectorAll('.section-' + escapedSection);
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => {
+        cb.checked = !allChecked;
+    });
+    // Update header checkbox
+    const headerCb = document.querySelector('.section-select-all[data-section="' + escapedSection + '"]');
+    if (headerCb) {
+        headerCb.checked = !allChecked;
+    }
+    updateSelectedCount();
+}
+</script>
 {% endblock %}

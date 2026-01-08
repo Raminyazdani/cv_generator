@@ -1,0 +1,51 @@
+﻿en_tag,de_tag,fa_tag
+Professional Experience,Berufserfahrung,تجربه حرفه‌ای
+Academic & Research,Akademisch & Forschung,دانشگاهی و پژوهشی
+Industry & Startups,Industrie & Start-ups,صنعت و استارتاپ
+Project Management,Projektmanagement,مدیریت پروژه
+Business Development,Geschäftsentwicklung,توسعه کسب‌وکار
+Life Sciences,Lebenswissenschaften,علوم زیستی
+Computer Science & IT,Informatik & IT,علوم کامپیوتر و فناوری اطلاعات
+Data & Analytics,Daten & Analytik,داده و تحلیل
+Biotechnology,Biotechnologie,بیوتکنولوژی
+Bioinformatics,Bioinformatik,بیوانفورماتیک
+Microbial Genomics,Mikrobielle Genomik,ژنومیکس میکروبی
+Multi-Omics Integration,Multi-Omics-Integration,یکپارچه‌سازی مولتی‌اُمیکس
+Metagenomics,Metagenomik,متاژنومیکس
+Transcriptomics,Transkriptomik,ترنسکریپتومیکس
+Proteomics,Proteomik,پروتئومیکس
+Gene Expression Analysis,Genexpressionsanalyse,تحلیل بیان ژن
+Functional Annotation,Funktionelle Annotation,حاشیه‌نویسی عملکردی
+Pathway Analysis,Signalweg-Analyse,تحلیل مسیرهای زیستی
+Systems Biology,Systembiologie,زیست‌شناسی سامانه‌ای
+Single-Cell RNA-seq,Einzelzell-RNA-seq,RNA-seq تک‌سلولی
+Spatial Transcriptomics,Räumliche Transkriptomik,ترنسکریپتومیکس فضایی
+Machine Learning,Maschinelles Lernen,یادگیری ماشین
+Bioinformatics Machine Learning,Maschinelles Lernen in der Bioinformatik,یادگیری ماشین در بیوانفورماتیک
+Data Visualization,Datenvisualisierung,مصورسازی داده
+Laboratory Work,Laborarbeit,کار آزمایشگاهی
+Bioprocess Engineering,Bioverfahrenstechnik,مهندسی فرایندهای زیستی
+Fermentation Engineering,Fermentationstechnik,مهندسی تخمیر
+Fed-batch Fermentation,Fed-Batch-Fermentation,تخمیر فد-بچ
+Pichia pastoris,Pichia pastoris,پیکیا پاستوریس
+Bioreactor Operation,Bioreaktorbetrieb,کار با بیوراکتور
+QA/QC,Qualitätssicherung/-kontrolle (QA/QC),تضمین و کنترل کیفیت (QA/QC)
+R&D Compliance,F&E-Compliance,انطباق و مقررات تحقیق و توسعه
+Software Development,Softwareentwicklung,توسعه نرم‌افزار
+Web Development,Webentwicklung,توسعه وب
+Full-Stack Development,Full-Stack-Entwicklung,توسعه فول‌استک
+Backend Development,Backend-Entwicklung,توسعه بک‌اند
+Frontend Development,Frontend-Entwicklung,توسعه فرانت‌اند
+API Development,API-Entwicklung,توسعه API
+REST APIs,REST-APIs,APIهای REST
+Django,Django,جنگو
+Flask,Flask,فلاسک
+FastAPI,FastAPI,فست‌ای‌پی‌آی
+React,React,ریکْت
+Automation & Scripting,Automatisierung & Scripting,اتوماسیون و اسکریپت‌نویسی
+Web Scraping,Web-Scraping,وب‌اسکرپینگ
+SQL,SQL,SQL
+Git (Version Control),Git (Versionsverwaltung),گیت (کنترل نسخه)
+Linux,Linux,لینوکس
+CI/CD,CI/CD,CI/CD
+Containerization & Orchestration (Docker/Kubernetes),Containerisierung & Orchestrierung (Docker/Kubernetes),کانتینری‌سازی و ارکستریشن (داکر/کوبرنتیز)

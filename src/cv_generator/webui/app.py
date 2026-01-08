@@ -35,7 +35,7 @@ from .tagging import resolve_or_create_tag, attach_tag, detach_tag, list_entity_
 
 
 def create_app(*, repo_root: Path) -> Flask:
-    app = Flask(__name__, template_folder="../templates", static_folder="static")
+    app = Flask(__name__, template_folder="./templates", static_folder="static")
 
     # Config
     db_path = repo_root / "data" / "db" / "cv_database.db"

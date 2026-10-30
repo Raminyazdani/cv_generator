@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Export CV{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo; Export
+</div>
+
+<h2>📤 Export CV JSON Files</h2>
+
+<div class="card-grid">
+    <!-- Single Export -->
+    <div class="card">
+        <h3>Single Export</h3>
+        <p class="entry-meta" style="margin-bottom: 1rem;">
+            Export a single CV variant to a JSON file.
+        </p>
+
+        <form action="{{ url_for('export_single') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label for="person">Person</label>
+                <select name="person" id="person" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                    <option value="">-- Select a person --</option>
+                    {% for person in persons %}
+                        <option value="{{ person.slug }}">{{ person.display_name or person.slug }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Language</label>
+                <select name="language" id="language" style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px;">
+                    {% for lang in supported_languages %}
+                        <option value="{{ lang }}" {% if lang == current_language %}selected{% endif %}>{{ lang | upper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="actions" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-success">📤 Export</button>
+                <button type="submit" formaction="{{ url_for('export_preview_v2') }}" class="btn btn-secondary">👁️ Preview</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Batch Export -->
+    <div class="card">
+        <h3>Batch Export</h3>
+        <p class="entry-meta" style="margin-bottom: 1rem;">
+            Export all language variants for selected persons.
+        </p>
+
+        <form action="{{ url_for('export_batch') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label>Select Persons</label>
+                <div class="checkbox-list" style="max-height: 200px;">
+                    {% for person in persons %}
+                    <label class="checkbox-item" style="cursor: pointer;">
+                        <input type="checkbox" name="persons" value="{{ person.slug }}">
+                        <span>{{ person.display_name or person.slug }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="actions" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-success">📦 Export All Variants</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if available_variants %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>Available Variants (v2 Database)</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        These CV variants are available for export from the v2 database schema.
+    </p>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--gray-200);">
+                <th style="text-align: left; padding: 0.75rem;">Resume Key</th>
+                <th style="text-align: left; padding: 0.75rem;">Language</th>
+                <th style="text-align: right; padding: 0.75rem;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resume_key, lang_code in available_variants %}
+            <tr style="border-bottom: 1px solid var(--gray-200);">
+                <td style="padding: 0.75rem;">
+                    <strong>{{ resume_key }}</strong>
+                </td>
+                <td style="padding: 0.75rem;">
+                    <span class="tag tag-count">{{ lang_code | upper }}</span>
+                </td>
+                <td style="padding: 0.75rem; text-align: right;">
+                    <form action="{{ url_for('export_preview_v2') }}" method="post" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="person" value="{{ resume_key }}">
+                        <input type="hidden" name="language" value="{{ lang_code }}">
+                        <button type="submit" class="btn btn-sm btn-secondary">👁️ Preview</button>
+                    </form>
+                    <form action="{{ url_for('export_single') }}" method="post" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="person" value="{{ resume_key }}">
+                        <input type="hidden" name="language" value="{{ lang_code }}">
+                        <button type="submit" class="btn btn-sm btn-success">📤 Export</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if export_history %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>Recent Export History</h3>
+    <div class="list-item-container">
+        {% for entry in export_history %}
+        <div class="list-item">
+            <div>
+                {% if entry.batch %}
+                    <strong>Batch Export ({{ entry.persons_count }} person(s))</strong>
+                    <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
+                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        •
+                        {% if entry.failed_count == 0 %}
+                            <span class="status-ok">{{ entry.success_count }} exported</span>
+                        {% else %}
+                            <span class="status-warning">{{ entry.success_count }} succeeded, {{ entry.failed_count }} failed</span>
+                        {% endif %}
+                    </span>
+                    <span class="entry-meta">Output: {{ entry.output_dir }}</span>
+                {% else %}
+                    <strong>{{ entry.resume_key }}</strong>
+                    <span class="tag tag-count">{{ entry.language | upper }}</span>
+                    <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
+                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        {% if entry.success %}
+                            • <span class="status-ok">Exported</span>
+                        {% endif %}
+                    </span>
+                    <span class="entry-meta">{{ entry.output_path }}</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not persons %}
+<div class="card" style="margin-top: 1rem;">
+    <div class="empty-state">
+        <p>No persons found in database.</p>
+        <p style="margin-top: 1rem;">
+            <a href="{{ url_for('import_page') }}" class="btn btn-primary">📥 Import CV Data</a>
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top: 1rem; background: var(--gray-50);">
+    <h3>ℹ️ Export Information</h3>
+    <ul style="margin-left: 1.5rem; color: var(--gray-700);">
+        <li>Exported files are saved to the <code>output/json/</code> directory.</li>
+        <li>Filenames include timestamps to prevent overwriting previous exports.</li>
+        <li>Tags are exported in the selected language using the vocabulary translations.</li>
+        <li>The v2 exporter preserves the original JSON structure for LaTeX compatibility.</li>
+    </ul>
+</div>
+{% endblock %}

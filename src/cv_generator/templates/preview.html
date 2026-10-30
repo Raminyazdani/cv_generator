@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Export - {{ person }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('person_dashboard', person=person) }}">{{ person }}</a> &rsaquo;
+    Preview Export
+</div>
+
+<h2>📄 Export Preview: {{ person }}</h2>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>Export Language:</strong> {{ export_language|upper }}
+            <span class="entry-meta">(tags will be exported in this language)</span>
+        </div>
+        <div class="actions">
+            {% for lang in supported_languages %}
+                {% if lang != export_language %}
+                    <a href="{{ url_for('preview_export', person=person, language=lang) }}" class="btn btn-sm btn-secondary">
+                        View {{ lang|upper }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+            <form action="{{ url_for('export_person', person=person) }}" method="post" style="display: inline;">
+                <input type="hidden" name="language" value="{{ export_language }}">
+                <button type="submit" class="btn btn-primary">
+                    💾 Export to File
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>JSON Preview</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        This is what will be exported to the output directory.
+        The preview regenerates from the database source of truth.
+    </p>
+    <pre class="json-preview">{{ json_preview }}</pre>
+</div>
+
+{% if cv_data %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>📊 Summary</h3>
+    <div class="health-check-item">
+        <span>Person:</span>
+        <span>{{ cv_data.name|default('Unknown', true) }}</span>
+    </div>
+    {% if cv_data.projects %}
+    <div class="health-check-item">
+        <span>Projects:</span>
+        <span>{{ cv_data.projects|length }}</span>
+    </div>
+    {% endif %}
+    {% if cv_data.experiences %}
+    <div class="health-check-item">
+        <span>Experiences:</span>
+        <span>{{ cv_data.experiences|length }}</span>
+    </div>
+    {% endif %}
+    {% if cv_data.publications %}
+    <div class="health-check-item">
+        <span>Publications:</span>
+        <span>{{ cv_data.publications|length }}</span>
+    </div>
+    {% endif %}
+    {% if cv_data.education %}
+    <div class="health-check-item">
+        <span>Education:</span>
+        <span>{{ cv_data.education|length }}</span>
+    </div>
+    {% endif %}
+    {% if cv_data.skills %}
+    <div class="health-check-item">
+        <span>Skill Categories:</span>
+        <span>{{ cv_data.skills|length }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

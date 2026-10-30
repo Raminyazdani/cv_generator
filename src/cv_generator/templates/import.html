@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Import CV{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo; Import
+</div>
+
+<h2>📥 Import CV JSON Files</h2>
+
+<div class="card">
+    <h3>Upload Files</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Select one or more CV JSON files to import into the database.
+        Files must be valid JSON format with the CV schema structure.
+    </p>
+
+    <form action="{{ url_for('import_upload') }}" method="post" enctype="multipart/form-data" id="import-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="files">Select JSON Files</label>
+            <div class="file-upload-area" id="drop-zone" style="
+                border: 2px dashed var(--gray-300);
+                border-radius: 8px;
+                padding: 2rem;
+                text-align: center;
+                cursor: pointer;
+                transition: border-color 0.2s, background 0.2s;
+                margin-bottom: 1rem;
+            ">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+                <p style="margin-bottom: 0.5rem;">Drag and drop files here, or click to select</p>
+                <p class="entry-meta">Accepts .json files only</p>
+                <input type="file" name="files" id="files" accept=".json" multiple
+                       style="display: none;" aria-label="Select JSON files to import">
+            </div>
+            <div id="file-list" style="margin-top: 0.5rem;"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Import Mode</label>
+            <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+                <label class="checkbox-item" style="cursor: pointer;">
+                    <input type="radio" name="import_mode" value="merge" checked>
+                    <span><strong>Merge</strong> - Add new data, keep existing entries</span>
+                </label>
+                <label class="checkbox-item" style="cursor: pointer;">
+                    <input type="radio" name="import_mode" value="overwrite">
+                    <span><strong>Overwrite</strong> - Replace existing data for matching persons</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary" id="upload-btn" disabled>
+                📤 Upload and Preview
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% if existing_persons %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>Existing Persons in Database</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        These persons already exist. Importing files with matching IDs will show collision warnings.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        {% for person in existing_persons %}
+            <span class="tag tag-count">{{ person.slug }}</span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if import_history %}
+<div class="card" style="margin-top: 1rem;">
+    <h3>Recent Import History</h3>
+    <div class="list-item-container">
+        {% for entry in import_history %}
+            <div class="list-item">
+                <div>
+                    <strong>{{ entry.files_count }} file(s)</strong>
+                    {% if entry.overwrite %}
+                        <span class="tag" style="background: var(--warning);">Overwrite</span>
+                    {% endif %}
+                    <span class="entry-meta" style="display: block; margin-top: 0.25rem;">
+                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC
+                        •
+                        {% if entry.error_count == 0 %}
+                            <span class="status-ok">All successful</span>
+                        {% else %}
+                            <span class="status-warning">{{ entry.success_count }} succeeded, {{ entry.error_count }} failed</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<script>
+(function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('files');
+    const fileList = document.getElementById('file-list');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    // Click to select files
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--primary)';
+        dropZone.style.background = 'var(--gray-50)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--gray-300)';
+        dropZone.style.background = '';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--gray-300)';
+        dropZone.style.background = '';
+
+        const files = e.dataTransfer.files;
+        fileInput.files = files;
+        updateFileList(files);
+    });
+
+    // File input change handler
+    fileInput.addEventListener('change', () => {
+        updateFileList(fileInput.files);
+    });
+
+    function updateFileList(files) {
+        fileList.innerHTML = '';
+        let validCount = 0;
+
+        for (const file of files) {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 0.5rem; border-radius: 4px; margin-bottom: 0.25rem;';
+
+            if (file.name.endsWith('.json')) {
+                div.style.background = 'var(--gray-100)';
+                div.innerHTML = `<span style="color: var(--success);">✓</span> ${file.name} <span class="entry-meta">(${(file.size / 1024).toFixed(1)} KB)</span>`;
+                validCount++;
+            } else {
+                div.style.background = '#fee2e2';
+                div.innerHTML = `<span style="color: var(--danger);">✗</span> ${file.name} <span class="entry-meta">(not a JSON file)</span>`;
+            }
+
+            fileList.appendChild(div);
+        }
+
+        uploadBtn.disabled = validCount === 0;
+    }
+})();
+</script>
+{% endblock %}

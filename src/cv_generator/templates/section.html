@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}{{ get_section_label(section) }} - {{ person.slug }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo;
+    <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &raquo;
+    {{ get_section_label(section) }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">({{ section }})</small>{% endif %}
+</nav>
+
+<h2>{{ get_section_label(section) }}{% if show_canonical_keys %} <small style="color: var(--gray-400);">({{ section }})</small>{% endif %}</h2>
+
+{% if section in ['basics', 'projects', 'experiences', 'publications', 'references', 'education', 'languages', 'profiles', 'workshop_and_certifications'] %}
+<div style="margin-bottom: 1rem;">
+    <a href="{{ url_for('create_entry_route', person=person.slug, section=section) }}" class="btn btn-primary">
+        ➕ Add New {{ get_section_label(section) | replace('s', '', 1) if get_section_label(section).endswith('s') else get_section_label(section) }}
+    </a>
+</div>
+{% endif %}
+
+{% if entries %}
+<div class="card">
+    <div style="margin-bottom: 1rem;">
+        <input type="text" id="search-input" placeholder="Search entries..." 
+               style="width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px;">
+    </div>
+    
+    <div id="entries-list">
+    {% if section == 'skills' and skills_by_category %}
+    {# Skills section: show grouped by parent/sub category #}
+    {% for parent_category, sub_categories in skills_by_category.items() %}
+    <div class="skill-parent-category" style="margin-bottom: 1.5rem;">
+        <h3 style="margin: 0.5rem 0; padding: 0.5rem; background: var(--gray-100); border-radius: 4px;">
+            📁 {{ parent_category }}
+        </h3>
+        {% for sub_category, skill_entries in sub_categories.items() %}
+        <div class="skill-sub-category" style="margin-left: 1rem; margin-top: 0.5rem;">
+            <h4 style="margin: 0.25rem 0; color: var(--gray-600); font-size: 0.9rem;">
+                📂 {{ sub_category }}
+            </h4>
+            {% for entry in skill_entries %}
+            <div class="list-item entry-item skill-item" 
+                 data-search="{{ entry.summary | lower }} {{ entry.tags | default([]) | join(' ') | lower }} {{ parent_category | lower }} {{ sub_category | lower }}"
+                 style="margin-left: 1rem; padding: 0.5rem;">
+                <div style="flex: 1;">
+                    <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
+                        🔹 {{ entry.summary }}
+                    </a>
+                    <div class="entry-meta">
+                        {% if entry.tags %}
+                            {% for tag in entry.tags %}
+                            <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span style="color: var(--gray-500); font-style: italic;">No tags</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    {% else %}
+    {# Other sections: show flat list #}
+    {% for entry in entries %}
+    <div class="list-item entry-item" data-search="{{ entry.summary | lower }} {{ entry.tags | default([]) | join(' ') | lower }}">
+        <div style="flex: 1;">
+            <a href="{{ url_for('entry_detail', entry_id=entry.id) }}">
+                {{ entry.summary }}
+            </a>
+            <div class="entry-meta">
+                {% if entry.tags %}
+                    {% for tag in entry.tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span style="color: var(--gray-500); font-style: italic;">No tags</span>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-secondary btn-sm">Edit Tags</a>
+    </div>
+    {% endfor %}
+    {% endif %}
+    </div>
+    
+    <div id="no-results" style="display: none; text-align: center; padding: 1rem; color: var(--gray-500);">
+        No entries match your search.
+    </div>
+</div>
+
+<script>
+document.getElementById('search-input').addEventListener('input', function() {
+    const query = this.value.toLowerCase().trim();
+    const entries = document.querySelectorAll('.entry-item');
+    const noResults = document.getElementById('no-results');
+    let visibleCount = 0;
+    
+    entries.forEach(function(entry) {
+        const searchText = entry.getAttribute('data-search');
+        const isVisible = query === '' || searchText.includes(query);
+        entry.style.display = isVisible ? 'flex' : 'none';
+        entry.dataset.visible = isVisible ? 'true' : 'false';
+        if (isVisible) visibleCount++;
+    });
+    
+    // Also hide empty category headers when searching skills
+    const parentCategories = document.querySelectorAll('.skill-parent-category');
+    parentCategories.forEach(function(cat) {
+        const items = cat.querySelectorAll('.entry-item');
+        let hasVisible = false;
+        items.forEach(function(item) {
+            if (item.dataset.visible === 'true') hasVisible = true;
+        });
+        cat.style.display = (query === '' || hasVisible) ? 'block' : 'none';
+    });
+    
+    const subCategories = document.querySelectorAll('.skill-sub-category');
+    subCategories.forEach(function(cat) {
+        const items = cat.querySelectorAll('.entry-item');
+        let hasVisible = false;
+        items.forEach(function(item) {
+            if (item.dataset.visible === 'true') hasVisible = true;
+        });
+        });
+        cat.style.display = (query === '' || hasVisible) ? 'block' : 'none';
+    });
+    
+    noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+});
+</script>
+{% else %}
+<div class="card empty-state">
+    <p>No entries in this section.</p>
+</div>
+{% endif %}
+{% endblock %}

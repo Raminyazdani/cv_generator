@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Import Preview{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('import_page') }}">Import</a> &rsaquo;
+    Preview
+</div>
+
+<h2>📋 Import Preview</h2>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Validation Results</h3>
+        <div>
+            <span class="tag" style="background: {% if import_mode == 'overwrite' %}var(--warning){% else %}var(--success){% endif %};">
+                {{ import_mode | title }} Mode
+            </span>
+        </div>
+    </div>
+
+    {% if not has_valid_files %}
+    <div class="flash flash-error" style="margin-bottom: 1rem;">
+        No valid files to import. Please check the errors below and try again.
+    </div>
+    {% elif has_collisions and import_mode != 'overwrite' %}
+    <div class="flash flash-warning" style="margin-bottom: 1rem;">
+        ⚠️ Some files will update existing data. Review the collision warnings below.
+    </div>
+    {% endif %}
+
+    <div class="list-item-container">
+        {% for result in validation_results %}
+        <div class="list-item" style="display: block; padding: 1rem; {% if not result.valid %}background: #fee2e2;{% elif result.collision %}background: #fef3c7;{% else %}background: #dcfce7;{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <strong style="font-size: 1.1rem;">
+                        {% if result.valid %}
+                            <span style="color: var(--success);">✓</span>
+                        {% else %}
+                            <span style="color: var(--danger);">✗</span>
+                        {% endif %}
+                        {{ result.filename }}
+                    </strong>
+
+                    {% if result.valid %}
+                        <div style="margin-top: 0.5rem;">
+                            <span class="tag">{{ result.resume_key }}</span>
+                            <span class="tag tag-count">{{ result.lang_code | upper }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if result.valid and result.section_counts %}
+                <div style="text-align: right;">
+                    <span class="entry-meta">Sections to import:</span>
+                    <div style="margin-top: 0.25rem;">
+                        {% for section, count in result.section_counts.items() %}
+                            <span class="tag tag-count" style="font-size: 0.7rem;">{{ section }}: {{ count }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not result.valid %}
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 4px; border-left: 3px solid var(--danger);">
+                <strong style="color: var(--danger);">Error:</strong> {{ result.error }}
+                {% if result.error_details %}
+                    <span class="entry-meta">(line {{ result.error_details.line }}, column {{ result.error_details.column }})</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if result.collision %}
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: white; border-radius: 4px; border-left: 3px solid var(--warning);">
+                <strong style="color: var(--warning);">⚠️ Collision:</strong>
+                Person "<strong>{{ result.collision.display_name }}</strong>" already exists with {{ result.collision.entry_count }} entries.
+                {% if import_mode == 'overwrite' %}
+                    <span class="entry-meta">(will be replaced)</span>
+                {% else %}
+                    <span class="entry-meta">(data will be merged)</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h3>Confirm Import</h3>
+
+    {% if has_valid_files %}
+    <p style="margin-bottom: 1rem;">
+        {% set valid_count = validation_results | selectattr('valid') | list | length %}
+        Ready to import <strong>{{ valid_count }}</strong> file(s).
+        {% if has_collisions %}
+            {% if import_mode == 'overwrite' %}
+                Existing data will be <strong>replaced</strong>.
+            {% else %}
+                New data will be <strong>merged</strong> with existing entries.
+            {% endif %}
+        {% endif %}
+    </p>
+
+    <div class="actions">
+        <form action="{{ url_for('import_confirm', session_id=session_id) }}" method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-success"
+                    onclick="return confirm('Are you sure you want to import these files? This action cannot be undone.');">
+                ✓ Confirm Import
+            </button>
+        </form>
+
+        <form action="{{ url_for('import_cancel', session_id=session_id) }}" method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary">
+                ✗ Cancel
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <p>No valid files to import. Please go back and select valid JSON files.</p>
+    <div class="actions">
+        <a href="{{ url_for('import_page') }}" class="btn btn-secondary">← Back to Import</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 1rem; background: var(--gray-50);">
+    <h3>ℹ️ Import Guidelines</h3>
+    <ul style="margin-left: 1.5rem; color: var(--gray-700);">
+        <li><strong>Merge mode:</strong> Adds new entries without deleting existing data. Use for incremental updates.</li>
+        <li><strong>Overwrite mode:</strong> Replaces all data for matching persons. Use for full re-imports.</li>
+        <li>JSON files must have a valid <code>config</code> block with <code>ID</code> and <code>lang</code> fields, or follow the naming convention <code>personname_lang.json</code>.</li>
+        <li>Imports are atomic - if any error occurs during import, all changes are rolled back.</li>
+    </ul>
+</div>
+{% endblock %}

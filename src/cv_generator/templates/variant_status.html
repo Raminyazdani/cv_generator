@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Variant Status: {{ resume_key }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &raquo; 
+    Variant Status: {{ resume_key }}
+</div>
+
+<h2>🌐 Variant Status: {{ resume_key }}</h2>
+
+<div class="card">
+    <h3>Overview</h3>
+    <p><strong>Base Language:</strong> {{ status.base_lang|upper }}</p>
+    <p><strong>Last Synced:</strong> {{ status.last_synced or 'Never' }}</p>
+</div>
+
+<div class="card-grid">
+    <!-- Existing Languages -->
+    <div class="card">
+        <h3>✅ Existing Variants</h3>
+        {% if status.existing_langs %}
+            <ul class="issue-list">
+            {% for lang in status.existing_langs %}
+                <li>
+                    <strong>{{ lang|upper }}</strong>
+                    {% if status.total_entries.get(lang) %}
+                        ({{ status.total_entries[lang] }} records)
+                    {% endif %}
+                    {% if lang != status.base_lang %}
+                        <form method="post" action="{{ url_for('remove_variant_route', resume_key=resume_key, lang_code=lang) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remove {{ lang|upper }} variant?')">Remove</button>
+                        </form>
+                        <form method="post" action="{{ url_for('unlink_variant_route', resume_key=resume_key, lang_code=lang) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="create_new" value="1">
+                            <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Unlink {{ lang|upper }} variant to its own resume_set?')">Unlink</button>
+                        </form>
+                    {% else %}
+                        <span class="tag">Base</span>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p class="empty-state">No variants found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Missing Languages -->
+    <div class="card">
+        <h3>⚠️ Missing Variants</h3>
+        {% if status.missing_langs %}
+            <ul class="issue-list">
+            {% for lang in status.missing_langs %}
+                <li>
+                    <strong>{{ lang|upper }}</strong>
+                    <form method="post" action="{{ url_for('add_variant_route', resume_key=resume_key) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="lang_code" value="{{ lang }}">
+                        <select name="copy_from" class="btn btn-secondary btn-sm" style="margin-left: 0.5rem;">
+                            <option value="">Empty</option>
+                            {% for src_lang in status.existing_langs %}
+                                <option value="{{ src_lang }}">Copy from {{ src_lang|upper }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success btn-sm">Add</button>
+                    </form>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>All languages are available! ✅</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Conflicts -->
+{% if status.conflicts %}
+<div class="card">
+    <h3>⚠️ Conflicts Detected</h3>
+    <p>These fields have different values across language variants and need resolution:</p>
+    <table style="width: 100%; margin-top: 1rem;">
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Field</th>
+                <th>Values</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for conflict in status.conflicts %}
+            <tr>
+                <td>{{ conflict.entity_type }} #{{ conflict.entity_id }}</td>
+                <td>{{ conflict.field_name }}</td>
+                <td>
+                    {% for lang, val in conflict.values_by_lang.items() %}
+                        <span class="tag">{{ lang|upper }}: {{ val }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    <a href="{{ url_for('variant_conflicts_route', resume_key=resume_key) }}" class="btn btn-primary btn-sm">Resolve</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Sync Action -->
+<div class="card">
+    <h3>🔄 Sync Invariant Fields</h3>
+    <p>Copy all shared fields (dates, URLs, etc.) from one language to all others:</p>
+    <form method="post" action="{{ url_for('sync_variant_route', resume_key=resume_key) }}" style="margin-top: 1rem;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group" style="display: flex; gap: 1rem; align-items: center;">
+            <label for="source_lang" style="margin: 0;">Source Language:</label>
+            <select name="source_lang" id="source_lang" class="btn btn-secondary">
+                {% for lang in status.existing_langs %}
+                    <option value="{{ lang }}" {% if lang == status.base_lang %}selected{% endif %}>{{ lang|upper }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Sync All Invariant Fields</button>
+        </div>
+    </form>
+</div>
+
+<!-- Related Orphans -->
+{% if related_orphans %}
+<div class="card">
+    <h3>🔗 Related Orphaned Variants</h3>
+    <p>These variants might belong to this person:</p>
+    <table style="width: 100%; margin-top: 1rem;">
+        <thead>
+            <tr>
+                <th>Resume Key</th>
+                <th>Language</th>
+                <th>Person Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for orphan in related_orphans %}
+            <tr>
+                <td>{{ orphan.resume_key }}</td>
+                <td>{{ orphan.lang_code|upper }}</td>
+                <td>{{ orphan.person_name or 'Unknown' }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('link_variant_route_v2') }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="version_id" value="{{ orphan.version_id }}">
+                        <input type="hidden" name="target_resume_key" value="{{ resume_key }}">
+                        <button type="submit" class="btn btn-success btn-sm">Link Here</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="actions" style="margin-top: 2rem;">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Home</a>
+    <a href="{{ url_for('variant_diagnostics_route') }}" class="btn btn-primary">View All Diagnostics</a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,3 @@
+# Direct build-tool metadata audit only; configure isolated builds separately.
+setuptools==84.2.1
+wheel==0.48.0

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Variants - {{ person.slug }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('person_dashboard', person=person.slug) }}">{{ person.display_name or person.slug }}</a> &rsaquo;
+    Variants
+</div>
+
+<h2>🧬 Variants: {{ person.display_name or person.slug }}</h2>
+
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid var(--gray-200);">
+                <th style="text-align: left; padding: 0.75rem;">Language</th>
+                <th style="text-align: left; padding: 0.75rem;">Status</th>
+                <th style="text-align: right; padding: 0.75rem;">Entries</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in variants %}
+            <tr style="border-bottom: 1px solid var(--gray-200);">
+                <td style="padding: 0.75rem;"><span class="tag tag-count">{{ v.lang|upper }}</span></td>
+                <td style="padding: 0.75rem;">
+                    {% if v.exists %}
+                        <span class="status-ok">✓ Available</span>
+                    {% else %}
+                        <span class="status-warning">Missing</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 0.75rem; text-align: right;">{{ v.entry_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card" style="background: var(--gray-50);">
+    <h3>Next Steps</h3>
+    <ul style="margin-left: 1.5rem; color: var(--gray-700); line-height: 1.8;">
+        <li>If a language is missing, import the corresponding JSON file (e.g., <code>Example_de.json</code>).</li>
+        <li>Use Diagnostics to find missing translations at entry-level.</li>
+    </ul>
+</div>
+{% endblock %}

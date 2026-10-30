@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Diagnostics{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo; Diagnostics
+</div>
+
+<h2>🩺 Diagnostics</h2>
+
+<div class="card">
+    <h3>Missing Entry Translations</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        These stable groups exist in at least one language but are missing in others.
+        Click to open the Cross-Language Editor and create missing language variants.
+    </p>
+
+    {% if missing_translations %}
+        <div class="list-item-container">
+        {% for row in missing_translations %}
+            <div class="list-item">
+                <div style="flex:1;">
+                    <strong>{{ row.person }}</strong>
+                    <span class="tag tag-count">{{ row.section }}</span>
+                    <span class="entry-meta" style="display:block;">
+                        Missing:
+                        {% for l in row.missing %}
+                            <span class="tag" style="background: var(--warning);">{{ l|upper }}</span>
+                        {% endfor %}
+                    </span>
+                </div>
+                <a href="{{ url_for('cross_language_editor', entry_id=row.entry_id) }}" class="btn btn-sm btn-secondary">Open</a>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--success);">✓ No missing translations detected.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Tags Missing Translations</h3>
+    <p class="entry-meta" style="margin-bottom: 1rem;">
+        Export falls back to slug when a tag translation is missing.
+    </p>
+
+    {% if tags_missing_translations %}
+        <div class="list-item-container">
+        {% for t in tags_missing_translations %}
+            <div class="list-item">
+                <div style="flex:1;">
+                    <strong>{{ t.slug }}</strong>
+                    <span class="entry-meta" style="display:block;">
+                        Missing:
+                        {% for l in t.missing %}
+                            <span class="tag" style="background: var(--warning);">{{ l|upper }}</span>
+                        {% endfor %}
+                    </span>
+                </div>
+                <a href="{{ url_for('tags_list') }}" class="btn btn-sm btn-secondary">Fix in Tags</a>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p style="color: var(--success);">✓ All tags have translations in all languages.</p>
+    {% endif %}
+</div>
+
+<div class="card" style="background: var(--gray-50);">
+    <h3>ℹ️ What this checks</h3>
+    <ul style="margin-left: 1.5rem; color: var(--gray-700); line-height: 1.8;">
+        <li><strong>Entry translation coverage</strong>: for each (person, section, stable_id), all supported languages should exist.</li>
+        <li><strong>Tag translation coverage</strong>: for each tag, all supported languages should have a label.</li>
+    </ul>
+</div>
+{% endblock %}

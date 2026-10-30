@@ -1,0 +1,4 @@
+# Actual direct imports of this prepared variant; public package metadata audited by family.
+Flask
+Flask-SQLAlchemy
+Flask-WTF
